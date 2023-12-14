@@ -1,23 +1,16 @@
+# Copyright 2023 Canonical Ltd.
+# See LICENSE file for licensing details.
 """Unit tests for the views module."""
 
-from views import handle_cleanup, handle_present
+import pytest
+from django.http import HttpRequest
+from lego.views import handle_present
 
 
-def handle_present_when_user_has_permission():
-    handle_present()
-    assert False
-
-
-def handle_present_when_user_has_no_permission():
-    handle_present()
-    assert False
-
-
-def handle_cleanup_when_user_has_permission():
-    handle_cleanup()
-    assert False
-
-
-def handle_cleanup_when_user_has_no_permission():
-    handle_cleanup()
-    assert False
+@pytest.mark.django_db
+def test_handle_present_when_get(client):
+    response = client.get('/present')
+    request = HttpRequest()
+    request.method = "GET"
+    response = handle_present(request)
+    assert response.status_code == 200

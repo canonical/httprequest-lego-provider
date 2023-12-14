@@ -1,9 +1,12 @@
+# Copyright 2023 Canonical Ltd.
+# See LICENSE file for licensing details.
+"""Unit tests for the dns module."""
+
 from git import Repo
 from unittest.mock import patch, MagicMock
 from pathlib import Path
 from lego.dns import remove_dns_record, write_dns_record
 
-"""Unit tests for the dns module."""
 
 @patch.object(Path, "exists", False)
 @patch.object(Path, "write_text")
@@ -12,7 +15,7 @@ def test_write_dns_record_if_not_exists(repo_patch, _):
     """
     arrange: mock the repo and filesystem so that the file matching a DNS record doesn't exist.
     act: attempt to write a new DNS record.
-    assert: a new file with filename matching the record is commited and pushed to the repository.
+    assert: a new file with filename matching the record is committed and pushed to the repository.
     """
     repo_mock = MagicMock(spec=Repo)
     repo_patch.return_value = repo_mock
@@ -23,6 +26,7 @@ def test_write_dns_record_if_not_exists(repo_patch, _):
     repo_mock.index.add.assert_called_with([dns_record])
     repo_mock.git.commit.assert_called_once()
     repo_mock.remote(name="origin").push.assert_called_once()
+
 
 @patch.object(Path, "exists", True)
 @patch.object(Repo, "clone_from")
