@@ -2,6 +2,5 @@
 
 import os
 
-# "git+ssh://arturo-seijas@git.launchpad.net/~arturo-seijas/canonical-is-dns-configs@main"#"auto-httpreq"
-DNS_REPOSITORY_URL=os.environ["DNS_REPOSITORY_URL"]
+DNS_REPOSITORY_URL=os.getenv("DNS_REPOSITORY_URL", default="")
 SSH_IDENTITY_FILE=os.path.expanduser("~/.ssh/id_rsa")
