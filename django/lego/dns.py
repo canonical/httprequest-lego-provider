@@ -1,5 +1,6 @@
+"""DNS utiilities."""
+
 from git import Git, Repo
-from os import path
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from .settings import DNS_REPOSITORY_URL, SSH_IDENTITY_FILE

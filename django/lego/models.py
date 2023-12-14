@@ -1,3 +1,5 @@
+"""Models."""
+
 from datetime import datetime
 from django.contrib.auth.models import User
 from django.db import models
@@ -10,6 +12,8 @@ audit_log_status_choices = (
 
 
 class Domain(models.Model):
+    """DNS domain."""
+
     # We should add validators to ensure this matches expected values. Note
     # that this validation should also be used in the Django form when processing
     # a request.
@@ -17,13 +21,18 @@ class Domain(models.Model):
 
 
 class DomainUserPermission(models.Model):
+    """Relation between the user and the domains each user can manage."""
+
     domain = models.ForeignKey(Domain, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     text = models.TextField()
 
 
 class AuditLog(models.Model):
+    """Audit log representation."""
+
     # We may not need this since it can be derived from domainuserpermission.
+
     user = models.ForeignKey(User, on_delete=models.DO_NOTHING)
     domain = models.ForeignKey(Domain, on_delete=models.DO_NOTHING)
     now = datetime.now().time()

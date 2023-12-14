@@ -1,3 +1,5 @@
+"""Views."""
+
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
@@ -9,6 +11,7 @@ from .models import AuditLog, Domain, DomainUserPermission
 
 @login_required
 def handle_present(request):
+    """Handle the submissing of the present form."""
     if request.method == "POST":
         form = PresentForm(request.POST)
         if not form.is_valid():
@@ -31,6 +34,7 @@ def handle_present(request):
 
 @login_required
 def handle_cleanup(request):
+    """Handle the submissing of the cleanup form."""
     if request.method == "POST":
         form = CleanupForm(request.POST)
         if not form.is_valid():

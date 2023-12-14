@@ -1,3 +1,5 @@
+"""Settings."""
+
 import os
 
 # "git+ssh://arturo-seijas@git.launchpad.net/~arturo-seijas/canonical-is-dns-configs@main"#"auto-httpreq"
