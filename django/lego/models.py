@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from django.contrib.auth.models import User
+from django.core.validators import RegexValidator
 from django.db import models
 
 audit_log_status_choices = (
@@ -14,10 +15,16 @@ audit_log_status_choices = (
 class Domain(models.Model):
     """DNS domain."""
 
-    # We should add validators to ensure this matches expected values. Note
-    # that this validation should also be used in the Django form when processing
-    # a request.
-    fqdn = models.CharField(max_length=200, unique=True)
+    fqdn = models.CharField(
+        max_length=200,
+        unique=True,
+        validators=[
+            RegexValidator(
+                regex=r'(?=^.{4,253}$)(^((?!-)[a-zA-Z0-9-]{1,63}(?<!-)\.)+[a-zA-Z]{2,63}$)',
+                message="Enter a valid FQDN.",
+                code="invalid_fqdn",
+            ),
+        ],)
 
 
 class DomainUserPermission(models.Model):
