@@ -31,7 +31,9 @@ header:
     - 'icon.svg'
     - 'LICENSE'
     - 'trivy.yaml'
+    - 'pyproject.toml'
     - 'zap_rules.tsv'
     - 'django/manage.py'
     - 'django/app/**'
+    - 'django/**/.*html'
   comment: on-failure
