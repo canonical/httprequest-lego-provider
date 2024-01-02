@@ -2,7 +2,7 @@
 # See LICENSE file for licensing details.
 """Models."""
 
-from django.contrib.auth.models import User
+from django.contrib import auth
 from django.core.validators import RegexValidator
 from django.db import models
 
@@ -25,11 +25,12 @@ class Domain(models.Model):
         unique=True,
         validators=[
             RegexValidator(
-                regex=r'(?=^.{4,253}$)(^((?!-)[a-zA-Z0-9-]{1,63}(?<!-)\.)+[a-zA-Z]{2,63}$)',
+                regex=r"(?=^.{4,253}$)(^((?!-)[a-zA-Z0-9-]{1,63}(?<!-)\.)+[a-zA-Z]{2,63}$)",
                 message="Enter a valid FQDN.",
                 code="invalid_fqdn",
             ),
-        ],)
+        ],
+    )
 
 
 class DomainUserPermission(models.Model):
@@ -42,7 +43,7 @@ class DomainUserPermission(models.Model):
     """
 
     domain = models.ForeignKey(Domain, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(auth.get_user_model(), on_delete=models.CASCADE)
     text = models.TextField()
 
 

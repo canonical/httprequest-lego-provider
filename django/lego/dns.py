@@ -2,9 +2,11 @@
 # See LICENSE file for licensing details.
 """DNS utiilities."""
 
-from git import Git, Repo
 from pathlib import Path
 from tempfile import TemporaryDirectory
+
+from git import Git, Repo
+
 from .settings import DNS_REPOSITORY_URL, SSH_IDENTITY_FILE
 
 REPOSITORY_BASE_URL = "@".join(DNS_REPOSITORY_URL.split("@")[:-1])
@@ -22,8 +24,8 @@ def write_dns_record(dns_record: str) -> None:
     with TemporaryDirectory() as tmp_dir, Git().custom_environment(GIT_SSH_COMMAND=SSH_EXECUTABLE):
         repo = Repo.clone_from(REPOSITORY_BASE_URL, tmp_dir, branch=REPOSITORY_BRANCH)
         dns_record_file = Path(f"{repo.working_tree_dir}/{dns_record}")
-        if not dns_record_file.exists:
-            dns_record_file.write_text(RECORD_CONTENT)
+        if not bool(dns_record_file.exists):
+            dns_record_file.write_text(RECORD_CONTENT, encoding="utf-8")
             repo.index.add([dns_record])
             repo.git.commit("-m", f"Add {dns_record} record")
             repo.remote(name="origin").push()
@@ -38,7 +40,7 @@ def remove_dns_record(dns_record: str) -> None:
     with TemporaryDirectory() as tmp_dir, Git().custom_environment(GIT_SSH_COMMAND=SSH_EXECUTABLE):
         repo = Repo.clone_from(REPOSITORY_BASE_URL, tmp_dir, branch=REPOSITORY_BRANCH)
         dns_record_file = Path(f"{repo.working_tree_dir}/{dns_record}")
-        if dns_record_file.exists:
+        if bool(dns_record_file.exists):
             dns_record_file.unlink(missing_ok=True)
             repo.index.add([dns_record])
             repo.git.commit("-m", f"Remove {dns_record} record")

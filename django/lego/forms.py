@@ -2,24 +2,24 @@
 # See LICENSE file for licensing details.
 """Forms."""
 
-from django import forms
+from django.forms import CharField, Form
 
 
-class PresentForm(forms.Form):
+class PresentForm(Form):
     """Form for the present endpoint.
 
     Attributes:
         fqdn: Fully qulified domain name.
     """
 
-    fqdn = forms.CharField(label="FQDN", max_length=255)
+    fqdn = CharField(label="FQDN", max_length=255)
 
 
-class CleanupForm(forms.Form):
+class CleanupForm(Form):
     """Form for the cleanup endpoint.
 
     Attributes:
         fqdn: Fully qulified domain name.
     """
 
-    fqdn = forms.CharField(label="FQDN", max_length=255)
+    fqdn = CharField(label="FQDN", max_length=255)

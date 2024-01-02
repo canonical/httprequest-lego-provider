@@ -2,9 +2,10 @@
 # See LICENSE file for licensing details.
 """Unit tests for the dns module."""
 
-from git import Repo
-from unittest.mock import patch, MagicMock
 from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+from git import Repo
 from lego.dns import remove_dns_record, write_dns_record
 
 

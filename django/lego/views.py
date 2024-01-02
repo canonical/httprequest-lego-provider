@@ -2,11 +2,13 @@
 # See LICENSE file for licensing details.
 """Views."""
 
+from typing import Optional
+
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponse, HttpRequest
+from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
-from typing import Optional
+
 from .dns import remove_dns_record, write_dns_record
 from .forms import CleanupForm, PresentForm
 from .models import Domain, DomainUserPermission
@@ -37,12 +39,11 @@ def handle_present(request: HttpRequest) -> Optional[HttpResponse]:
             # audit_log.user = user
             # audit_log.domain = domain
             # audit_log.save()
-            write_dns_record(domain=domain, value=form.cleaned_data["value"])
-        else:
-            raise PermissionDenied
-    else:
-        form = PresentForm()
-        return render(request, "present.html", {"form": form})
+            write_dns_record(domain)
+            return HttpResponse(status=204)
+        raise PermissionDenied
+    form = PresentForm()
+    return render(request, "present.html", {"form": form})
 
 
 @login_required
@@ -70,9 +71,8 @@ def handle_cleanup(request: HttpRequest) -> Optional[HttpResponse]:
             # audit_log.user = user
             # audit_log.domain = domain
             # audit_log.save()
-            remove_dns_record(domain=domain, value=form.cleaned_data["value"])
-        else:
-            raise PermissionDenied
-    else:
-        form = CleanupForm()
-        return render(request, "cleanup.html", {"form": form})
+            remove_dns_record(domain)
+            return HttpResponse(status=204)
+        raise PermissionDenied
+    form = CleanupForm()
+    return render(request, "cleanup.html", {"form": form})
