@@ -1,2 +1,0 @@
-GitPython==3.1.37
-pytest-django==4.7.0
