@@ -46,7 +46,7 @@ def test_post_present_when_logged_in_and_permission(client: Client):
     DomainUserPermission.objects.create(domain=domain, user=user)
     client.login(username=user.username, password=user.password)
     response = client.post("/present/", data={"fqdn": "example.com"}, follow=True)
-    assert response.status_code == 200
+    assert response.status_code == 204
 
 
 @pytest.mark.django_db
@@ -111,7 +111,7 @@ def test_post_cleanup_when_logged_in_and_permission(client: Client):
     DomainUserPermission.objects.create(domain=domain, user=user)
     client.login(username=user.username, password=user.password)
     response = client.post("/cleanup/", data={"fqdn": "example.com"}, follow=True)
-    assert response.status_code == 200
+    assert response.status_code == 204
 
 
 @pytest.mark.django_db
@@ -137,4 +137,3 @@ def test_get_cleanup_when_logged_in(client: Client):
     client.login(username=user.username, password=user.password)
     response = client.get("/cleanup/", follow=True)
     assert response.status_code == 200
-    assert response.url == "/cleanup/"

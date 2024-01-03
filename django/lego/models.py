@@ -45,16 +45,3 @@ class DomainUserPermission(models.Model):
     domain = models.ForeignKey(Domain, on_delete=models.CASCADE)
     user = models.ForeignKey(auth.get_user_model(), on_delete=models.CASCADE)
     text = models.TextField()
-
-
-# class AuditLog(models.Model):
-#     """Audit log representation."""
-
-#     # We may not need this since it can be derived from domainuserpermission.
-
-#     user = models.ForeignKey(User, on_delete=models.RESTRICT)
-#     domain = models.ForeignKey(Domain, on_delete=models.RESTRICT)
-#     now = datetime.now().time()
-#     created_at = models.DateTimeField(default=now)
-#     status = models.CharField(choices=audit_log_status_choices, max_length=20, default="created")
-#     details = models.TextField()
