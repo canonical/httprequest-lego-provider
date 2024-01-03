@@ -36,7 +36,7 @@ def handle_present(request: HttpRequest) -> Optional[HttpResponse]:
             domain = Domain.objects.get(fqdn=form.cleaned_data["fqdn"])
         except Domain.DoesNotExist:
             return HttpResponse(status=404)
-        if DomainUserPermission.objects.filter(users__id=user.id, domains__id=domain.id):
+        if DomainUserPermission.objects.filter(user=user, domain=domain):
             write_dns_record(domain)
             return HttpResponse(status=204)
         raise PermissionDenied

@@ -1,6 +1,7 @@
 # Copyright 2024 Canonical Ltd.
 # See LICENSE file for licensing details.
 """Unit tests for the views module."""
+from unittest.mock import patch
 
 import pytest
 from lego.models import Domain, DomainUserPermission
@@ -29,8 +30,8 @@ def test_post_present_when_logged_in_and_no_fqdn(client: Client):
     assert: a 404 is returned.
     """
     user = User.objects.create_user("test_user", password="test_user")
-    client.login(username=user.username, password=user.password)
-    response = client.post("/present/", data={"fqdn": "example.com"}, follow=True)
+    client.login(username=user.username, password="test_user")
+    response = client.post("/present/", data={"fqdn": "example.com"})
     assert response.status_code == 404
 
 
@@ -43,24 +44,26 @@ def test_post_present_when_logged_in_and_no_permission(client: Client):
     """
     user = User.objects.create_user("test_user", password="test_user")
     Domain.objects.create(fqdn="example.com")
-    client.login(username=user.username, password=user.password)
-    response = client.post("/present/", data={"fqdn": "example.com"}, follow=True)
-    assert response.status_code == 401
+    client.login(username=user.username, password="test_user")
+    response = client.post("/present/", data={"fqdn": "example.com"})
+    assert response.status_code == 403
 
 
 @pytest.mark.django_db
 def test_post_present_when_logged_in_and_permission(client: Client):
     """
-    arrange: log in a user a give him permissions on a fqdn.
+    arrange: mock the write_dns_recod method, log in a user a give him permissions on a fqdn.
     act: submit a POST request for the present URL containing the fqdn above.
     assert: a 200 is returned.
     """
     user = User.objects.create_user("test_user", password="test_user")
     domain = Domain.objects.create(fqdn="example.com")
     DomainUserPermission.objects.create(domain=domain, user=user)
-    client.login(username=user.username, password=user.password)
-    response = client.post("/present/", data={"fqdn": "example.com"}, follow=True)
-    assert response.status_code == 204
+    client.login(username=user.username, password="test_user")
+    with patch("lego.dns.write_dns_record") as mocked_dns_write:
+        response = client.post("/present/", data={"fqdn": "example.com"})
+        assert mocked_dns_write.assert_called_once_with("example.com")
+        assert response.status_code == 204
 
 
 @pytest.mark.django_db
@@ -83,8 +86,8 @@ def test_get_present_when_logged_in(client: Client):
     assert: the cleanup page is returned.
     """
     user = User.objects.create_user("test_user", password="test_user")
-    client.login(username=user.username, password=user.password)
-    response = client.get("/present/", follow=True)
+    client.login(username=user.username, password="test_user")
+    response = client.get("/present/")
     assert response.status_code == 200
 
 
@@ -108,8 +111,8 @@ def test_post_cleanup_when_logged_in_and_no_fqdn(client: Client):
     assert: a 404 is returned.
     """
     user = User.objects.create_user("test_user", password="test_user")
-    client.login(username=user.username, password=user.password)
-    response = client.post("/cleanup/", data={"fqdn": "example.com"}, follow=True)
+    client.login(username=user.username, password="test_user")
+    response = client.post("/cleanup/", data={"fqdn": "example.com"})
     assert response.status_code == 404
 
 
@@ -122,24 +125,26 @@ def test_post_cleanup_when_logged_in_and_no_permission(client: Client):
     """
     user = User.objects.create_user("test_user", password="test_user")
     Domain.objects.create(fqdn="example.com")
-    client.login(username=user.username, password=user.password)
-    response = client.post("/cleanup/", data={"fqdn": "example.com"}, follow=True)
-    assert response.status_code == 401
+    client.login(username=user.username, password="test_user")
+    response = client.post("/cleanup/", data={"fqdn": "example.com"})
+    assert response.status_code == 403
 
 
 @pytest.mark.django_db
 def test_post_cleanup_when_logged_in_and_permission(client: Client):
     """
-    arrange: log in a user a give him permissions on a fqdn.
+    arrange: mock the dns module, log in a user a give him permissions on a fqdn.
     act: submit a POST request for the cleanup URL containing the fqdn above.
     assert: a 200 is returned.
     """
     user = User.objects.create_user("test_user", password="test_user")
     domain = Domain.objects.create(fqdn="example.com")
     DomainUserPermission.objects.create(domain=domain, user=user)
-    client.login(username=user.username, password=user.password)
-    response = client.post("/cleanup/", data={"fqdn": "example.com"}, follow=True)
-    assert response.status_code == 204
+    client.login(username=user.username, password="test_user")
+    with patch("lego.dns.remove_dns_record") as mocked_dns_remove:
+        response = client.post("/cleanup/", data={"fqdn": "example.com"})
+        mocked_dns_remove.assert_called_once_with("example.com")
+        assert response.status_code == 204
 
 
 @pytest.mark.django_db
@@ -162,6 +167,6 @@ def test_get_cleanup_when_logged_in(client: Client):
     assert: the cleanup page is returned.
     """
     user = User.objects.create_user("test_user", password="test_user")
-    client.login(username=user.username, password=user.password)
-    response = client.get("/cleanup/", follow=True)
+    client.login(username=user.username, password="test_user")
+    response = client.get("/cleanup/")
     assert response.status_code == 200
