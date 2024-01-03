@@ -22,7 +22,7 @@ def test_post_present_when_not_logged_in(client: Client):
 
 
 @pytest.mark.django_db
-def test_post_present_when_logged_in_and_no_permission(client: Client):
+def test_post_present_when_logged_in_and_no_fqdn(client: Client):
     """
     arrange: log in a user.
     act: submit a POST request for the present URL.
@@ -32,6 +32,20 @@ def test_post_present_when_logged_in_and_no_permission(client: Client):
     client.login(username=user.username, password=user.password)
     response = client.post("/present/", data={"fqdn": "example.com"}, follow=True)
     assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_post_present_when_logged_in_and_no_permission(client: Client):
+    """
+    arrange: log in a user.
+    act: submit a POST request for the present URL.
+    assert: a 404 is returned.
+    """
+    user = User.objects.create_user("test_user", password="test_user")
+    Domain.objects.create(fqdn="example.com")
+    client.login(username=user.username, password=user.password)
+    response = client.post("/present/", data={"fqdn": "example.com"}, follow=True)
+    assert response.status_code == 401
 
 
 @pytest.mark.django_db
@@ -87,7 +101,7 @@ def test_post_cleanup_when_not_logged_in(client: Client):
 
 
 @pytest.mark.django_db
-def test_post_cleanup_when_logged_in_and_no_permission(client: Client):
+def test_post_cleanup_when_logged_in_and_no_fqdn(client: Client):
     """
     arrange: log in a user.
     act: submit a POST request for the cleanup URL.
@@ -97,6 +111,20 @@ def test_post_cleanup_when_logged_in_and_no_permission(client: Client):
     client.login(username=user.username, password=user.password)
     response = client.post("/cleanup/", data={"fqdn": "example.com"}, follow=True)
     assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_post_cleanup_when_logged_in_and_no_permission(client: Client):
+    """
+    arrange: log in a user.
+    act: submit a POST request for the cleanup URL.
+    assert: a 404 is returned.
+    """
+    user = User.objects.create_user("test_user", password="test_user")
+    Domain.objects.create(fqdn="example.com")
+    client.login(username=user.username, password=user.password)
+    response = client.post("/cleanup/", data={"fqdn": "example.com"}, follow=True)
+    assert response.status_code == 401
 
 
 @pytest.mark.django_db
