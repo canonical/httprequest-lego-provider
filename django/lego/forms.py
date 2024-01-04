@@ -9,7 +9,7 @@ class PresentForm(Form):
     """Form for the present endpoint.
 
     Attributes:
-        fqdn: Fully qulified domain name.
+        fqdn: Fully qualified domain name.
     """
 
     fqdn = CharField(label="FQDN", max_length=255)
