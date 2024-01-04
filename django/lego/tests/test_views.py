@@ -27,12 +27,12 @@ def test_post_present_when_logged_in_and_no_fqdn(client: Client):
     """
     arrange: log in a user.
     act: submit a POST request for the present URL.
-    assert: a 404 is returned.
+    assert: a 403 is returned.
     """
     user = User.objects.create_user("test_user", password="test_user")
     client.login(username=user.username, password="test_user")
     response = client.post("/present/", data={"fqdn": "example.com"})
-    assert response.status_code == 404
+    assert response.status_code == 403
 
 
 @pytest.mark.django_db
@@ -108,12 +108,12 @@ def test_post_cleanup_when_logged_in_and_no_fqdn(client: Client):
     """
     arrange: log in a user.
     act: submit a POST request for the cleanup URL.
-    assert: a 404 is returned.
+    assert: a 403 is returned.
     """
     user = User.objects.create_user("test_user", password="test_user")
     client.login(username=user.username, password="test_user")
     response = client.post("/cleanup/", data={"fqdn": "example.com"})
-    assert response.status_code == 404
+    assert response.status_code == 403
 
 
 @pytest.mark.django_db

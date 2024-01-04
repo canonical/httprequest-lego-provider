@@ -64,11 +64,11 @@ def handle_cleanup(request: HttpRequest) -> Optional[HttpResponse]:
         user = request.user
         try:
             domain = Domain.objects.get(fqdn=form.cleaned_data["fqdn"])
+            if DomainUserPermission.objects.filter(user=user, domain=domain):
+                remove_dns_record(domain)
+                return HttpResponse(status=204)
         except Domain.DoesNotExist:
-            return HttpResponse(status=404)
-        if DomainUserPermission.objects.filter(user=user, domain=domain):
-            remove_dns_record(domain)
-            return HttpResponse(status=204)
+            pass
         raise PermissionDenied
     form = CleanupForm()
     return render(request, "cleanup.html", {"form": form})
