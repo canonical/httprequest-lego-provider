@@ -1,6 +1,7 @@
 # Copyright 2024 Canonical Ltd.
 # See LICENSE file for licensing details.
 """Unit tests for the views module."""
+import secrets
 from unittest.mock import patch
 
 import pytest
@@ -29,8 +30,9 @@ def test_post_present_when_logged_in_and_no_fqdn(client: Client):
     act: submit a POST request for the present URL.
     assert: a 403 is returned.
     """
-    user = User.objects.create_user("test_user", password="test_user")
-    client.login(username=user.username, password="test_user")
+    test_password = secrets.token_hex()
+    user = User.objects.create_user("test_user", password=test_password)
+    client.login(username=user.username, password=test_password)
     response = client.post("/present/", data={"fqdn": "example.com"})
     assert response.status_code == 403
 
@@ -42,9 +44,10 @@ def test_post_present_when_logged_in_and_no_permission(client: Client):
     act: submit a POST request for the present URL.
     assert: a 404 is returned.
     """
-    user = User.objects.create_user("test_user", password="test_user")
+    test_password = secrets.token_hex()
+    user = User.objects.create_user("test_user", password=test_password)
     Domain.objects.create(fqdn="example.com")
-    client.login(username=user.username, password="test_user")
+    client.login(username=user.username, password=test_password)
     response = client.post("/present/", data={"fqdn": "example.com"})
     assert response.status_code == 403
 
@@ -56,10 +59,11 @@ def test_post_present_when_logged_in_and_permission(client: Client):
     act: submit a POST request for the present URL containing the fqdn above.
     assert: a 200 is returned.
     """
-    user = User.objects.create_user("test_user", password="test_user")
+    test_password = secrets.token_hex()
+    user = User.objects.create_user("test_user", password=test_password)
     domain = Domain.objects.create(fqdn="example.com")
     DomainUserPermission.objects.create(domain=domain, user=user)
-    client.login(username=user.username, password="test_user")
+    client.login(username=user.username, password=test_password)
     with patch("lego.views.write_dns_record") as mocked_dns_write:
         response = client.post("/present/", data={"fqdn": "example.com"})
         mocked_dns_write.assert_called_once_with(domain)
@@ -85,8 +89,9 @@ def test_get_present_when_logged_in(client: Client):
     act: submit a GET request for the present URL.
     assert: the cleanup page is returned.
     """
-    user = User.objects.create_user("test_user", password="test_user")
-    client.login(username=user.username, password="test_user")
+    test_password = secrets.token_hex()
+    user = User.objects.create_user("test_user", password=test_password)
+    client.login(username=user.username, password=test_password)
     response = client.get("/present/")
     assert response.status_code == 200
 
@@ -110,8 +115,9 @@ def test_post_cleanup_when_logged_in_and_no_fqdn(client: Client):
     act: submit a POST request for the cleanup URL.
     assert: a 403 is returned.
     """
-    user = User.objects.create_user("test_user", password="test_user")
-    client.login(username=user.username, password="test_user")
+    test_password = secrets.token_hex()
+    user = User.objects.create_user("test_user", password=test_password)
+    client.login(username=user.username, password=test_password)
     response = client.post("/cleanup/", data={"fqdn": "example.com"})
     assert response.status_code == 403
 
@@ -123,9 +129,10 @@ def test_post_cleanup_when_logged_in_and_no_permission(client: Client):
     act: submit a POST request for the cleanup URL.
     assert: a 404 is returned.
     """
-    user = User.objects.create_user("test_user", password="test_user")
+    test_password = secrets.token_hex()
+    user = User.objects.create_user("test_user", password=test_password)
     Domain.objects.create(fqdn="example.com")
-    client.login(username=user.username, password="test_user")
+    client.login(username=user.username, password=test_password)
     response = client.post("/cleanup/", data={"fqdn": "example.com"})
     assert response.status_code == 403
 
@@ -137,10 +144,11 @@ def test_post_cleanup_when_logged_in_and_permission(client: Client):
     act: submit a POST request for the cleanup URL containing the fqdn above.
     assert: a 200 is returned.
     """
-    user = User.objects.create_user("test_user", password="test_user")
+    test_password = secrets.token_hex()
+    user = User.objects.create_user("test_user", password=test_password)
     domain = Domain.objects.create(fqdn="example.com")
     DomainUserPermission.objects.create(domain=domain, user=user)
-    client.login(username=user.username, password="test_user")
+    client.login(username=user.username, password=test_password)
     with patch("lego.views.remove_dns_record") as mocked_dns_remove:
         response = client.post("/cleanup/", data={"fqdn": "example.com"})
         mocked_dns_remove.assert_called_once_with(domain)
@@ -166,7 +174,8 @@ def test_get_cleanup_when_logged_in(client: Client):
     act: submit a GET request for the cleanup URL.
     assert: the cleanup page is returned.
     """
-    user = User.objects.create_user("test_user", password="test_user")
-    client.login(username=user.username, password="test_user")
+    test_password = secrets.token_hex()
+    user = User.objects.create_user("test_user", password=test_password)
+    client.login(username=user.username, password=test_password)
     response = client.get("/cleanup/")
     assert response.status_code == 200
