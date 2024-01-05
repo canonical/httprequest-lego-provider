@@ -6,12 +6,6 @@ from django.contrib import auth
 from django.core.validators import RegexValidator
 from django.db import models
 
-audit_log_status_choices = (
-    ("created", "created"),
-    ("updated", "updated"),
-    ("deleted", "deleted"),
-)
-
 
 class Domain(models.Model):
     """DNS domain.
