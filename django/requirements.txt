@@ -1,2 +1,0 @@
-Django==4.2.8
-GitPython==3.1.37
