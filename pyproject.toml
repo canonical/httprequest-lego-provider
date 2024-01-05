@@ -27,7 +27,7 @@ select = ["E", "W", "F", "C", "N", "R", "D", "H"]
 # Ignore D107 Missing docstring in __init__
 ignore = ["W503", "E501", "D107"]
 # D100, D101, D102, D103: Ignore missing docstrings in tests
-per-file-ignores = ["tests/*:D100,D101,D102,D103,D104,D205,D212,D415","lego/tests/*:D100,D101,D102,D103,D104,D205,D212,D415"]
+per-file-ignores = ["tests/*:D100,D101,D102,D103,D104,D205,D212,D415","httprequest_lego_provider/tests/*:D100,D101,D102,D103,D104,D205,D212,D415"]
 docstring-convention = "google"
 
 [tool.isort]
@@ -45,7 +45,7 @@ disable = "wrong-import-order"
 [tool.pytest.ini_options]
 minversion = "6.0"
 log_cli_level = "INFO"
-DJANGO_SETTINGS_MODULE = "lego.tests.settings"
+DJANGO_SETTINGS_MODULE = "httprequest_lego_provider.tests.settings"
 
 # Linting tools configuration
 [tool.ruff]
@@ -66,7 +66,7 @@ extend-ignore = [
 ]
 ignore = ["E501", "D107"]
 extend-exclude = ["__pycache__", "*.egg_info"]
-per-file-ignores = {"tests/*" = ["D100","D101","D102","D103","D104"],"lego/tests/*" = ["D100","D101","D102","D103","D104"]}
+per-file-ignores = {"tests/*" = ["D100","D101","D102","D103","D104"],"httprequest_lego_provider/tests/*" = ["D100","D101","D102","D103","D104"]}
 
 [tool.ruff.mccabe]
 max-complexity = 10

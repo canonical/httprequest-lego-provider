@@ -31,7 +31,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "lego",
+    "httprequest_lego_provider",
 ]
 
 MIDDLEWARE = [

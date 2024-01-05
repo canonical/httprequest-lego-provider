@@ -8,7 +8,7 @@ import pytest
 from django.contrib.auth.models import User
 from django.test import Client
 
-from lego.models import Domain, DomainUserPermission
+from httprequest_lego_provider.models import Domain, DomainUserPermission
 
 
 @pytest.mark.django_db
@@ -64,7 +64,7 @@ def test_post_present_when_logged_in_and_permission(client: Client):
     domain = Domain.objects.create(fqdn="example.com")
     DomainUserPermission.objects.create(domain=domain, user=user)
     client.login(username=user.username, password=test_password)
-    with patch("lego.views.write_dns_record") as mocked_dns_write:
+    with patch("httprequest_lego_provider.views.write_dns_record") as mocked_dns_write:
         response = client.post("/present/", data={"fqdn": "example.com"})
         mocked_dns_write.assert_called_once_with(domain)
         assert response.status_code == 204
@@ -149,7 +149,7 @@ def test_post_cleanup_when_logged_in_and_permission(client: Client):
     domain = Domain.objects.create(fqdn="example.com")
     DomainUserPermission.objects.create(domain=domain, user=user)
     client.login(username=user.username, password=test_password)
-    with patch("lego.views.remove_dns_record") as mocked_dns_remove:
+    with patch("httprequest_lego_provider.views.remove_dns_record") as mocked_dns_remove:
         response = client.post("/cleanup/", data={"fqdn": "example.com"})
         mocked_dns_remove.assert_called_once_with(domain)
         assert response.status_code == 204

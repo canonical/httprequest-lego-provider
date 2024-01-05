@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from git import GitCommandError, Repo
 
-from lego.dns import DnsSourceUpdateError, remove_dns_record, write_dns_record
+from httprequest_lego_provider.dns import DnsSourceUpdateError, remove_dns_record, write_dns_record
 
 
 @patch.object(Path, "exists", False)

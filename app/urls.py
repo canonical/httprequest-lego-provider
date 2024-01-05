@@ -18,6 +18,6 @@ from django.contrib import admin
 from django.urls import include, path
 
 urlpatterns = [
-    path("", include("lego.urls")),
+    path("", include("httprequest_lego_provider.urls")),
     path("admin/", admin.site.urls),
 ]
