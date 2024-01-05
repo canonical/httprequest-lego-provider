@@ -5,9 +5,25 @@
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from git import Repo
+import pytest
+from git import GitCommandError, Repo
 
-from lego.dns import remove_dns_record, write_dns_record
+from lego.dns import DnsSourceUpdateError, remove_dns_record, write_dns_record
+
+
+@patch.object(Path, "exists", False)
+@patch.object(Repo, "clone_from")
+def test_write_dns_record_raises_exception(repo_patch):
+    """
+    arrange: mock the repo so that it raises a GitCommandError.
+    act: attempt to write a new DNS record.
+    assert: a DnsSourceUpdateError exception is raised.
+    """
+    repo_patch.side_effect = GitCommandError("Error executing command")
+
+    dns_record = "site.example.com"
+    with pytest.raises(DnsSourceUpdateError):
+        write_dns_record(dns_record)
 
 
 @patch.object(Path, "exists", False)
@@ -45,6 +61,21 @@ def test_write_dns_record_if_exists(repo_patch):
     write_dns_record(dns_record)
 
     repo_mock.remote(name="origin").push.assert_not_called()
+
+
+@patch.object(Path, "exists", False)
+@patch.object(Repo, "clone_from")
+def test_remove_dns_record_raises_exception(repo_patch):
+    """
+    arrange: mock the repo so that it raises a GitCommandError.
+    act: attempt to remove a DNS record.
+    assert: a DnsSourceUpdateError exception is raised.
+    """
+    repo_patch.side_effect = GitCommandError("Error executing command")
+
+    dns_record = "site.example.com"
+    with pytest.raises(DnsSourceUpdateError):
+        remove_dns_record(dns_record)
 
 
 @patch.object(Path, "exists", False)
