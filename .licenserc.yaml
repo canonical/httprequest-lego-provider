@@ -33,6 +33,6 @@ header:
     - 'trivy.yaml'
     - 'pyproject.toml'
     - 'zap_rules.tsv'
-    - 'django/manage.py'
-    - 'django/app/**'
+    - 'manage.py'
+    - 'app/**'
   comment: on-failure
