@@ -45,7 +45,7 @@ disable = "wrong-import-order"
 [tool.pytest.ini_options]
 minversion = "6.0"
 log_cli_level = "INFO"
-DJANGO_SETTINGS_MODULE = "app.settings"
+DJANGO_SETTINGS_MODULE = "lego.tests.settings"
 
 # Linting tools configuration
 [tool.ruff]
