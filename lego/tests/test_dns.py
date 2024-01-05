@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from git import Repo
+
 from lego.dns import remove_dns_record, write_dns_record
 
 

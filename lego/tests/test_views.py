@@ -4,10 +4,10 @@
 from unittest.mock import patch
 
 import pytest
-from lego.models import Domain, DomainUserPermission
-
 from django.contrib.auth.models import User
 from django.test import Client
+
+from lego.models import Domain, DomainUserPermission
 
 
 @pytest.mark.django_db
