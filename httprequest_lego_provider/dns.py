@@ -13,7 +13,7 @@ FILENAME_SUFFIX = ".domain"
 SPLIT_DNS_REPOSITORY_URL = DNS_REPOSITORY_URL.rsplit("@", 1)
 REPOSITORY_BASE_URL = SPLIT_DNS_REPOSITORY_URL[0]
 REPOSITORY_BRANCH = SPLIT_DNS_REPOSITORY_URL[1] if len(SPLIT_DNS_REPOSITORY_URL) > 1 else None
-RECORD_CONTENT = ". 600 IN TXT \042{value}\042"
+RECORD_CONTENT = ". 600 IN TXT \042{dns_value}\042"
 SSH_EXECUTABLE = f"ssh -i {SSH_IDENTITY_FILE}"
 
 
@@ -35,7 +35,9 @@ def write_dns_record(dns_record: str, value: str) -> None:
         try:
             repo = Repo.clone_from(REPOSITORY_BASE_URL, tmp_dir, branch=REPOSITORY_BRANCH)
             dns_record_file = Path(f"{repo.working_tree_dir}/{dns_record}{FILENAME_SUFFIX}")
-            dns_record_file.write_text(RECORD_CONTENT.format(value=value), encoding="utf-8")
+            dns_record_file.write_text(
+                RECORD_CONTENT.format(dns_value=dns_record), encoding="utf-8"
+            )
             repo.index.add([f"{dns_record}{FILENAME_SUFFIX}"])
             repo.git.commit("-m", f"Add {dns_record} record")
             repo.remote(name="origin").push()
