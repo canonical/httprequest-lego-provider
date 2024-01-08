@@ -10,9 +10,11 @@ class PresentForm(Form):
 
     Attributes:
         fqdn: Fully qualified domain name.
+        value: Authorization signature for Let's Encrypt.
     """
 
     fqdn = CharField(label="FQDN", max_length=255)
+    value = CharField(label="value")
 
 
 class CleanupForm(Form):
@@ -20,6 +22,8 @@ class CleanupForm(Form):
 
     Attributes:
         fqdn: Fully qualified domain name.
+        value: Authorization signature for Let's Encrypt.
     """
 
     fqdn = CharField(label="FQDN", max_length=255)
+    value = CharField(label="value")

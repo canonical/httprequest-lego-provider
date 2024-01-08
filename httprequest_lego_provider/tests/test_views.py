@@ -33,7 +33,8 @@ def test_post_present_when_logged_in_and_no_fqdn(client: Client):
     test_password = secrets.token_hex()
     user = User.objects.create_user("test_user", password=test_password)
     client.login(username=user.username, password=test_password)
-    response = client.post("/present/", data={"fqdn": "example.com"})
+    value = secrets.token_hex()
+    response = client.post("/present/", data={"fqdn": "example.com", "value": value})
     assert response.status_code == 403
 
 
@@ -48,7 +49,8 @@ def test_post_present_when_logged_in_and_no_permission(client: Client):
     user = User.objects.create_user("test_user", password=test_password)
     Domain.objects.create(fqdn="example.com")
     client.login(username=user.username, password=test_password)
-    response = client.post("/present/", data={"fqdn": "example.com"})
+    value = secrets.token_hex()
+    response = client.post("/present/", data={"fqdn": "example.com", "value": value})
     assert response.status_code == 403
 
 
@@ -65,8 +67,9 @@ def test_post_present_when_logged_in_and_permission(client: Client):
     DomainUserPermission.objects.create(domain=domain, user=user)
     client.login(username=user.username, password=test_password)
     with patch("httprequest_lego_provider.views.write_dns_record") as mocked_dns_write:
-        response = client.post("/present/", data={"fqdn": "example.com"})
-        mocked_dns_write.assert_called_once_with(domain)
+        value = secrets.token_hex()
+        response = client.post("/present/", data={"fqdn": "example.com", "value": value})
+        mocked_dns_write.assert_called_once_with(domain, value)
         assert response.status_code == 204
 
 
@@ -118,7 +121,8 @@ def test_post_cleanup_when_logged_in_and_no_fqdn(client: Client):
     test_password = secrets.token_hex()
     user = User.objects.create_user("test_user", password=test_password)
     client.login(username=user.username, password=test_password)
-    response = client.post("/cleanup/", data={"fqdn": "example.com"})
+    value = secrets.token_hex()
+    response = client.post("/cleanup/", data={"fqdn": "example.com", "value": value})
     assert response.status_code == 403
 
 
@@ -133,7 +137,8 @@ def test_post_cleanup_when_logged_in_and_no_permission(client: Client):
     user = User.objects.create_user("test_user", password=test_password)
     Domain.objects.create(fqdn="example.com")
     client.login(username=user.username, password=test_password)
-    response = client.post("/cleanup/", data={"fqdn": "example.com"})
+    value = secrets.token_hex()
+    response = client.post("/cleanup/", data={"fqdn": "example.com", "value": value})
     assert response.status_code == 403
 
 
@@ -150,7 +155,8 @@ def test_post_cleanup_when_logged_in_and_permission(client: Client):
     DomainUserPermission.objects.create(domain=domain, user=user)
     client.login(username=user.username, password=test_password)
     with patch("httprequest_lego_provider.views.remove_dns_record") as mocked_dns_remove:
-        response = client.post("/cleanup/", data={"fqdn": "example.com"})
+        value = secrets.token_hex()
+        response = client.post("/cleanup/", data={"fqdn": "example.com", "value": value})
         mocked_dns_remove.assert_called_once_with(domain)
         assert response.status_code == 204
 
