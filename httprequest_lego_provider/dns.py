@@ -9,6 +9,7 @@ from git import Git, GitCommandError, Repo
 
 from .settings import DNS_REPOSITORY_URL, SSH_IDENTITY_FILE
 
+FILENAME_SUFFIX = ".domain"
 SPLIT_DNS_REPOSITORY_URL = DNS_REPOSITORY_URL.rsplit("@", 1)
 REPOSITORY_BASE_URL = SPLIT_DNS_REPOSITORY_URL[0]
 REPOSITORY_BRANCH = SPLIT_DNS_REPOSITORY_URL[1] if len(SPLIT_DNS_REPOSITORY_URL) > 1 else None
@@ -33,9 +34,9 @@ def write_dns_record(dns_record: str, value: str) -> None:
     with TemporaryDirectory() as tmp_dir, Git().custom_environment(GIT_SSH_COMMAND=SSH_EXECUTABLE):
         try:
             repo = Repo.clone_from(REPOSITORY_BASE_URL, tmp_dir, branch=REPOSITORY_BRANCH)
-            dns_record_file = Path(f"{repo.working_tree_dir}/{dns_record}")
+            dns_record_file = Path(f"{repo.working_tree_dir}/{dns_record}{FILENAME_SUFFIX}")
             dns_record_file.write_text(RECORD_CONTENT.format(value=value), encoding="utf-8")
-            repo.index.add([dns_record])
+            repo.index.add([f"{dns_record}{FILENAME_SUFFIX}"])
             repo.git.commit("-m", f"Add {dns_record} record")
             repo.remote(name="origin").push()
         except (GitCommandError, ValueError) as ex:
@@ -54,10 +55,10 @@ def remove_dns_record(dns_record: str) -> None:
     with TemporaryDirectory() as tmp_dir, Git().custom_environment(GIT_SSH_COMMAND=SSH_EXECUTABLE):
         try:
             repo = Repo.clone_from(REPOSITORY_BASE_URL, tmp_dir, branch=REPOSITORY_BRANCH)
-            dns_record_file = Path(f"{repo.working_tree_dir}/{dns_record}")
+            dns_record_file = Path(f"{repo.working_tree_dir}/{dns_record}{FILENAME_SUFFIX}")
             if dns_record_file.exists():
                 dns_record_file.write_text("", encoding="utf-8")
-                repo.index.add([dns_record])
+                repo.index.add([f"{dns_record}{FILENAME_SUFFIX}"])
                 repo.git.commit("-m", f"Remove {dns_record} record")
                 repo.remote(name="origin").push()
         except (GitCommandError, ValueError) as ex:

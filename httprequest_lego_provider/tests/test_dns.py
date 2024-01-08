@@ -42,7 +42,7 @@ def test_write_dns_record_if(repo_patch, _):
     dns_record = "site.example.com"
     write_dns_record(dns_record, secrets.token_hex())
 
-    repo_mock.index.add.assert_called_with([dns_record])
+    repo_mock.index.add.assert_called_with([f"{dns_record}.domain"])
     repo_mock.git.commit.assert_called_once()
     repo_mock.remote(name="origin").push.assert_called_once()
 
@@ -97,6 +97,6 @@ def test_remove_dns_record_if_exists(repo_patch, _, patch_path):
     dns_record = "site.example.com"
     remove_dns_record(dns_record)
 
-    repo_mock.index.add.assert_called_with([dns_record])
+    repo_mock.index.add.assert_called_with([f"{dns_record}.domain"])
     repo_mock.git.commit.assert_called_once()
     repo_mock.remote(name="origin").push.assert_called_once()
