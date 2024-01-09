@@ -76,7 +76,7 @@ def _remove_subdomain_entries_from_file_content(
 
 
 def write_dns_record(fqdn: str, value: str) -> None:
-    """Write a DNS record following the canonical-is-dns-configs specs if it doesn't exist.
+    """Write a DNS record.
 
     Args:
         fqdn: the FQDN for which to add a record.
@@ -105,7 +105,7 @@ def write_dns_record(fqdn: str, value: str) -> None:
 
 
 def remove_dns_record(fqdn: str) -> None:
-    """Delete a DNS record following the canonical-is-dns-configs specs if it exists.
+    """Delete a DNS record if it exists.
 
     Args:
         fqdn: the FQDN for which to delete the record.
