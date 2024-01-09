@@ -3,6 +3,7 @@
 """DNS utiilities."""
 
 import io
+import logging
 from collections.abc import Iterable
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -69,6 +70,8 @@ def _remove_subdomain_entries_from_file_content(
     for line in content:
         if not _line_matches_subdomain(line, subdomain):
             new_content.append(line)
+        else:
+            logging.error("Subdomain %s already present as a DNS record.", subdomain)
     return new_content
 
 
