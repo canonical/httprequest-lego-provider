@@ -66,9 +66,8 @@ def write_dns_record(fqdn: str, value: str) -> None:
         try:
             repo = Repo.clone_from(REPOSITORY_BASE_URL, tmp_dir, branch=REPOSITORY_BRANCH)
             domain, subdomain = _get_domain_and_subdomain_from_fqdn(fqdn)
-            dns_record_file = Path(
-                f"{repo.working_tree_dir}/{FILENAME_TEMPLATE.format(domain=domain)}"
-            )
+            filename = FILENAME_TEMPLATE.format(domain=domain)
+            dns_record_file = Path(f"{repo.working_tree_dir}/{filename}")
             content = dns_record_file.read_text("utf-8")
             new_content = []
             for line in io.StringIO(content):
@@ -76,7 +75,7 @@ def write_dns_record(fqdn: str, value: str) -> None:
                     new_content.append(line)
             new_content.append(RECORD_CONTENT.format(record=subdomain, value=value))
             dns_record_file.write_text("".join(new_content), encoding="utf-8")
-            repo.index.add([FILENAME_TEMPLATE.format(domain=domain)])
+            repo.index.add([filename])
             repo.git.commit("-m", f"Add {fqdn} record")
             repo.remote(name="origin").push()
         except (GitCommandError, ValueError) as ex:
@@ -96,16 +95,15 @@ def remove_dns_record(fqdn: str) -> None:
         try:
             repo = Repo.clone_from(REPOSITORY_BASE_URL, tmp_dir, branch=REPOSITORY_BRANCH)
             domain, subdomain = _get_domain_and_subdomain_from_fqdn(fqdn)
-            dns_record_file = Path(
-                f"{repo.working_tree_dir}/{FILENAME_TEMPLATE.format(domain=domain)}"
-            )
+            filename = FILENAME_TEMPLATE.format(domain=domain)
+            dns_record_file = Path(f"{repo.working_tree_dir}/{filename}")
             content = dns_record_file.read_text("utf-8")
             new_content = []
             for line in io.StringIO(content):
                 if not _line_matches_subdomain(line, subdomain):
                     new_content.append(line)
             dns_record_file.write_text("".join(new_content), encoding="utf-8")
-            repo.index.add([FILENAME_TEMPLATE.format(domain=domain)])
+            repo.index.add([filename])
             repo.git.commit("-m", f"Remove {fqdn} record")
             repo.remote(name="origin").push()
         except (GitCommandError, ValueError) as ex:
