@@ -49,7 +49,7 @@ def _line_matches_subdomain(line: str, subdomain: str) -> bool:
     Returns:
         true if the subdomain matches the line.
     """
-    return len(line.split()) > 0 and line.split()[0] == subdomain
+    return not line.strip().startswith(";") and bool(line.split()) and line.split()[0] == subdomain
 
 
 def write_dns_record(fqdn: str, value: str) -> None:
