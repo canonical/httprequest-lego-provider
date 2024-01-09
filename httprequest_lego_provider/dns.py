@@ -5,12 +5,13 @@
 import io
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import Tuple
 
 from git import Git, GitCommandError, Repo
 
 from .settings import DNS_REPOSITORY_URL, SSH_IDENTITY_FILE
 
-FILENAME_SUFFIX = ".domain"
+FILENAME_TEMPLATE = "{domain}.domain"
 SPLIT_DNS_REPOSITORY_URL = DNS_REPOSITORY_URL.rsplit("@", 1)
 REPOSITORY_BASE_URL = SPLIT_DNS_REPOSITORY_URL[0]
 REPOSITORY_BRANCH = SPLIT_DNS_REPOSITORY_URL[1] if len(SPLIT_DNS_REPOSITORY_URL) > 1 else None
@@ -22,11 +23,37 @@ class DnsSourceUpdateError(Exception):
     """Exception for DNS update errors."""
 
 
-def write_dns_record(dns_record: str, value: str) -> None:
+def _get_domain_and_subdomain_from_fqdn(fqdn: str) -> Tuple[str, str]:
+    """Get the domain and subdomain for the FQDN record provided.
+
+    Args:
+        fqdn: Fully quallified domain name.
+
+    Returns:
+        the domain and subdomain for the FQDN provided.
+    """
+    splitted_record = fqdn.rsplit(".", 2)
+    return ".".join(splitted_record[1:]) if splitted_record else ".", splitted_record[0]
+
+
+def _line_matches_subdomain(line: str, subdomain: str) -> bool:
+    """Check if the line in bind9 format corresponds to a given subdomain.
+
+    Args:
+        line: the line in binbd9 format.
+        subdomain: the subdomain to compare with.
+
+    Returns:
+        true if the subdomain matches the line.
+    """
+    return len(line.split()) > 0 and line.split()[0] == subdomain
+
+
+def write_dns_record(fqdn: str, value: str) -> None:
     """Write a DNS record following the canonical-is-dns-configs specs if it doesn't exist.
 
     Args:
-        dns_record: the DNS record to add.
+        fqdn: the FQDN for which to add a record.
         value: ACME challenge for DNS record to add.
 
     Raises:
@@ -35,29 +62,29 @@ def write_dns_record(dns_record: str, value: str) -> None:
     with TemporaryDirectory() as tmp_dir, Git().custom_environment(GIT_SSH_COMMAND=SSH_EXECUTABLE):
         try:
             repo = Repo.clone_from(REPOSITORY_BASE_URL, tmp_dir, branch=REPOSITORY_BRANCH)
-            splitted_record = dns_record.rsplit(".", 2)
-            subdomain = splitted_record[0]
-            domain = ".".join(splitted_record[1:]) if splitted_record else "."
-            dns_record_file = Path(f"{repo.working_tree_dir}/{domain}{FILENAME_SUFFIX}")
+            domain, subdomain = _get_domain_and_subdomain_from_fqdn(fqdn)
+            dns_record_file = Path(
+                f"{repo.working_tree_dir}/{FILENAME_TEMPLATE.format(domain=domain)}"
+            )
             content = dns_record_file.read_text("utf-8")
             new_content = []
             for line in io.StringIO(content):
-                if not line.split() or line.split()[0] != subdomain:
+                if not _line_matches_subdomain(line, subdomain):
                     new_content.append(line)
             new_content.append(RECORD_CONTENT.format(record=subdomain, value=value))
             dns_record_file.write_text("".join(new_content), encoding="utf-8")
-            repo.index.add([f"{domain}{FILENAME_SUFFIX}"])
-            repo.git.commit("-m", f"Add {dns_record} record")
+            repo.index.add([FILENAME_TEMPLATE.format(domain=domain)])
+            repo.git.commit("-m", f"Add {fqdn} record")
             repo.remote(name="origin").push()
         except (GitCommandError, ValueError) as ex:
             raise DnsSourceUpdateError from ex
 
 
-def remove_dns_record(dns_record: str) -> None:
+def remove_dns_record(fqdn: str) -> None:
     """Delete a DNS record following the canonical-is-dns-configs specs if it exists.
 
     Args:
-        dns_record: the DNS record to delete.
+        fqdn: the FQDN for which to delete the record.
 
     Raises:
         DnsSourceUpdateError: if an error while updating the repository occurs.
@@ -65,18 +92,18 @@ def remove_dns_record(dns_record: str) -> None:
     with TemporaryDirectory() as tmp_dir, Git().custom_environment(GIT_SSH_COMMAND=SSH_EXECUTABLE):
         try:
             repo = Repo.clone_from(REPOSITORY_BASE_URL, tmp_dir, branch=REPOSITORY_BRANCH)
-            splitted_record = dns_record.rsplit(".", 2)
-            subdomain = splitted_record[0]
-            domain = ".".join(splitted_record[1:]) if splitted_record else "."
-            dns_record_file = Path(f"{repo.working_tree_dir}/{domain}{FILENAME_SUFFIX}")
+            domain, subdomain = _get_domain_and_subdomain_from_fqdn(fqdn)
+            dns_record_file = Path(
+                f"{repo.working_tree_dir}/{FILENAME_TEMPLATE.format(domain=domain)}"
+            )
             content = dns_record_file.read_text("utf-8")
             new_content = []
             for line in io.StringIO(content):
-                if line.split() and not line.split()[0] == subdomain:
+                if not _line_matches_subdomain(line, subdomain):
                     new_content.append(line)
             dns_record_file.write_text("".join(new_content), encoding="utf-8")
-            repo.index.add([f"{domain}{FILENAME_SUFFIX}"])
-            repo.git.commit("-m", f"Remove {dns_record} record")
+            repo.index.add([FILENAME_TEMPLATE.format(domain=domain)])
+            repo.git.commit("-m", f"Remove {fqdn} record")
             repo.remote(name="origin").push()
         except (GitCommandError, ValueError) as ex:
             raise DnsSourceUpdateError from ex

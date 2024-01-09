@@ -22,9 +22,9 @@ def test_write_dns_record_raises_exception(repo_patch, _):
     """
     repo_patch.side_effect = GitCommandError("Error executing command")
 
-    dns_record = "site.example.com"
+    fqdn = "site.example.com"
     with pytest.raises(DnsSourceUpdateError):
-        write_dns_record(dns_record, secrets.token_hex())
+        write_dns_record(fqdn, secrets.token_hex())
 
 
 @patch.object(Path, "write_text")
@@ -45,8 +45,8 @@ def test_write_dns_record(repo_patch, read_patch, write_patch):
         "site3 600 IN TXT \042sometoken\042\n"
     )
 
-    dns_record = "site.example.com"
-    write_dns_record(dns_record, token)
+    fqdn = "site.example.com"
+    write_dns_record(fqdn, token)
 
     write_patch.assert_called_once_with(
         (
@@ -71,9 +71,9 @@ def test_remove_dns_record_raises_exception(repo_patch, _):
     """
     repo_patch.side_effect = GitCommandError("Error executing command")
 
-    dns_record = "site.example.com"
+    fqdn = "site.example.com"
     with pytest.raises(DnsSourceUpdateError):
-        remove_dns_record(dns_record)
+        remove_dns_record(fqdn)
 
 
 @patch.object(Path, "write_text")
@@ -93,8 +93,8 @@ def test_remove_dns_record(repo_patch, read_patch, write_patch):
         "site3 600 IN TXT \042sometoken\042\n"
     )
 
-    dns_record = "site.example.com"
-    remove_dns_record(dns_record)
+    fqdn = "site.example.com"
+    remove_dns_record(fqdn)
 
     write_patch.assert_called_once_with(
         "site1 600 IN TXT \042sometoken\042\nsite3 600 IN TXT \042sometoken\042\n",
