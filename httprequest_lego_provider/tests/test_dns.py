@@ -27,10 +27,19 @@ def test_write_dns_record_raises_exception(repo_patch, _):
         write_dns_record(fqdn, secrets.token_hex())
 
 
+@pytest.mark.parametrize(
+    "fqdn,record",
+    [
+        ("site.example.com", "site 600 IN TXT \042{token}\042\n"),
+        ("sïte.example.com", "sïte 600 IN TXT \042{token}\042\n"),
+        ("example.com", ". 600 IN TXT \042{token}\042\n"),
+        ("some.other.site.example.com", "some.other.site 600 IN TXT \042{token}\042\n"),
+    ],
+)
 @patch.object(Path, "write_text")
 @patch.object(Path, "read_text")
 @patch.object(Repo, "clone_from")
-def test_write_dns_record(repo_patch, read_patch, write_patch):
+def test_write_dns_record(repo_patch, read_patch, write_patch, fqdn, record):
     """
     arrange: mock the repo.
     act: attempt to write a new DNS record.
@@ -40,19 +49,18 @@ def test_write_dns_record(repo_patch, read_patch, write_patch):
     repo_patch.return_value = repo_mock
     token = secrets.token_hex()
     read_patch.return_value = (
-        "site 600 IN TXT \042sometoken\042\n"
-        "site1 600 IN TXT \042sometoken\042\n"
+        "site2 600 IN TXT \042sometoken\042\n"
+        "sïte1 600 IN TXT \042sometoken\042\n"
         "site3 600 IN TXT \042sometoken\042\n"
     )
 
-    fqdn = "site.example.com"
     write_dns_record(fqdn, token)
 
     write_patch.assert_called_once_with(
         (
-            "site1 600 IN TXT \042sometoken\042\n"
-            "site3 600 IN TXT \042sometoken\042\n"
-            "site 600 IN TXT \042{token}\042\n"
+            "site2 600 IN TXT \042sometoken\042\n"
+            "sïte1 600 IN TXT \042sometoken\042\n"
+            "site3 600 IN TXT \042sometoken\042\n" + record
         ).format(token=token),
         encoding="utf-8",
     )
@@ -76,10 +84,19 @@ def test_remove_dns_record_raises_exception(repo_patch, _):
         remove_dns_record(fqdn)
 
 
+@pytest.mark.parametrize(
+    "fqdn,record",
+    [
+        ("site.example.com", "site 600 IN TXT \042{token}\042\n"),
+        ("sïte.example.com", "sïte 600 IN TXT \042{token}\042\n"),
+        ("example.com", ". 600 IN TXT \042{token}\042\n"),
+        ("some.other.site.example.com", "some.other.site 600 IN TXT \042{token}\042\n"),
+    ],
+)
 @patch.object(Path, "write_text")
 @patch.object(Path, "read_text")
 @patch.object(Repo, "clone_from")
-def test_remove_dns_record(repo_patch, read_patch, write_patch):
+def test_remove_dns_record(repo_patch, read_patch, write_patch, fqdn, record):
     """
     arrange: mock the repo and filesystem so that the file matching a DNS exists.
     act: attempt to delete a new DNS record.
@@ -88,12 +105,9 @@ def test_remove_dns_record(repo_patch, read_patch, write_patch):
     repo_mock = MagicMock(spec=Repo)
     repo_patch.return_value = repo_mock
     read_patch.return_value = (
-        "site1 600 IN TXT \042sometoken\042\n"
-        "site 600 IN TXT \042sometoken\042\n"
-        "site3 600 IN TXT \042sometoken\042\n"
+        "site1 600 IN TXT \042sometoken\042\n" + record + "site3 600 IN TXT \042sometoken\042\n"
     )
 
-    fqdn = "site.example.com"
     remove_dns_record(fqdn)
 
     write_patch.assert_called_once_with(

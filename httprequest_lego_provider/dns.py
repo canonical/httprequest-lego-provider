@@ -32,8 +32,11 @@ def _get_domain_and_subdomain_from_fqdn(fqdn: str) -> Tuple[str, str]:
     Returns:
         the domain and subdomain for the FQDN provided.
     """
-    splitted_record = fqdn.rsplit(".", 2)
-    return ".".join(splitted_record[1:]) if splitted_record else ".", splitted_record[0]
+    splitted_record = fqdn.split(".")
+    return (
+        ".".join(splitted_record[-2:]),
+        ".".join(splitted_record[:-2]) if len(splitted_record) > 2 else ".",
+    )
 
 
 def _line_matches_subdomain(line: str, subdomain: str) -> bool:
