@@ -1,0 +1,9 @@
+<!--
+  ~ Copyright 2024 Canonical Ltd.
+  ~ See LICENSE file for licensing details.
+-->
+<form action="/cleanup/" method="post">
+    {% csrf_token %}
+    {{ form }}
+    <input type="submit" value="Submit">
+</form>
