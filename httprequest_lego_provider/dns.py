@@ -45,7 +45,7 @@ def _line_matches_subdomain(line: str, subdomain: str) -> bool:
     """Check if the line in bind9 format corresponds to a given subdomain.
 
     Args:
-        line: the line in binbd9 format.
+        line: the line in bind9 format.
         subdomain: the subdomain to compare with.
 
     Returns:
