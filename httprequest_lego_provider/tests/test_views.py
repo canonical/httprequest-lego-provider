@@ -59,7 +59,7 @@ def test_post_present_when_logged_in_and_permission(client: Client):
     """
     arrange: mock the write_dns_recod method, log in a user a give him permissions on a fqdn.
     act: submit a POST request for the present URL containing the fqdn above.
-    assert: a 200 is returned.
+    assert: a 204 is returned.
     """
     test_password = secrets.token_hex()
     user = User.objects.create_user("test_user", password=test_password)
