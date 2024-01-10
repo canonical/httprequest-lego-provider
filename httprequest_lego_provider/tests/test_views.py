@@ -43,7 +43,7 @@ def test_post_present_when_logged_in_and_no_permission(client: Client):
     """
     arrange: log in a user.
     act: submit a POST request for the present URL.
-    assert: a 404 is returned.
+    assert: a 403 is returned.
     """
     test_password = secrets.token_hex()
     user = User.objects.create_user("test_user", password=test_password)
