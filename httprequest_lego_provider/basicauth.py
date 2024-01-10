@@ -1,3 +1,7 @@
+# Copyright 2024 Canonical Ltd.
+# See LICENSE file for licensing details.
+
+# Inspired by https://github.com/m7v8/django-basic-authentication-decorator
 """Basic authentication."""
 
 import base64
