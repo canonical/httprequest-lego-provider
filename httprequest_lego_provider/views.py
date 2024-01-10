@@ -4,17 +4,18 @@
 
 from typing import Optional
 
-from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import HttpRequest, HttpResponse
-from django.shortcuts import render
+from django.views.decorators.http import require_http_methods
 
+from .basicauth import basicauth
 from .dns import remove_dns_record, write_dns_record
 from .forms import CleanupForm, PresentForm
 from .models import Domain, DomainUserPermission
 
 
-@login_required
+@basicauth
+@require_http_methods(["POST"])
 def handle_present(request: HttpRequest) -> Optional[HttpResponse]:
     """Handle the submissing of the present form.
 
@@ -27,25 +28,23 @@ def handle_present(request: HttpRequest) -> Optional[HttpResponse]:
     Raises:
         PermissionDenied: if the user is not allowed to perform the operation.
     """
-    if request.method == "POST":
-        form = PresentForm(request.POST)
-        if not form.is_valid():
-            return HttpResponse(form.errors.as_json())
-        user = request.user
-        try:
-            domain = Domain.objects.get(fqdn=form.cleaned_data["fqdn"])
-            value = form.cleaned_data["value"]
-            if DomainUserPermission.objects.filter(user=user, domain=domain):
-                write_dns_record(domain, value)
-                return HttpResponse(status=204)
-        except Domain.DoesNotExist:
-            pass
-        raise PermissionDenied
-    form = PresentForm()
-    return render(request, "present.html", {"form": form})
+    form = PresentForm(request.POST)
+    if not form.is_valid():
+        return HttpResponse(form.errors.as_json())
+    user = request.user
+    try:
+        domain = Domain.objects.get(fqdn=form.cleaned_data["fqdn"])
+        value = form.cleaned_data["value"]
+        if DomainUserPermission.objects.filter(user=user, domain=domain):
+            write_dns_record(domain, value)
+            return HttpResponse(status=204)
+    except Domain.DoesNotExist:
+        pass
+    raise PermissionDenied
 
 
-@login_required
+@basicauth
+@require_http_methods(["POST"])
 def handle_cleanup(request: HttpRequest) -> Optional[HttpResponse]:
     """Handle the submissing of the cleanup form.
 
@@ -58,18 +57,15 @@ def handle_cleanup(request: HttpRequest) -> Optional[HttpResponse]:
     Raises:
         PermissionDenied: if the user is not allowed to perform the operation.
     """
-    if request.method == "POST":
-        form = CleanupForm(request.POST)
-        if not form.is_valid():
-            return HttpResponse(form.errors.as_json())
-        user = request.user
-        try:
-            domain = Domain.objects.get(fqdn=form.cleaned_data["fqdn"])
-            if DomainUserPermission.objects.filter(user=user, domain=domain):
-                remove_dns_record(domain)
-                return HttpResponse(status=204)
-        except Domain.DoesNotExist:
-            pass
-        raise PermissionDenied
-    form = CleanupForm()
-    return render(request, "cleanup.html", {"form": form})
+    form = CleanupForm(request.POST)
+    if not form.is_valid():
+        return HttpResponse(form.errors.as_json())
+    user = request.user
+    try:
+        domain = Domain.objects.get(fqdn=form.cleaned_data["fqdn"])
+        if DomainUserPermission.objects.filter(user=user, domain=domain):
+            remove_dns_record(domain)
+            return HttpResponse(status=204)
+    except Domain.DoesNotExist:
+        pass
+    raise PermissionDenied
