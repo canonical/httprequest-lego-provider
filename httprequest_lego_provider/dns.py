@@ -29,7 +29,7 @@ def _get_domain_and_subdomain_from_fqdn(fqdn: str) -> Tuple[str, str]:
     """Get the domain and subdomain for the FQDN record provided.
 
     Args:
-        fqdn: Fully quallified domain name.
+        fqdn: Fully qualified domain name.
 
     Returns:
         the domain and subdomain for the FQDN provided.
