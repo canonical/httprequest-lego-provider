@@ -4,7 +4,7 @@
 
 import secrets
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from git import GitCommandError, Repo
@@ -14,7 +14,7 @@ from httprequest_lego_provider.dns import DnsSourceUpdateError, remove_dns_recor
 
 @patch.object(Path, "write_text")
 @patch.object(Repo, "clone_from")
-def test_write_dns_record_raises_exception(repo_patch, _):
+def test_write_dns_record_raises_exception(repo_patch: Mock, _):
     """
     arrange: mock the repo so that it raises a GitCommandError.
     act: attempt to write a new DNS record.
@@ -40,7 +40,9 @@ def test_write_dns_record_raises_exception(repo_patch, _):
 @patch.object(Path, "write_text")
 @patch.object(Path, "read_text")
 @patch.object(Repo, "clone_from")
-def test_write_dns_record(repo_patch, read_patch, write_patch, fqdn, record):
+def test_write_dns_record(
+    repo_patch: Mock, read_patch: Mock, write_patch: Mock, fqdn: str, record: str
+):
     """
     arrange: mock the repo.
     act: attempt to write a new DNS record.
@@ -72,7 +74,7 @@ def test_write_dns_record(repo_patch, read_patch, write_patch, fqdn, record):
 
 @patch.object(Path, "write_text")
 @patch.object(Repo, "clone_from")
-def test_remove_dns_record_raises_exception(repo_patch, _):
+def test_remove_dns_record_raises_exception(repo_patch: Mock, _):
     """
     arrange: mock the repo so that it raises a GitCommandError.
     act: attempt to remove a DNS record.
@@ -98,7 +100,9 @@ def test_remove_dns_record_raises_exception(repo_patch, _):
 @patch.object(Path, "write_text")
 @patch.object(Path, "read_text")
 @patch.object(Repo, "clone_from")
-def test_remove_dns_record(repo_patch, read_patch, write_patch, fqdn, record):
+def test_remove_dns_record(
+    repo_patch: Mock, read_patch: Mock, write_patch: Mock, fqdn: str, record: str
+):
     """
     arrange: mock the repo and filesystem so that the file matching a DNS exists.
     act: attempt to delete a new DNS record.
