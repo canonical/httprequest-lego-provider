@@ -2,7 +2,65 @@
 # See LICENSE file for licensing details.
 """Forms."""
 
+import re
+
+from django.core.exceptions import ValidationError
 from django.forms import CharField, Form
+
+FQDN_PREFIX = "_acme-challenge."
+
+
+def _is_fqdn(fqdn) -> bool:
+    """Check if the argument is a valid FQDN.
+
+    Args:
+        fqdn: the FQDN to validate.
+
+    Returns:
+        if the FQDN is valid.
+    """
+    return bool(
+        re.match(
+            (
+                r"^(?!.{255}|.{253}[^.])([a-z0-9](?:[-a-z-0-9]{0,61}[a-z0-9])?\.)+"
+                r"[a-z0-9](?:[-a-z0-9]{0,61}[a-z0-9])?[.]?$"
+            ),
+            fqdn,
+            re.IGNORECASE,
+        )
+    )
+
+
+def is_fqdn_compliant(fqdn) -> bool:
+    """Check if value consists only of a valid FQDNs prefixed by '_acme-challenge.'.
+
+    Args:
+        fqdn: the FQDN to validate.
+
+    Returns:
+        if the FQDN is valid.
+    """
+    return fqdn.startswith(FQDN_PREFIX) and _is_fqdn(fqdn.split(".", 1)[1])
+
+
+class FQDNField(CharField):
+    """FQDN field class."""
+
+    def validate(self, value):
+        """Check if value consists only of a valid FQDNs prefixed by '_acme-challenge.'.
+
+        Args:
+            value: field value.
+
+        Raises:
+            ValidationError: if the value is invalid.
+        """
+        # Use the parent's handling of required fields, etc.
+        super().validate(value)
+        if not is_fqdn_compliant(value):
+            raise ValidationError(
+                message="Please provide a valid FQDN", code="invalid", params={"value": value}
+            )
 
 
 class PresentForm(Form):
@@ -13,7 +71,7 @@ class PresentForm(Form):
         value: Authorization signature for Let's Encrypt.
     """
 
-    fqdn = CharField(label="FQDN", max_length=255)
+    fqdn = FQDNField(label="FQDN")
     value = CharField(label="value")
 
 
@@ -25,5 +83,5 @@ class CleanupForm(Form):
         value: Authorization signature for Let's Encrypt.
     """
 
-    fqdn = CharField(label="FQDN", max_length=255)
+    fqdn = FQDNField(label="FQDN")
     value = CharField(label="value")

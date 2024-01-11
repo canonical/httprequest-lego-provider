@@ -30,7 +30,7 @@ def handle_present(request: HttpRequest) -> Optional[HttpResponse]:
     """
     form = PresentForm(request.POST)
     if not form.is_valid():
-        return HttpResponse(form.errors.as_json())
+        return HttpResponse(content=form.errors.as_json(), status=400)
     user = request.user
     try:
         domain = Domain.objects.get(fqdn=form.cleaned_data["fqdn"])
@@ -59,7 +59,7 @@ def handle_cleanup(request: HttpRequest) -> Optional[HttpResponse]:
     """
     form = CleanupForm(request.POST)
     if not form.is_valid():
-        return HttpResponse(form.errors.as_json())
+        return HttpResponse(content=form.errors.as_json(), status=400)
     user = request.user
     try:
         domain = Domain.objects.get(fqdn=form.cleaned_data["fqdn"])

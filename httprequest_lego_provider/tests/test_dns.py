@@ -23,6 +23,7 @@ def test_write_dns_record_raises_exception(repo_patch, _):
     repo_patch.side_effect = GitCommandError("Error executing command")
 
     fqdn = "site.example.com"
+
     with pytest.raises(DnsSourceUpdateError):
         write_dns_record(fqdn, secrets.token_hex())
 
@@ -80,6 +81,7 @@ def test_remove_dns_record_raises_exception(repo_patch, _):
     repo_patch.side_effect = GitCommandError("Error executing command")
 
     fqdn = "site.example.com"
+
     with pytest.raises(DnsSourceUpdateError):
         remove_dns_record(fqdn)
 
