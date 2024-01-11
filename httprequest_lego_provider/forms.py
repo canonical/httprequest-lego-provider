@@ -10,7 +10,7 @@ from django.forms import CharField, Form
 FQDN_PREFIX = "_acme-challenge."
 
 
-def _is_fqdn(fqdn) -> bool:
+def _is_fqdn(fqdn: str) -> bool:
     """Check if the argument is a valid FQDN.
 
     Args:
@@ -31,7 +31,7 @@ def _is_fqdn(fqdn) -> bool:
     )
 
 
-def is_fqdn_compliant(fqdn) -> bool:
+def is_fqdn_compliant(fqdn: str) -> bool:
     """Check if value consists only of a valid FQDNs prefixed by '_acme-challenge.'.
 
     Args:
