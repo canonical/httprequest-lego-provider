@@ -14,29 +14,27 @@ from httprequest_lego_provider.models import Domain, DomainUserPermission
 
 
 @pytest.fixture(scope="module")
-def username():
+def username() -> str:
     """Provide a default username."""
-    yield "test_user"
+    return "test_user"
 
 
 @pytest.fixture(scope="module")
-def user_password():
+def user_password() -> str:
     """Provide a default user password."""
-    yield secrets.token_hex()
+    return secrets.token_hex()
 
 
 @pytest.fixture(scope="function")
-def user(username, user_password):
+def user(username: str, user_password: str) -> User:
     """Provide a default user."""
-    user = User.objects.create_user(username, password=user_password)
-    yield user
+    return User.objects.create_user(username, password=user_password)
 
 
 @pytest.fixture(scope="function")
-def user_auth_token(username, user_password, user):
+def user_auth_token(username: str, user_password: str, user: User) -> str:
     """Provide the auth_token for the default user."""
-    auth_token = base64.b64encode(bytes(f"{username}:{user_password}", "utf-8")).decode("utf-8")
-    yield auth_token
+    return base64.b64encode(bytes(f"{username}:{user_password}", "utf-8")).decode("utf-8")
 
 
 @pytest.fixture(scope="module")
@@ -46,14 +44,12 @@ def fqdn():
 
 
 @pytest.fixture(scope="function")
-def domain(fqdn):
+def domain(fqdn: str) -> Domain:
     """Provide a valid domain."""
-    domain = Domain.objects.create(fqdn=fqdn)
-    yield domain
+    return Domain.objects.create(fqdn=fqdn)
 
 
 @pytest.fixture(scope="function")
-def domain_user_permission(domain, user):
+def domain_user_permission(domain: Domain, user: User) -> DomainUserPermission:
     """Provide a valid domain."""
-    domain_user_permission = DomainUserPermission.objects.create(domain=domain, user=user)
-    yield domain_user_permission
+    return DomainUserPermission.objects.create(domain=domain, user=user)
