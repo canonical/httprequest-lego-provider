@@ -8,13 +8,11 @@ from django.core.exceptions import PermissionDenied
 from django.http import HttpRequest, HttpResponse
 from django.views.decorators.http import require_http_methods
 
-from .basicauth import basicauth
 from .dns import remove_dns_record, write_dns_record
 from .forms import CleanupForm, PresentForm
 from .models import Domain, DomainUserPermission
 
 
-@basicauth
 @require_http_methods(["POST"])
 def handle_present(request: HttpRequest) -> Optional[HttpResponse]:
     """Handle the submissing of the present form.
@@ -43,7 +41,6 @@ def handle_present(request: HttpRequest) -> Optional[HttpResponse]:
     raise PermissionDenied
 
 
-@basicauth
 @require_http_methods(["POST"])
 def handle_cleanup(request: HttpRequest) -> Optional[HttpResponse]:
     """Handle the submissing of the cleanup form.
