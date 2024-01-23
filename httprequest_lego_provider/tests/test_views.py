@@ -21,7 +21,7 @@ def test_post_present_when_not_logged_in(client: Client):
     """
     response = client.post("/present/")
 
-    assert response.status_code == 400
+    assert response.status_code == 401
 
 
 @pytest.mark.django_db
@@ -33,7 +33,7 @@ def test_post_present_when_auth_header_empty(client: Client):
     """
     response = client.post("/present/", headers={"AUTHORIZATION": ""})
 
-    assert response.status_code == 400
+    assert response.status_code == 401
 
 
 @pytest.mark.django_db
@@ -46,7 +46,7 @@ def test_post_present_when_auth_header_invalid(client: Client):
     auth_token = base64.b64encode(bytes("invalid:invalid", "utf-8")).decode("utf-8")
     response = client.post("/present/", headers={"AUTHORIZATION": f"Basic {auth_token}"})
 
-    assert response.status_code == 403
+    assert response.status_code == 401
 
 
 @pytest.mark.django_db
@@ -145,7 +145,7 @@ def test_post_cleanup_when_not_logged_in(client: Client):
     """
     response = client.post("/cleanup/")
 
-    assert response.status_code == 400
+    assert response.status_code == 401
 
 
 @pytest.mark.django_db

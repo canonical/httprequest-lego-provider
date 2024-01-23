@@ -75,14 +75,20 @@ WSGI_APPLICATION = "app.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# DATABASES = {
+#     "default": {
+#         "ENGINE": environ.get("DB_ENGINE"),
+#         "NAME": environ.get("DB_NAME"),
+#         "USER": environ.get("DB_USER"),
+#         "PASSWORD": environ.get("DB_PASSWORD"),
+#         "HOST": environ.get("DB_HOST"),
+#         "PORT": environ.get("DB_PORT"),
+#     }
+# }
 DATABASES = {
     "default": {
-        "ENGINE": environ.get("DB_ENGINE"),
-        "NAME": environ.get("DB_NAME"),
-        "USER": environ.get("DB_USER"),
-        "PASSWORD": environ.get("DB_PASSWORD"),
-        "HOST": environ.get("DB_HOST"),
-        "PORT": environ.get("DB_PORT"),
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
 }
 
@@ -131,10 +137,10 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        'rest_framework.authentication.BasicAuthentication',
+        "rest_framework.authentication.BasicAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ),
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-    ]
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
 }
