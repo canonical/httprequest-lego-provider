@@ -2,6 +2,7 @@
 # See LICENSE file for licensing details.
 """Unit tests for the views module."""
 import base64
+import json
 import secrets
 from unittest.mock import patch
 
@@ -248,14 +249,15 @@ def test_test_jwt_token_login(
         "/api/v1/auth/token/",
         data={"username": username, "password": user_password},
     )
-    print(response.content)
+    print(json.dumps(response.content))
+    token = json.dumps(response.content)["token"]
 
     with patch("httprequest_lego_provider.views.write_dns_record"):
         value = secrets.token_hex()
         response = client.post(
             "/present/",
             data={"fqdn": domain_user_permission.domain.fqdn, "value": value},
-            headers={"AUTHORIZATION": f"JWT {response.content.token}"},
+            headers={"AUTHORIZATION": f"JWT {token}"},
         )
 
         assert response.status_code == 204
