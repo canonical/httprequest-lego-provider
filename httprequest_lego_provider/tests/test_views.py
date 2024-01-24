@@ -250,7 +250,7 @@ def test_test_jwt_token_login(
         "/api/v1/auth/token/",
         data={"username": username, "password": user_password},
     )
-    print(reponse.content)
+    print(response.content)
 
     with patch("httprequest_lego_provider.views.write_dns_record"):
         value = secrets.token_hex()
