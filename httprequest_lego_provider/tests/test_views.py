@@ -132,7 +132,9 @@ def test_get_present_when_logged_in(client: Client, user_auth_token: str):
     act: submit a GET request for the present URL.
     assert: a 405 is returned.
     """
-    response = client.get("/api/v1/present/", headers={"AUTHORIZATION": f"Basic {user_auth_token}"})
+    response = client.get(
+        "/api/v1/present/", headers={"AUTHORIZATION": f"Basic {user_auth_token}"}
+    )
 
     assert response.status_code == 405
 
@@ -231,7 +233,9 @@ def test_get_cleanup_when_logged_in(client: Client, user_auth_token: str):
     act: submit a GET request for the cleanup URL.
     assert: a 405 is returned.
     """
-    response = client.get("/api/v1/present/", headers={"AUTHORIZATION": f"Basic {user_auth_token}"})
+    response = client.get(
+        "/api/v1/present/", headers={"AUTHORIZATION": f"Basic {user_auth_token}"}
+    )
 
     assert response.status_code == 405
 
