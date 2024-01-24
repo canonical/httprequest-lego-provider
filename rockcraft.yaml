@@ -20,8 +20,4 @@ parts:
             - "django/app/app"
             - "django/app/LICENSE"
             - "django/app/manage.py"
-    django-framework/dependencies:
-      stage-packages:
-        - djangorestframework==3.14.0
-        - djangorestframework-simplejwt==5.3.1
-        - GitPython==3.1.41
+            - "django/app/requirements.txt"
