@@ -235,6 +235,8 @@ def test_get_cleanup_when_logged_in(client: Client, user_auth_token: str):
     assert response.status_code == 405
 
 
+from django.http import HttpRequest, HttpResponse
+
 @pytest.mark.django_db
 def test_test_jwt_token_login(
     client: Client, username: str, user_password: str, domain_user_permission: DomainUserPermission
@@ -244,17 +246,18 @@ def test_test_jwt_token_login(
     act: submit a POST request for the present URL containing the fqdn above.
     assert: a 204 is returned.
     """
-    response = client.post(
+    response: HttpResponse = client.post(
         "/api/v1/auth/token/",
         data={"username": username, "password": user_password},
     )
+    print(reponse.content)
 
     with patch("httprequest_lego_provider.views.write_dns_record"):
         value = secrets.token_hex()
         response = client.post(
             "/present/",
             data={"fqdn": domain_user_permission.domain.fqdn, "value": value},
-            headers={"AUTHORIZATION": f"JWT {response.token}"},
+            headers={"AUTHORIZATION": f"JWT {response.content.token}"},
         )
 
         assert response.status_code == 204
