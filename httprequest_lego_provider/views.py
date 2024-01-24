@@ -26,7 +26,6 @@ def handle_present(request: HttpRequest) -> Optional[HttpResponse]:
     Raises:
         PermissionDenied: if the user is not allowed to perform the operation.
     """
-    print("ENTRO")
     form = PresentForm(request.POST)
     if not form.is_valid():
         return HttpResponse(content=form.errors.as_json(), status=400)

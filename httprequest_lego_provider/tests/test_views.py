@@ -249,15 +249,13 @@ def test_test_jwt_token_login(
         "/api/v1/auth/token/",
         data={"username": username, "password": user_password},
     )
-    print(json.loads(response.content))
-    token = json.loads(response.content)["access"]
 
     with patch("httprequest_lego_provider.views.write_dns_record"):
         value = secrets.token_hex()
         response = client.post(
             "/present/",
             data={"fqdn": domain_user_permission.domain.fqdn, "value": value},
-            headers={"AUTHORIZATION": f"JWT {token}"},
+            headers={"AUTHORIZATION": f"Bearer {token}"},
         )
 
         assert response.status_code == 204
