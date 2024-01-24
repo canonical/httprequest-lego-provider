@@ -20,7 +20,7 @@ def test_post_present_when_not_logged_in(client: Client):
     act: submit a POST request for the present URL.
     assert: a 401 is returned.
     """
-    response = client.post("/present/")
+    response = client.post("/api/v1/present/")
 
     assert response.status_code == 401
 
@@ -32,7 +32,7 @@ def test_post_present_when_auth_header_empty(client: Client):
     act: submit a POST request for the present URL with an empty authorization header.
     assert: a 401 is returned.
     """
-    response = client.post("/present/", headers={"AUTHORIZATION": ""})
+    response = client.post("/api/v1/present/", headers={"AUTHORIZATION": ""})
 
     assert response.status_code == 401
 
@@ -45,7 +45,7 @@ def test_post_present_when_auth_header_invalid(client: Client):
     assert: a 401 is returned.
     """
     auth_token = base64.b64encode(bytes("invalid:invalid", "utf-8")).decode("utf-8")
-    response = client.post("/present/", headers={"AUTHORIZATION": f"Basic {auth_token}"})
+    response = client.post("/api/v1/present/", headers={"AUTHORIZATION": f"Basic {auth_token}"})
 
     assert response.status_code == 401
 
@@ -59,7 +59,7 @@ def test_post_present_when_logged_in_and_no_fqdn(client: Client, user_auth_token
     """
     value = secrets.token_hex()
     response = client.post(
-        "/present/",
+        "/api/v1/present/",
         data={"fqdn": fqdn, "value": value},
         headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
     )
@@ -78,7 +78,7 @@ def test_post_present_when_logged_in_and_no_permission(
     """
     value = secrets.token_hex()
     response = client.post(
-        "/present/",
+        "/api/v1/present/",
         data={"fqdn": domain.fqdn, "value": value},
         headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
     )
@@ -98,7 +98,7 @@ def test_post_present_when_logged_in_and_permission(
     with patch("httprequest_lego_provider.views.write_dns_record") as mocked_dns_write:
         value = secrets.token_hex()
         response = client.post(
-            "/present/",
+            "/api/v1/present/",
             data={"fqdn": domain_user_permission.domain.fqdn, "value": value},
             headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
         )
@@ -117,7 +117,7 @@ def test_post_present_when_logged_in_and_fqdn_invalid(client: Client, user_auth_
     with patch("httprequest_lego_provider.views.write_dns_record"):
         value = secrets.token_hex()
         response = client.post(
-            "/present/",
+            "/api/v1/present/",
             data={"fqdn": "example.com", "value": value},
             headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
         )
@@ -132,7 +132,9 @@ def test_get_present_when_logged_in(client: Client, user_auth_token: str):
     act: submit a GET request for the present URL.
     assert: a 405 is returned.
     """
-    response = client.get("/present/", headers={"AUTHORIZATION": f"Basic {user_auth_token}"})
+    response = client.get(
+        "/api/v1/present/", headers={"AUTHORIZATION": f"Basic {user_auth_token}"}
+    )
 
     assert response.status_code == 405
 
@@ -144,7 +146,7 @@ def test_post_cleanup_when_not_logged_in(client: Client):
     act: submit a POST request for the cleanup URL.
     assert: a 401 is returned.
     """
-    response = client.post("/cleanup/")
+    response = client.post("/api/v1/cleanup/")
 
     assert response.status_code == 401
 
@@ -158,7 +160,7 @@ def test_post_cleanup_when_logged_in_and_no_fqdn(client: Client, user_auth_token
     """
     value = secrets.token_hex()
     response = client.post(
-        "/cleanup/",
+        "/api/v1/cleanup/",
         data={"fqdn": f"{FQDN_PREFIX}example.com", "value": value},
         headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
     )
@@ -177,7 +179,7 @@ def test_post_cleanup_when_logged_in_and_no_permission(
     """
     value = secrets.token_hex()
     response = client.post(
-        "/cleanup/",
+        "/api/v1/cleanup/",
         data={"fqdn": domain.fqdn, "value": value},
         headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
     )
@@ -197,7 +199,7 @@ def test_post_cleanup_when_logged_in_and_permission(
     with patch("httprequest_lego_provider.views.remove_dns_record") as mocked_dns_remove:
         value = secrets.token_hex()
         response = client.post(
-            "/cleanup/",
+            "/api/v1/cleanup/",
             data={"fqdn": domain_user_permission.domain.fqdn, "value": value},
             headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
         )
@@ -216,7 +218,7 @@ def test_post_cleanup_when_logged_in_and_fqdn_invalid(client: Client, user_auth_
     with patch("httprequest_lego_provider.views.remove_dns_record"):
         value = secrets.token_hex()
         response = client.post(
-            "/cleanup/",
+            "/api/v1/cleanup/",
             data={"fqdn": "example.com", "value": value},
             headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
         )
@@ -231,7 +233,9 @@ def test_get_cleanup_when_logged_in(client: Client, user_auth_token: str):
     act: submit a GET request for the cleanup URL.
     assert: a 405 is returned.
     """
-    response = client.get("/present/", headers={"AUTHORIZATION": f"Basic {user_auth_token}"})
+    response = client.get(
+        "/api/v1/present/", headers={"AUTHORIZATION": f"Basic {user_auth_token}"}
+    )
 
     assert response.status_code == 405
 
@@ -254,7 +258,7 @@ def test_test_jwt_token_login(
     with patch("httprequest_lego_provider.views.write_dns_record"):
         value = secrets.token_hex()
         response = client.post(
-            "/present/",
+            "/api/v1/present/",
             data={"fqdn": domain_user_permission.domain.fqdn, "value": value},
             headers={"AUTHORIZATION": f"Bearer {token}"},
         )
