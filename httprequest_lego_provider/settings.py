@@ -4,6 +4,6 @@
 
 import os
 
-DNS_REPOSITORY_URL = os.getenv("DNS_REPOSITORY_URL", default="")
-SSH_IDENTITY_FILE = os.path.expanduser("~/.ssh/id_rsa")
+DNS_REPOSITORY_URL = os.getenv("DJANGO_DNS_REPOSITORY_URL", default="")
+SSH_KEY = os.getenv("DJANGO_SSH_KEY", default="")
 LOGIN_REDIRECT_URL = "/"

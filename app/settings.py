@@ -75,14 +75,17 @@ WSGI_APPLICATION = "app.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+db_url = os.environ.get("POSTGRESQL_DB_CONNECT_STRING")
+parsed_db_url = urllib.parse.urlparse(db_url)
+
 DATABASES = {
     "default": {
-        "ENGINE": environ.get("DB_ENGINE"),
-        "NAME": environ.get("DB_NAME"),
-        "USER": environ.get("DB_USER"),
-        "PASSWORD": environ.get("DB_PASSWORD"),
-        "HOST": environ.get("DB_HOST"),
-        "PORT": environ.get("DB_PORT"),
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": parsed_db_url.path.removeprefix("/"),
+        "USER": parsed_db_url.username,
+        "PASSWORD": parsed_db_url.password,
+        "HOST": parsed_db_url.hostname,
+        "PORT": parsed_db_url.port or "5432",
     }
 }
 

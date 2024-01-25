@@ -11,14 +11,14 @@ from typing import List, Tuple
 
 from git import Git, GitCommandError, Repo
 
-from .settings import DNS_REPOSITORY_URL, SSH_IDENTITY_FILE
+from .settings import DNS_REPOSITORY_URL, SSH_KEY
 
 FILENAME_TEMPLATE = "{domain}.domain"
 SPLIT_DNS_REPOSITORY_URL = DNS_REPOSITORY_URL.rsplit("@", 1)
 REPOSITORY_BASE_URL = SPLIT_DNS_REPOSITORY_URL[0]
 REPOSITORY_BRANCH = SPLIT_DNS_REPOSITORY_URL[1] if len(SPLIT_DNS_REPOSITORY_URL) > 1 else None
 RECORD_CONTENT = "{record} 600 IN TXT \042{value}\042\n"
-SSH_EXECUTABLE = f"ssh -i {SSH_IDENTITY_FILE}"
+SSH_EXECUTABLE = f"echo ${SSH_KEY} | ssh -i /dev/stdin"
 
 
 class DnsSourceUpdateError(Exception):
