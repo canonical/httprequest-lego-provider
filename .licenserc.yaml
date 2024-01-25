@@ -35,4 +35,5 @@ header:
     - 'zap_rules.tsv'
     - 'manage.py'
     - 'app/**'
+    - 'lib/**'
   comment: on-failure
