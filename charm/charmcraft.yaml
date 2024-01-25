@@ -44,7 +44,7 @@ config:
   options:
     dns_repository_url:
       type: string
-      description: The repository URL when the DNS records are stored.
+      description: The repository URL where the DNS records are stored.
     ssh_key:
       type: string
       description: The private key for SSH authentication.
