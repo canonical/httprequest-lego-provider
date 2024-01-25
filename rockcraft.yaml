@@ -21,7 +21,7 @@ parts:
     # Exclude pyproject.yaml so that the python plugin doesn't handle this project as a package
     django-framework/dependencies:
         override-build: |
-            rm pyproject.toml
+            rm -f pyproject.toml
             craftctl default
     django-framework/install-app:
         prime:

@@ -48,5 +48,3 @@ config:
     ssh_key:
       type: string
       description: The private key for SSH authentication.
-
-
