@@ -76,7 +76,7 @@ WSGI_APPLICATION = "app.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-db_url = os.environ.get("POSTGRESQL_DB_CONNECT_STRING")
+db_url = os.environ.get("POSTGRESQL_DB_CONNECT_STRING", "")
 parsed_db_url = urllib.parse.urlparse(db_url)
 
 DATABASES = {
