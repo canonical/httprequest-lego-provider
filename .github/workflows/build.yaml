@@ -15,22 +15,44 @@ jobs:
           path: rockcraft
           fetch-depth: 0
 
+      - name: Get Rockcraft SHA
+        id: rockcraft-sha
+        working-directory: ./rockcraft
+        run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Restore Rockcraft Cache
+        id: restore-rockcraft
+        uses: actions/cache/restore@v4
+        with:
+          path: ./rockcraft*.snap
+          key: rockcraft-${{ steps.rockcraft-sha.outputs.sha }}
+
       - uses: canonical/setup-lxd@v0.1.1
 
       - name: Install Snapcraft
+        if: steps.restore-rockcraft.outputs.cache-hit != 'true'
         run: sudo snap install snapcraft --classic
 
-      - name: Build and Install Rockcraft
+      - name: Build Rockcraft
+        if: steps.restore-rockcraft.outputs.cache-hit != 'true'
         working-directory: ./rockcraft
         run: |
           snapcraft --use-lxd
-          sudo snap install --dangerous --classic rockcraft*.snap
           cp rockcraft*.snap ../
+
+      - name: Save Rockcraft Cache
+        uses: actions/cache/save@v4
+        with:
+          path: ./rockcraft*.snap
+          key: ${{ steps.restore-rockcraft.outputs.cache-primary-key }}
 
       - uses: actions/upload-artifact@v4
         with:
           name: rockcraft-snap
           path: "rockcraft*.snap"
+
+      - name: Install Rockcraft
+        run: sudo snap install --dangerous --classic rockcraft*.snap
 
       - name: Cleanup
         run: rm -rf rockcraft*
@@ -62,22 +84,38 @@ jobs:
           path: charmcraft
           fetch-depth: 0
 
+      - name: Get Charmcraft SHA
+        id: charmcraft-sha
+        working-directory: ./charmcraft
+        run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Restore Charmcraft Cache
+        id: restore-charmcraft
+        uses: actions/cache/restore@v4
+        with:
+          path: ./charmcraft*.snap
+          key: charmcraft-${{ steps.charmcraft-sha.outputs.sha }}
+
       - uses: canonical/setup-lxd@v0.1.1
 
       - name: Install Snapcraft
+        if: steps.restore-charmcraft.outputs.cache-hit != 'true'
         run: sudo snap install snapcraft --classic
 
-      - name: Build and Install Charmcraft
+      - name: Build Charmcraft
+        if: steps.restore-charmcraft.outputs.cache-hit != 'true'
         working-directory: ./charmcraft
         run: |
           snapcraft --use-lxd
-          sudo snap install --dangerous --classic charmcraft*.snap
           cp charmcraft*.snap ../
 
       - uses: actions/upload-artifact@v4
         with:
           name: charmcraft-snap
           path: "charmcraft*.snap"
+
+      - name: Install Charmcraft
+        run: sudo snap install --dangerous --classic charmcraft*.snap
 
       - name: Cleanup
         run: rm -rf charmcraft*
@@ -87,7 +125,10 @@ jobs:
       - name: Build Charm
         env:
           CHARMCRAFT_ENABLE_EXPERIMENTAL_EXTENSIONS: "true"
-        run: charmcraft pack --verbosity trace
+        working-directory: ./charm
+        run: |
+          charmcraft pack --verbosity trace
+          cp *.charm ../
 
       - name: Print Charmcraft logs
         if: always()
