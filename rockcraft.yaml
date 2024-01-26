@@ -2,7 +2,7 @@
 # See LICENSE file for licensing details.
 
 name: httprequest-lego-provider
-base: ubuntu:22.04
+base: ubuntu@22.04
 version: "0.1"
 summary: A Django application implementing HTTPRequest Lego Provider
 description: |
