@@ -42,6 +42,7 @@ jobs:
 
       - name: Save Rockcraft Cache
         uses: actions/cache/save@v4
+        if: steps.restore-rockcraft.outputs.cache-hit != 'true'
         with:
           path: ./rockcraft*.snap
           key: ${{ steps.restore-rockcraft.outputs.cache-primary-key }}
@@ -111,6 +112,7 @@ jobs:
 
       - name: Save Charmcraft Cache
         uses: actions/cache/save@v4
+        if: steps.restore-charmcraft.outputs.cache-hit != 'true'
         with:
           path: ./charmcraft*.snap
           key: ${{ steps.restore-charmcraft.outputs.cache-primary-key }}
@@ -150,6 +152,7 @@ jobs:
 
       - name: Save Charm Cache
         uses: actions/cache/save@v4
+        if: steps.restore-charm.outputs.cache-hit != 'true'
         with:
           path: ./*.charm
           key: ${{ steps.restore-charm.outputs.cache-primary-key }}
