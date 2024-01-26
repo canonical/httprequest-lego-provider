@@ -45,6 +45,9 @@ config:
     dns_repository_url:
       type: string
       description: The repository URL where the DNS records are stored.
+    secret_key:
+      type: string
+      description: Django secret key.
     ssh_key:
       type: string
       description: The private key for SSH authentication.

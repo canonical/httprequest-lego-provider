@@ -20,6 +20,8 @@ extensions:
 parts:
     # Exclude pyproject.yaml so that the python plugin doesn't handle this project as a package
     django-framework/dependencies:
+        stage-packages:
+            - git
         override-build: |
             rm -f pyproject.toml
             craftctl default
