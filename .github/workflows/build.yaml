@@ -14,7 +14,7 @@ jobs:
           ref: feat-12f-django
           path: rockcraft
 
-      - uses: canonical/setup-lxd
+      - uses: canonical/setup-lxd@v0.1.1
 
       - name: Install Snapcraft
         run: sudo snap install snapcraft --classic
@@ -60,7 +60,7 @@ jobs:
           ref: feat-12f-django
           path: charmcraft
 
-      - uses: canonical/setup-lxd
+      - uses: canonical/setup-lxd@v0.1.1
 
       - name: Install Snapcraft
         run: sudo snap install snapcraft --classic
