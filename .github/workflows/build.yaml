@@ -109,6 +109,12 @@ jobs:
           snapcraft --use-lxd
           cp charmcraft*.snap ../
 
+      - name: Save Charmcraft Cache
+        uses: actions/cache/save@v4
+        with:
+          path: ./charmcraft*.snap
+          key: ${{ steps.restore-charmcraft.outputs.cache-primary-key }}
+
       - uses: actions/upload-artifact@v4
         with:
           name: charmcraft-snap
@@ -122,9 +128,17 @@ jobs:
 
       - uses: actions/checkout@v4
 
+      - name: Restore Charm Cache
+        id: restore-charm
+        uses: actions/cache/restore@v4
+        with:
+          path: ./*.charm
+          key: charm-${{ hashFiles('./charm') }}
+
       - name: Build Charm
         env:
           CHARMCRAFT_ENABLE_EXPERIMENTAL_EXTENSIONS: "true"
+        if: steps.restore-charm.outputs.cache-hit != 'true'
         working-directory: ./charm
         run: |
           charmcraft pack --verbosity trace
@@ -133,6 +147,12 @@ jobs:
       - name: Print Charmcraft logs
         if: always()
         run: "cat ~/.local/state/charmcraft/log/* || :"
+
+      - name: Save Charm Cache
+        uses: actions/cache/save@v4
+        with:
+          path: ./*.charm
+          key: ${{ steps.restore-charm.outputs.cache-primary-key }}
 
       - uses: actions/upload-artifact@v4
         with:
