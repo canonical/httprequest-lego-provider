@@ -140,7 +140,7 @@ jobs:
       - name: Build Charm
         env:
           CHARMCRAFT_ENABLE_EXPERIMENTAL_EXTENSIONS: "true"
-        if: steps.restore-charm.outputs.cache-hit != 'true'
+        if: steps.restore-charm.outputs.cache-hit != 'true' || steps.restore-charmcraft.outputs.cache-hit != 'true'
         working-directory: ./charm
         run: |
           charmcraft pack --verbosity trace
@@ -152,7 +152,7 @@ jobs:
 
       - name: Save Charm Cache
         uses: actions/cache/save@v4
-        if: steps.restore-charm.outputs.cache-hit != 'true'
+        if: steps.restore-charm.outputs.cache-hit != 'true' || steps.restore-charmcraft.outputs.cache-hit != 'true'
         with:
           path: ./*.charm
           key: ${{ steps.restore-charm.outputs.cache-primary-key }}
