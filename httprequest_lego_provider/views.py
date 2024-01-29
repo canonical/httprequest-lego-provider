@@ -2,15 +2,20 @@
 # See LICENSE file for licensing details.
 """Views."""
 
+# pylint:disable=too-many-ancestors
+
 from typing import Optional
 
 from django.core.exceptions import PermissionDenied
 from django.http import HttpRequest, HttpResponse
+from rest_framework import viewsets
 from rest_framework.decorators import api_view
+from rest_framework.permissions import IsAdminUser
 
 from .dns import remove_dns_record, write_dns_record
 from .forms import CleanupForm, PresentForm
 from .models import Domain, DomainUserPermission
+from .serializers import DomainSerializer, DomainUserPermissionSerializer
 
 
 @api_view(["POST"])
@@ -66,3 +71,31 @@ def handle_cleanup(request: HttpRequest) -> Optional[HttpResponse]:
     except Domain.DoesNotExist:
         pass
     raise PermissionDenied
+
+
+class DomainViewSet(viewsets.ModelViewSet):
+    """Views for the Domain.
+
+    Attributes:
+        queryset: query for the objects in the model.
+        serializer_class: class used for seriqlization.
+        permission_classes: list of classes to match permissions.
+    """
+
+    queryset = Domain.objects.all()
+    serializer_class = DomainSerializer
+    permission_classes = [IsAdminUser]
+
+
+class DomainUserPermissionViewSet(viewsets.ModelViewSet):
+    """Views for the DomainUserPermission.
+
+    Attributes:
+        queryset: query for the objects in the model.
+        serializer_class: class used for seriqlization.
+        permission_classes: list of classes to match permissions.
+    """
+
+    queryset = DomainUserPermission.objects.all()
+    serializer_class = DomainUserPermissionSerializer
+    permission_classes = [IsAdminUser]

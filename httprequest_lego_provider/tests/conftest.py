@@ -38,6 +38,32 @@ def user_auth_token(username: str, user_password: str, user: User) -> str:
 
 
 @pytest.fixture(scope="module")
+def admin_username() -> str:
+    """Provide an admin username."""
+    return "admin"
+
+
+@pytest.fixture(scope="module")
+def admin_user_password() -> str:
+    """Provide an admin user password."""
+    return secrets.token_hex()
+
+
+@pytest.fixture(scope="function")
+def admin_user(admin_username: str, admin_user_password: str) -> User:
+    """Provide an admin user."""
+    return User.objects.create_user(username, password=user_password, is_staff=True)
+
+
+@pytest.fixture(scope="function")
+def admin_user_auth_token(admin_username: str, admin_user_password: str, admin_user: User) -> str:
+    """Provide the auth_token for the admin user."""
+    return base64.b64encode(bytes(f"{admin_username}:{admin_user_password}", "utf-8")).decode(
+        "utf-8"
+    )
+
+
+@pytest.fixture(scope="module")
 def fqdn():
     """Provide a valid FQDN."""
     yield f"{FQDN_PREFIX}example.com"
