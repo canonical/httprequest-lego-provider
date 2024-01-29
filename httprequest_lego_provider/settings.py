@@ -4,6 +4,6 @@
 
 import os
 
-DNS_REPOSITORY_URL = os.getenv("DJANGO_DNS_REPOSITORY_URL", default="")
-SSH_KEY = os.getenv("DJANGO_SSH_KEY", default="")
+GIT_REPO_URL = os.getenv("DJANGO_GIT_REPO", default="")
+GIT_SSH_KEY = os.getenv("DJANGO_GIT_SSH_KEY", default="")
 LOGIN_REDIRECT_URL = "/"

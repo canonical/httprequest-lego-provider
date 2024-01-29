@@ -42,9 +42,9 @@ requires:
 
 config:
   options:
-    dns_repository_url:
+    git_repo:
       type: string
       description: The repository URL where the DNS records are stored.
-    ssh_key:
+    git_ssh_key:
       type: string
       description: The private key for SSH authentication.
