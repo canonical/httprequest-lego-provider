@@ -7,6 +7,7 @@ import secrets
 from unittest.mock import patch
 
 import pytest
+from django.contrib.auth.models import User
 from django.test import Client
 
 from httprequest_lego_provider.forms import FQDN_PREFIX
@@ -264,3 +265,138 @@ def test_test_jwt_token_login(
         )
 
         assert response.status_code == 204
+
+
+@pytest.mark.django_db
+def test_post_domain_when_logged_in_as_non_admin_user(
+    client: Client, user_auth_token: str, fqdn: str
+):
+    """
+    arrange: log in a user.
+    act: submit a POST request for the domain URL.
+    assert: a 403 is returned and the domain is not inserted in the database.
+    """
+    response = client.post(
+        "/api/v1/domains/",
+        data={"fqdn": fqdn},
+        headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
+    )
+
+    with pytest.raises(Domain.DoesNotExist):
+        Domain.objects.get(fqdn=fqdn)
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_post_domain_when_logged_in_as_admin_user(
+    client: Client, admin_user_auth_token: str, fqdn: str
+):
+    """
+    arrange: log in an admin user.
+    act: submit a POST request for the domain URL.
+    assert: a 201 is returned and the domain is inserted in the database.
+    """
+    response = client.post(
+        "/api/v1/domains/",
+        data={"fqdn": fqdn},
+        headers={"AUTHORIZATION": f"Basic {admin_user_auth_token}"},
+    )
+
+    assert Domain.objects.get(fqdn=fqdn) is not None
+    assert response.status_code == 201
+
+
+@pytest.mark.django_db
+def test_post_domain_when_logged_in_as_admin_user_and_domain_invalid(
+    client: Client, admin_user_auth_token: str
+):
+    """
+    arrange: log in a admin user.
+    act: submit a POST request for the domain URL.
+    assert: a 400 is returned.
+    """
+    response = client.post(
+        "/api/v1/domains/",
+        data={"fqdn": "invalid-value"},
+        headers={"AUTHORIZATION": f"Basic {admin_user_auth_token}"},
+    )
+
+    with pytest.raises(Domain.DoesNotExist):
+        Domain.objects.get(fqdn="invalid-value")
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_post_domain_user_permission_when_logged_in_as_non_admin_user(
+    client: Client, user_auth_token: str, domain: Domain, user: User
+):
+    """
+    arrange: log in a user.
+    act: submit a POST request for the domain user permission URL.
+    assert: a 403 is returned and the domain is not inserted in the database.
+    """
+    response = client.post(
+        "/api/v1/domain-user-permissions/",
+        data={"domain": domain.id, "user": user.id, "text": "whatever"},
+        headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
+    )
+
+    assert not DomainUserPermission.objects.filter(user=user, domain=domain)
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_post_domain_user_permission_with_invalid_domain_when_logged_in_as_admin_user(
+    client: Client, admin_user_auth_token: str, user: User
+):
+    """
+    arrange: log in an admin user.
+    act: submit a POST request for the domain user permission URL for a non existing domain.
+    assert: a 400 is returned and the domain is not inserted in the database.
+    """
+    response = client.post(
+        "/api/v1/domain-user-permissions/",
+        data={"domain": 1, "user": user.id, "text": "whatever"},
+        headers={"AUTHORIZATION": f"Basic {admin_user_auth_token}"},
+    )
+
+    assert not DomainUserPermission.objects.filter(user=user, domain=1)
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_post_domain_user_permission_with_invalid_user_when_logged_in_as_admin_user(
+    client: Client, admin_user_auth_token: str, domain: Domain
+):
+    """
+    arrange: log in an admin user.
+    act: submit a POST request for the domain user permission URL for a non existing user.
+    assert: a 400 is returned and the domain is not inserted in the database.
+    """
+    response = client.post(
+        "/api/v1/domain-user-permissions/",
+        data={"domain": domain.id, "user": 99, "text": "whatever"},
+        headers={"AUTHORIZATION": f"Basic {admin_user_auth_token}"},
+    )
+
+    assert not DomainUserPermission.objects.filter(user=99, domain=domain)
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_post_domain_user_permission_when_logged_in_as_admin_user(
+    client: Client, admin_user_auth_token: str, user: User, domain: Domain
+):
+    """
+    arrange: log in an admin user.
+    act: submit a POST request for the domain user permission URL for a non existing domain.
+    assert: a 201 is returned and the domain user permission is inserted in the database.
+    """
+    response = client.post(
+        "/api/v1/domain-user-permissions/",
+        data={"domain": domain.id, "user": user.id, "text": "whatever"},
+        headers={"AUTHORIZATION": f"Basic {admin_user_auth_token}"},
+    )
+
+    assert DomainUserPermission.objects.filter(user=99, domain=domain) is not None
+    assert response.status_code == 201

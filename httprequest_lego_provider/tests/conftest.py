@@ -40,7 +40,7 @@ def user_auth_token(username: str, user_password: str, user: User) -> str:
 @pytest.fixture(scope="module")
 def admin_username() -> str:
     """Provide an admin username."""
-    return "admin"
+    return "test_admin_user"
 
 
 @pytest.fixture(scope="module")
@@ -52,7 +52,7 @@ def admin_user_password() -> str:
 @pytest.fixture(scope="function")
 def admin_user(admin_username: str, admin_user_password: str) -> User:
     """Provide an admin user."""
-    return User.objects.create_user(username, password=user_password, is_staff=True)
+    return User.objects.create_user(admin_username, password=admin_user_password, is_staff=True)
 
 
 @pytest.fixture(scope="function")
