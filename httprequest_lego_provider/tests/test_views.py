@@ -268,9 +268,7 @@ def test_test_jwt_token_login(
 
 
 @pytest.mark.django_db
-def test_post_domain_when_logged_in_as_non_admin_user(
-    client: Client, user_auth_token: str, fqdn: str
-):
+def test_post_domain_when_logged_in_as_non_admin_user(client: Client, user_auth_token: str):
     """
     arrange: log in a user.
     act: submit a POST request for the domain URL.
@@ -278,19 +276,17 @@ def test_post_domain_when_logged_in_as_non_admin_user(
     """
     response = client.post(
         "/api/v1/domains/",
-        data={"fqdn": fqdn},
+        data={"fqdn": "example.com"},
         headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
     )
 
     with pytest.raises(Domain.DoesNotExist):
-        Domain.objects.get(fqdn=fqdn)
+        Domain.objects.get(fqdn="example.com")
     assert response.status_code == 403
 
 
 @pytest.mark.django_db
-def test_post_domain_when_logged_in_as_admin_user(
-    client: Client, admin_user_auth_token: str, fqdn: str
-):
+def test_post_domain_when_logged_in_as_admin_user(client: Client, admin_user_auth_token: str):
     """
     arrange: log in an admin user.
     act: submit a POST request for the domain URL.
@@ -298,11 +294,11 @@ def test_post_domain_when_logged_in_as_admin_user(
     """
     response = client.post(
         "/api/v1/domains/",
-        data={"fqdn": fqdn},
+        data={"fqdn": "example.com"},
         headers={"AUTHORIZATION": f"Basic {admin_user_auth_token}"},
     )
 
-    assert Domain.objects.get(fqdn=fqdn) is not None
+    assert Domain.objects.get(fqdn="example.com") is not None
     assert response.status_code == 201
 
 
