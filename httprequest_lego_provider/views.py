@@ -78,7 +78,7 @@ class DomainViewSet(viewsets.ModelViewSet):
 
     Attributes:
         queryset: query for the objects in the model.
-        serializer_class: class used for seriqlization.
+        serializer_class: class used for serialization.
         permission_classes: list of classes to match permissions.
     """
 
@@ -92,7 +92,7 @@ class DomainUserPermissionViewSet(viewsets.ModelViewSet):
 
     Attributes:
         queryset: query for the objects in the model.
-        serializer_class: class used for seriqlization.
+        serializer_class: class used for serialization.
         permission_classes: list of classes to match permissions.
     """
 
