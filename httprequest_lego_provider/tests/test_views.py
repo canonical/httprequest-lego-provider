@@ -54,7 +54,7 @@ def test_post_present_when_auth_header_invalid(client: Client):
 @pytest.mark.django_db
 def test_post_present_when_logged_in_and_no_fqdn(client: Client, user_auth_token: str, fqdn: str):
     """
-    arrange: log in a user.
+    arrange: log in a non-admin user.
     act: submit a POST request for the present URL.
     assert: a 403 is returned.
     """
@@ -73,7 +73,7 @@ def test_post_present_when_logged_in_and_no_permission(
     client: Client, user_auth_token: str, domain: Domain
 ):
     """
-    arrange: log in a user and insert a domain in the database.
+    arrange: log in a non-admin user and insert a domain in the database.
     act: submit a POST request for the present URL.
     assert: a 403 is returned.
     """
@@ -129,7 +129,7 @@ def test_post_present_when_logged_in_and_fqdn_invalid(client: Client, user_auth_
 @pytest.mark.django_db
 def test_get_present_when_logged_in(client: Client, user_auth_token: str):
     """
-    arrange: log in a user.
+    arrange: log in a non-admin user.
     act: submit a GET request for the present URL.
     assert: a 405 is returned.
     """
@@ -155,7 +155,7 @@ def test_post_cleanup_when_not_logged_in(client: Client):
 @pytest.mark.django_db
 def test_post_cleanup_when_logged_in_and_no_fqdn(client: Client, user_auth_token: str):
     """
-    arrange: log in a user.
+    arrange: log in a non-admin user.
     act: submit a POST request for the cleanup URL.
     assert: a 403 is returned.
     """
@@ -174,7 +174,7 @@ def test_post_cleanup_when_logged_in_and_no_permission(
     client: Client, user_auth_token: str, domain: Domain
 ):
     """
-    arrange: log in a user.
+    arrange: log in a non-admin user.
     act: submit a POST request for the cleanup URL.
     assert: a 403 is returned.
     """
@@ -230,7 +230,7 @@ def test_post_cleanup_when_logged_in_and_fqdn_invalid(client: Client, user_auth_
 @pytest.mark.django_db
 def test_get_cleanup_when_logged_in(client: Client, user_auth_token: str):
     """
-    arrange: log in a user.
+    arrange: log in a non-admin user.
     act: submit a GET request for the cleanup URL.
     assert: a 405 is returned.
     """
@@ -270,7 +270,7 @@ def test_test_jwt_token_login(
 @pytest.mark.django_db
 def test_post_domain_when_logged_in_as_non_admin_user(client: Client, user_auth_token: str):
     """
-    arrange: log in a user.
+    arrange: log in a non-admin user.
     act: submit a POST request for the domain URL.
     assert: a 403 is returned and the domain is not inserted in the database.
     """
@@ -327,7 +327,7 @@ def test_post_domain_user_permission_when_logged_in_as_non_admin_user(
     client: Client, user_auth_token: str, domain: Domain, user: User
 ):
     """
-    arrange: log in a user.
+    arrange: log in a non-admin user.
     act: submit a POST request for the domain user permission URL.
     assert: a 403 is returned and the domain is not inserted in the database.
     """
