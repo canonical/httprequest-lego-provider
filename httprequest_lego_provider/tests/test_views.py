@@ -308,7 +308,7 @@ def test_post_domain_when_logged_in_as_admin_user_and_domain_invalid(
 ):
     """
     arrange: log in a admin user.
-    act: submit a POST request for the domain URL.
+    act: submit a POST request with an invalid value for the domain URL.
     assert: a 400 is returned.
     """
     response = client.post(
