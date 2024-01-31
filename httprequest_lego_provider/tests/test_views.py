@@ -385,7 +385,7 @@ def test_post_domain_user_permission_when_logged_in_as_admin_user(
 ):
     """
     arrange: log in an admin user.
-    act: submit a POST request for the domain user permission URL for a non existing domain.
+    act: submit a POST request for the domain user permission URL for a existing domain.
     assert: a 201 is returned and the domain user permission is inserted in the database.
     """
     response = client.post(

@@ -2,6 +2,7 @@
 # See LICENSE file for licensing details.
 """Views."""
 
+# Disable too-many-ancestors rule since we can't control inheritance for the ViewSets.
 # pylint:disable=too-many-ancestors
 
 from typing import Optional
