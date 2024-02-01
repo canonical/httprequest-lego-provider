@@ -48,3 +48,6 @@ config:
     git_ssh_key:
       type: string
       description: The private key for SSH authentication.
+    git_username:
+      type: string
+      description: The git username.
