@@ -11,6 +11,7 @@ branch = true
 [tool.black]
 line-length = 99
 target-version = ["py38"]
+exclude = "httprequest_lego_provider/migrations"
 
 [tool.coverage.report]
 fail_under = 100
@@ -21,7 +22,7 @@ show_missing = true
 max-line-length = 99
 max-doc-length = 99
 max-complexity = 10
-exclude = [".git", "__pycache__", ".tox", "build", "dist", "*.egg_info", "venv"]
+exclude = [".git", "__pycache__", ".tox", "build", "dist", "*.egg_info", "venv", "httprequest_lego_provider/migrations"]
 select = ["E", "W", "F", "C", "N", "R", "D", "H"]
 # Ignore W503, E501 because using black creates errors with this
 # Ignore D107 Missing docstring in __init__
@@ -33,6 +34,7 @@ docstring-convention = "google"
 [tool.isort]
 line_length = 99
 profile = "black"
+skip = ["httprequest_lego_provider/migrations"]
 
 [tool.mypy]
 ignore_missing_imports = true
@@ -41,6 +43,7 @@ namespace_packages = true
 
 [tool.pylint]
 disable = "wrong-import-order"
+ignore = "httprequest_lego_provider/migrations"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
@@ -73,3 +76,6 @@ max-complexity = 10
 
 [tool.codespell]
 skip = "build,lib,venv,icon.svg,.tox,.git,.mypy_cache,.ruff_cache,.coverage"
+
+[tool.pydocstyle]
+match_dir = "match-dir=^(?!httprequest_lego_provider/migrations)"
