@@ -36,4 +36,5 @@ header:
     - 'manage.py'
     - 'app/**'
     - 'charm/lib/**'
+    - 'app/**/migrations/**'
   comment: on-failure
