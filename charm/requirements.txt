@@ -1,3 +1,1 @@
 https://github.com/canonical/xiilib/archive/feat-12f-django.tar.gz
-# Add tzdata while it's not packed by charmcraft
-tzdata==2024.1
