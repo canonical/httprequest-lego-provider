@@ -62,6 +62,7 @@ def test_post_present_when_logged_in_and_no_fqdn(client: Client, user_auth_token
     response = client.post(
         "/present",
         data={"fqdn": fqdn, "value": value},
+        format="json",
         headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
     )
 
@@ -81,6 +82,7 @@ def test_post_present_when_logged_in_and_no_permission(
     response = client.post(
         "/present",
         data={"fqdn": domain.fqdn, "value": value},
+        format="json",
         headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
     )
 
@@ -101,6 +103,7 @@ def test_post_present_when_logged_in_and_permission(
         response = client.post(
             "/present",
             data={"fqdn": domain_user_permission.domain.fqdn, "value": value},
+            format="json",
             headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
         )
         mocked_dns_write.assert_called_once_with(domain_user_permission.domain, value)
@@ -120,6 +123,7 @@ def test_post_present_when_logged_in_and_fqdn_invalid(client: Client, user_auth_
         response = client.post(
             "/present",
             data={"fqdn": "example.com", "value": value},
+            format="json",
             headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
         )
 
@@ -161,6 +165,7 @@ def test_post_cleanup_when_logged_in_and_no_fqdn(client: Client, user_auth_token
     response = client.post(
         "/cleanup",
         data={"fqdn": f"{FQDN_PREFIX}example.com", "value": value},
+        format="json",
         headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
     )
 
@@ -180,6 +185,7 @@ def test_post_cleanup_when_logged_in_and_no_permission(
     response = client.post(
         "/cleanup",
         data={"fqdn": domain.fqdn, "value": value},
+        format="json",
         headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
     )
 
@@ -200,6 +206,7 @@ def test_post_cleanup_when_logged_in_and_permission(
         response = client.post(
             "/cleanup",
             data={"fqdn": domain_user_permission.domain.fqdn, "value": value},
+            format="json",
             headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
         )
         mocked_dns_remove.assert_called_once_with(domain_user_permission.domain)
@@ -219,6 +226,7 @@ def test_post_cleanup_when_logged_in_and_fqdn_invalid(client: Client, user_auth_
         response = client.post(
             "/cleanup",
             data={"fqdn": "example.com", "value": value},
+            format="json",
             headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
         )
 
@@ -257,6 +265,7 @@ def test_test_jwt_token_login(
         response = client.post(
             "/present",
             data={"fqdn": domain_user_permission.domain.fqdn, "value": value},
+            format="json",
             headers={"AUTHORIZATION": f"Bearer {token}"},
         )
 
@@ -273,6 +282,7 @@ def test_post_domain_when_logged_in_as_non_admin_user(client: Client, user_auth_
     response = client.post(
         "/api/v1/domains/",
         data={"fqdn": "example.com"},
+        format="json",
         headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
     )
 
@@ -291,6 +301,7 @@ def test_post_domain_when_logged_in_as_admin_user(client: Client, admin_user_aut
     response = client.post(
         "/api/v1/domains/",
         data={"fqdn": "example.com"},
+        format="json",
         headers={"AUTHORIZATION": f"Basic {admin_user_auth_token}"},
     )
 
@@ -310,6 +321,7 @@ def test_post_domain_when_logged_in_as_admin_user_and_domain_invalid(
     response = client.post(
         "/api/v1/domains/",
         data={"fqdn": "invalid-value"},
+        format="json",
         headers={"AUTHORIZATION": f"Basic {admin_user_auth_token}"},
     )
 
@@ -330,6 +342,7 @@ def test_post_domain_user_permission_when_logged_in_as_non_admin_user(
     response = client.post(
         "/api/v1/domain-user-permissions/",
         data={"domain": domain.id, "user": user.id, "text": "whatever"},
+        format="json",
         headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
     )
 

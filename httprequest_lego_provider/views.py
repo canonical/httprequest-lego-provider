@@ -32,7 +32,7 @@ def handle_present(request: HttpRequest) -> Optional[HttpResponse]:
     Raises:
         PermissionDenied: if the user is not allowed to perform the operation.
     """
-    form = PresentForm(request.POST)
+    form = PresentForm(request.data)
     if not form.is_valid():
         return HttpResponse(content=form.errors.as_json(), status=400)
     user = request.user
@@ -60,7 +60,7 @@ def handle_cleanup(request: HttpRequest) -> Optional[HttpResponse]:
     Raises:
         PermissionDenied: if the user is not allowed to perform the operation.
     """
-    form = CleanupForm(request.POST)
+    form = CleanupForm(request.data)
     if not form.is_valid():
         return HttpResponse(content=form.errors.as_json(), status=400)
     user = request.user
