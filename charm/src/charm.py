@@ -29,6 +29,7 @@ class DjangoCharm(xiilib.django.Charm):
             args: passthrough to CharmBase.
         """
         super().__init__(*args)
+        self.framework.observe(self.on.collect_app_status, self._on_collect_app_status)
 
     def _on_config_changed(self, _event: ops.ConfigChangedEvent) -> None:
         """"Config changed handler.
@@ -52,10 +53,8 @@ class DjangoCharm(xiilib.django.Charm):
         """Copy files needed by git."""
         container = self.unit.get_container(self._CONTAINER_NAME)
         if not container.can_connect():
-            self.unit.status = ops.WaitingStatus("Waiting for pebble ready")
             return
-        if not self.config.get("git_repo"):
-            self.unit.status = ops.WaitingStatus("Config git_repo is required")
+        if not self.config.get("git_repo") or not self.config.get("git_ssh_key"):
             return
         hostname = self.config.get("git_repo").split("@")[1].split("/")[0]
         process = container.exec(["ssh-keyscan", "-t", "rsa", hostname])
@@ -69,9 +68,6 @@ class DjangoCharm(xiilib.django.Charm):
             group=DJANGO_GROUP,
             permissions=0o600,
         )
-        if not self.config.get("git_ssh_key"):
-            self.unit.status = ops.WaitingStatus("Config git_ssh_key is required")
-            return
         container.push(
             RSA_PATH,
             self.config.get("git_ssh_key"),
@@ -81,6 +77,19 @@ class DjangoCharm(xiilib.django.Charm):
             group=DJANGO_GROUP,
             permissions=0o600,
         )
+    
+    def _on_collect_app_status(self, _: ops.CollectStatusEvent) -> None:
+        """"Handle the status changes.
+
+        Args:
+            event: the event triggering the handler.
+        """
+        if not self.config.get("git_repo"):
+            self.unit.status = ops.WaitingStatus("Config git_repo is required")
+            return
+        if not self.config.get("git_ssh_key"):
+            self.unit.status = ops.WaitingStatus("Config git_ssh_key is required")
+            return
 
 
 if __name__ == "__main__":
