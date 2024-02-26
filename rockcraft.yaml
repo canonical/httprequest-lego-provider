@@ -22,6 +22,7 @@ parts:
     django-framework/dependencies:
         stage-packages:
             - git
+            - openssh-client
         override-build: |
             rm -f pyproject.toml
             craftctl default
