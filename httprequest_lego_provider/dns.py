@@ -11,7 +11,7 @@ from typing import List, Tuple
 
 from git import Git, GitCommandError, Repo
 
-from .settings import GIT_REPO_URL, GIT_SSH_KEY, GIT_USERNAME
+from .settings import GIT_REPO_URL, GIT_SSH_KEY
 
 FILENAME_TEMPLATE = "{domain}.domain"
 SPLIT_GIT_REPO_URL = GIT_REPO_URL.rsplit("@", 1)
@@ -88,7 +88,6 @@ def write_dns_record(fqdn: str, value: str) -> None:
     with TemporaryDirectory() as tmp_dir, Git().custom_environment(GIT_SSH_COMMAND=SSH_EXECUTABLE):
         try:
             repo = Repo.clone_from(REPOSITORY_BASE_URL, tmp_dir, branch=REPOSITORY_BRANCH)
-            repo.config_writer().set_value("user", "name", GIT_USERNAME).release()
             domain, subdomain = _get_domain_and_subdomain_from_fqdn(fqdn)
             filename = FILENAME_TEMPLATE.format(domain=domain)
             dns_record_file = Path(f"{repo.working_tree_dir}/{filename}")
@@ -117,7 +116,6 @@ def remove_dns_record(fqdn: str) -> None:
     with TemporaryDirectory() as tmp_dir, Git().custom_environment(GIT_SSH_COMMAND=SSH_EXECUTABLE):
         try:
             repo = Repo.clone_from(REPOSITORY_BASE_URL, tmp_dir, branch=REPOSITORY_BRANCH)
-            repo.config_writer().set_value("user", "name", GIT_USERNAME).release()
             domain, subdomain = _get_domain_and_subdomain_from_fqdn(fqdn)
             filename = FILENAME_TEMPLATE.format(domain=domain)
             dns_record_file = Path(f"{repo.working_tree_dir}/{filename}")
