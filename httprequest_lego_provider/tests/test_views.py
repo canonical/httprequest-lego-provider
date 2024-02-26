@@ -106,7 +106,7 @@ def test_post_present_when_logged_in_and_permission(
             format="json",
             headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
         )
-        mocked_dns_write.assert_called_once_with(domain_user_permission.domain, value)
+        mocked_dns_write.assert_called_once_with(domain_user_permission.domain.fqdn, value)
 
         assert response.status_code == 204
 
@@ -209,7 +209,7 @@ def test_post_cleanup_when_logged_in_and_permission(
             format="json",
             headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
         )
-        mocked_dns_remove.assert_called_once_with(domain_user_permission.domain)
+        mocked_dns_remove.assert_called_once_with(domain_user_permission.domain.fqdn)
 
         assert response.status_code == 204
 

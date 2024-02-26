@@ -9,16 +9,15 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import List, Tuple
 
-from git import Git, GitCommandError, Repo
+from git import GitCommandError, Repo
 
-from .settings import GIT_REPO_URL, GIT_SSH_KEY
+from .settings import GIT_REPO_URL
 
 FILENAME_TEMPLATE = "{domain}.domain"
 SPLIT_GIT_REPO_URL = GIT_REPO_URL.split("@")
 REPOSITORY_BASE_URL = "@".join(SPLIT_GIT_REPO_URL[:2])
 REPOSITORY_BRANCH = SPLIT_GIT_REPO_URL[2] if len(SPLIT_GIT_REPO_URL) > 2 else None
 RECORD_CONTENT = "{record} 600 IN TXT \042{value}\042\n"
-SSH_EXECUTABLE = f"echo ${GIT_SSH_KEY} | ssh -i /dev/stdin"
 
 
 class DnsSourceUpdateError(Exception):
@@ -85,7 +84,7 @@ def write_dns_record(fqdn: str, value: str) -> None:
     Raises:
         DnsSourceUpdateError: if an error while updating the repository occurs.
     """
-    with TemporaryDirectory() as tmp_dir, Git().custom_environment(GIT_SSH_COMMAND=SSH_EXECUTABLE):
+    with TemporaryDirectory() as tmp_dir:
         try:
             repo = Repo.clone_from(REPOSITORY_BASE_URL, tmp_dir, branch=REPOSITORY_BRANCH)
             domain, subdomain = _get_domain_and_subdomain_from_fqdn(fqdn)
@@ -113,7 +112,7 @@ def remove_dns_record(fqdn: str) -> None:
     Raises:
         DnsSourceUpdateError: if an error while updating the repository occurs.
     """
-    with TemporaryDirectory() as tmp_dir, Git().custom_environment(GIT_SSH_COMMAND=SSH_EXECUTABLE):
+    with TemporaryDirectory() as tmp_dir:
         try:
             repo = Repo.clone_from(REPOSITORY_BASE_URL, tmp_dir, branch=REPOSITORY_BRANCH)
             domain, subdomain = _get_domain_and_subdomain_from_fqdn(fqdn)

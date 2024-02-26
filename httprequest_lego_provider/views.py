@@ -37,7 +37,7 @@ def handle_present(request: HttpRequest) -> Optional[HttpResponse]:
         domain = Domain.objects.get(fqdn=fqdn)
         value = form.cleaned_data["value"]
         if DomainUserPermission.objects.filter(user=user, domain=domain):
-            write_dns_record(domain, value)
+            write_dns_record(domain.fqdn, value)
             return HttpResponse(status=204)
     except Domain.DoesNotExist:
         pass
@@ -65,7 +65,7 @@ def handle_cleanup(request: HttpRequest) -> Optional[HttpResponse]:
     try:
         domain = Domain.objects.get(fqdn=fqdn)
         if DomainUserPermission.objects.filter(user=user, domain=domain):
-            remove_dns_record(domain)
+            remove_dns_record(domain.fqdn)
             return HttpResponse(status=204)
     except Domain.DoesNotExist:
         pass
