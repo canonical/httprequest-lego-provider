@@ -28,7 +28,7 @@ def parse_repository_url(repository_url: str) -> Tuple[str, str, str | None]:
         repository_url: the repository's connection string.
 
     Returns:
-        the repository user.
+        the repository user, url and branch.
     """
     splitted_url = repository_url.split("@")
     user = splitted_url[0].split("//")[1]
