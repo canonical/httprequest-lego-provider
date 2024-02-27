@@ -21,7 +21,7 @@ class DnsSourceUpdateError(Exception):
     """Exception for DNS update errors."""
 
 
-def _parse_repository_url(repository_url: str) -> Tuple[str | None, str, str | None]:
+def _parse_repository_url(repository_url: str) -> Tuple[str, str, str | None]:
     """Get the parsed connection details from the repository connection string.
 
     Args:
