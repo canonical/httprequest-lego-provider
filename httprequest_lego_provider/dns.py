@@ -16,6 +16,7 @@ from .settings import GIT_REPO_URL
 FILENAME_TEMPLATE = "{domain}.domain"
 SPLIT_GIT_REPO_URL = GIT_REPO_URL.split("@")
 REPOSITORY_BASE_URL = "@".join(SPLIT_GIT_REPO_URL[:2])
+REPOSITORY_USER = SPLIT_GIT_REPO_URL[0].split("//")[1]
 REPOSITORY_BRANCH = SPLIT_GIT_REPO_URL[2] if len(SPLIT_GIT_REPO_URL) > 2 else None
 RECORD_CONTENT = "{record} 600 IN TXT \042{value}\042\n"
 
@@ -87,6 +88,7 @@ def write_dns_record(fqdn: str, value: str) -> None:
     with TemporaryDirectory() as tmp_dir:
         try:
             repo = Repo.clone_from(REPOSITORY_BASE_URL, tmp_dir, branch=REPOSITORY_BRANCH)
+            repo.config_writer().set_value("user", "name", REPOSITORY_USER).release()
             domain, subdomain = _get_domain_and_subdomain_from_fqdn(fqdn)
             filename = FILENAME_TEMPLATE.format(domain=domain)
             dns_record_file = Path(f"{repo.working_tree_dir}/{filename}")
@@ -115,6 +117,7 @@ def remove_dns_record(fqdn: str) -> None:
     with TemporaryDirectory() as tmp_dir:
         try:
             repo = Repo.clone_from(REPOSITORY_BASE_URL, tmp_dir, branch=REPOSITORY_BRANCH)
+            repo.config_writer().set_value("user", "name", REPOSITORY_USER).release()
             domain, subdomain = _get_domain_and_subdomain_from_fqdn(fqdn)
             filename = FILENAME_TEMPLATE.format(domain=domain)
             dns_record_file = Path(f"{repo.working_tree_dir}/{filename}")
