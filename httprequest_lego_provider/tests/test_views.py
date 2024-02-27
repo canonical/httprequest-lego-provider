@@ -112,6 +112,28 @@ def test_post_present_when_logged_in_and_permission(
 
 
 @pytest.mark.django_db
+def test_post_present_when_logged_in_and_permission_with_trailing_dor(
+    client: Client, user_auth_token: str, domain_user_permission: DomainUserPermission
+):
+    """
+    arrange: mock the write_dns_recod method, log in a user and give him permissions on a FQDN.
+    act: submit a POST request for the present URL containing the fqdn above.
+    assert: a 204 is returned.
+    """
+    with patch("httprequest_lego_provider.views.write_dns_record") as mocked_dns_write:
+        value = secrets.token_hex()
+        response = client.post(
+            "/present",
+            data={"fqdn": f"{domain_user_permission.domain.fqdn}.", "value": value},
+            format="json",
+            headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
+        )
+        mocked_dns_write.assert_called_once_with(domain_user_permission.domain.fqdn, value)
+
+        assert response.status_code == 204
+
+
+@pytest.mark.django_db
 def test_post_present_when_logged_in_and_fqdn_invalid(client: Client, user_auth_token: str):
     """
     arrange: mock the write_dns_recod method and log in a user.
@@ -206,6 +228,28 @@ def test_post_cleanup_when_logged_in_and_permission(
         response = client.post(
             "/cleanup",
             data={"fqdn": domain_user_permission.domain.fqdn, "value": value},
+            format="json",
+            headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
+        )
+        mocked_dns_remove.assert_called_once_with(domain_user_permission.domain.fqdn)
+
+        assert response.status_code == 204
+
+
+@pytest.mark.django_db
+def test_post_cleanup_when_logged_in_and_permission_with_trailing_dot(
+    client: Client, user_auth_token: str, domain_user_permission: DomainUserPermission
+):
+    """
+    arrange: mock the dns module, log in a user and give him permissions on a FQDN.
+    act: submit a POST request for the cleanup URL containing the fqdn above.
+    assert: a 200 is returned.
+    """
+    with patch("httprequest_lego_provider.views.remove_dns_record") as mocked_dns_remove:
+        value = secrets.token_hex()
+        response = client.post(
+            "/cleanup",
+            data={"fqdn": f"{domain_user_permission.domain.fqdn}.", "value": value},
             format="json",
             headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
         )

@@ -46,7 +46,7 @@ def is_fqdn_compliant(fqdn: str) -> bool:
 class FQDNField(CharField):
     """FQDN field class."""
 
-    def validate(self, value):
+    def validate(self, value) -> None:
         """Check if value consists only of a valid FQDNs prefixed by '_acme-challenge.'.
 
         Args:
@@ -61,6 +61,17 @@ class FQDNField(CharField):
             raise ValidationError(
                 message="Please provide a valid FQDN", code="invalid", params={"value": value}
             )
+
+    def to_python(self, value) -> str:
+        """Remove the trailing dot from the FQDN if present.
+
+        Args:
+            value: field value.
+
+        Returns:
+            the FQDN without a trailing dot.
+        """
+        return value.rstrip(".")
 
 
 class PresentForm(Form):
