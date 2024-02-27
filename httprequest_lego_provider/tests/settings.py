@@ -30,3 +30,5 @@ DATABASES = {
         "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
     }
 }
+
+GIT_REPO_URL = "git+ssh://user@git.launchpad.net/repo@lego"
