@@ -33,7 +33,7 @@ def _parse_repository_url(repository_url: str) -> Tuple[str | None, str, str | N
     splitted_url = repository_url.split("@")
     user = splitted_url[0].split("//")[1]
     base_url = "@".join(splitted_url[:2])
-    branch = splitted_url[2]
+    branch = splitted_url[2] if len(splitted_url) > 2 else None
     return user, base_url, branch
 
 
