@@ -21,7 +21,7 @@ class DnsSourceUpdateError(Exception):
     """Exception for DNS update errors."""
 
 
-def _parse_repository_url(repository_url: str) -> Tuple[str, str, str | None]:
+def parse_repository_url(repository_url: str) -> Tuple[str, str, str | None]:
     """Get the parsed connection details from the repository connection string.
 
     Args:
@@ -97,7 +97,7 @@ def write_dns_record(fqdn: str, value: str) -> None:
     Raises:
         DnsSourceUpdateError: if an error while updating the repository occurs.
     """
-    user, base_url, branch = _parse_repository_url(GIT_REPO_URL)
+    user, base_url, branch = parse_repository_url(GIT_REPO_URL)
     with TemporaryDirectory() as tmp_dir:
         try:
             repo = Repo.clone_from(base_url, tmp_dir, branch=branch)
@@ -129,7 +129,7 @@ def remove_dns_record(fqdn: str) -> None:
     Raises:
         DnsSourceUpdateError: if an error while updating the repository occurs.
     """
-    user, base_url, branch = _parse_repository_url(GIT_REPO_URL)
+    user, base_url, branch = parse_repository_url(GIT_REPO_URL)
     with TemporaryDirectory() as tmp_dir:
         try:
             repo = Repo.clone_from(base_url, tmp_dir, branch=branch)
