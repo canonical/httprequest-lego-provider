@@ -16,6 +16,7 @@ exclude = "httprequest_lego_provider/migrations"
 [tool.coverage.report]
 fail_under = 100
 show_missing = true
+omit = ["httprequest_lego_provider/settings.py"]
 
 # Linting tools configuration
 [tool.flake8]

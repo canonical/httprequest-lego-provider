@@ -10,8 +10,7 @@ from tempfile import TemporaryDirectory
 from typing import List, Tuple
 
 from git import GitCommandError, Repo
-
-from .settings import GIT_REPO_URL
+from settings import GIT_REPO_URL
 
 FILENAME_TEMPLATE = "{domain}.domain"
 SPLIT_GIT_REPO_URL = GIT_REPO_URL.split("@")
