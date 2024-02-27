@@ -10,12 +10,17 @@ from tempfile import TemporaryDirectory
 from typing import List, Tuple
 
 from git import GitCommandError, Repo
-from settings import GIT_REPO_URL
+
+from .settings import GIT_REPO_URL
 
 FILENAME_TEMPLATE = "{domain}.domain"
 SPLIT_GIT_REPO_URL = GIT_REPO_URL.split("@")
 REPOSITORY_BASE_URL = "@".join(SPLIT_GIT_REPO_URL[:2])
-REPOSITORY_USER = SPLIT_GIT_REPO_URL[0].split("//")[1]
+REPOSITORY_USER = (
+    SPLIT_GIT_REPO_URL[0].split("//")[1]
+    if SPLIT_GIT_REPO_URL and len(SPLIT_GIT_REPO_URL[0].split("//")) > 2
+    else None
+)
 REPOSITORY_BRANCH = SPLIT_GIT_REPO_URL[2] if len(SPLIT_GIT_REPO_URL) > 2 else None
 RECORD_CONTENT = "{record} 600 IN TXT \042{value}\042\n"
 
