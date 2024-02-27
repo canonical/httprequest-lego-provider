@@ -14,19 +14,27 @@ from git import GitCommandError, Repo
 from .settings import GIT_REPO_URL
 
 FILENAME_TEMPLATE = "{domain}.domain"
-SPLIT_GIT_REPO_URL = GIT_REPO_URL.split("@")
-REPOSITORY_BASE_URL = "@".join(SPLIT_GIT_REPO_URL[:2])
-REPOSITORY_USER = (
-    SPLIT_GIT_REPO_URL[0].split("//")[1]
-    if SPLIT_GIT_REPO_URL and len(SPLIT_GIT_REPO_URL[0].split("//")) > 2
-    else None
-)
-REPOSITORY_BRANCH = SPLIT_GIT_REPO_URL[2] if len(SPLIT_GIT_REPO_URL) > 2 else None
 RECORD_CONTENT = "{record} 600 IN TXT \042{value}\042\n"
 
 
 class DnsSourceUpdateError(Exception):
     """Exception for DNS update errors."""
+
+
+def _parse_repository_url(repository_url: str) -> Tuple[str | None, str, str | None]:
+    """Get the parsed connection details from the repository connection string.
+
+    Args:
+        repository_url: the repository's connection string.
+
+    Returns:
+        the repository user.
+    """
+    splitted_url = repository_url.split("@")
+    user = splitted_url[0].split("//")[1]
+    base_url = "@".join(splitted_url[:2])
+    branch = splitted_url[2]
+    return user, base_url, branch
 
 
 def _get_domain_and_subdomain_from_fqdn(fqdn: str) -> Tuple[str, str]:
@@ -89,10 +97,13 @@ def write_dns_record(fqdn: str, value: str) -> None:
     Raises:
         DnsSourceUpdateError: if an error while updating the repository occurs.
     """
+    user, base_url, branch = _parse_repository_url(GIT_REPO_URL)
     with TemporaryDirectory() as tmp_dir:
         try:
-            repo = Repo.clone_from(REPOSITORY_BASE_URL, tmp_dir, branch=REPOSITORY_BRANCH)
-            repo.config_writer().set_value("user", "name", REPOSITORY_USER).release()
+            repo = Repo.clone_from(base_url, tmp_dir, branch=branch)
+            config_writer = repo.config_writer()
+            config_writer.set_value("user", "name", user)
+            config_writer.release()
             domain, subdomain = _get_domain_and_subdomain_from_fqdn(fqdn)
             filename = FILENAME_TEMPLATE.format(domain=domain)
             dns_record_file = Path(f"{repo.working_tree_dir}/{filename}")
@@ -118,10 +129,13 @@ def remove_dns_record(fqdn: str) -> None:
     Raises:
         DnsSourceUpdateError: if an error while updating the repository occurs.
     """
+    user, base_url, branch = _parse_repository_url(GIT_REPO_URL)
     with TemporaryDirectory() as tmp_dir:
         try:
-            repo = Repo.clone_from(REPOSITORY_BASE_URL, tmp_dir, branch=REPOSITORY_BRANCH)
-            repo.config_writer().set_value("user", "name", REPOSITORY_USER).release()
+            repo = Repo.clone_from(base_url, tmp_dir, branch=branch)
+            config_writer = repo.config_writer()
+            config_writer.set_value("user", "name", user)
+            config_writer.release()
             domain, subdomain = _get_domain_and_subdomain_from_fqdn(fqdn)
             filename = FILENAME_TEMPLATE.format(domain=domain)
             dns_record_file = Path(f"{repo.working_tree_dir}/{filename}")
