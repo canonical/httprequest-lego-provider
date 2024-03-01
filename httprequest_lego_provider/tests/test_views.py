@@ -1,6 +1,9 @@
 # Copyright 2024 Canonical Ltd.
 # See LICENSE file for licensing details.
 """Unit tests for the views module."""
+
+# pylint:disable=imported-auth-user
+
 import base64
 import json
 import secrets
