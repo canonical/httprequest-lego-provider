@@ -17,15 +17,18 @@ logger = logging.getLogger(__name__)
 
 CREATE_OR_UPDATE_USER_TEMPLATE = (
     "from django.contrib.auth.models import User;"
-    "User.objects.update_or_create(username='{username}', password='{password}')"
+    "user, _ = User.objects.update_or_create(username='{username}', password='{password}');"
+    "user.save()"
 )
 GRANT_DOMAIN_USER_PERMISSION_TEMPLATE = (
     "from django.contrib.auth.models import User;"
     "from httprequest_lego_provider.models import Domain;"
     "from httprequest_lego_provider.models import DomainUserPermission;"
     "user = User.objects.get(username='{username}');"
-    "domain, _ = Domain.objects.get_or_create(fqdn='_acme-challenge.{domain}')"
-    "DomainUserPermission.objects.get_or_create(domain=domain, user=user)"
+    "domain, _ = Domain.objects.get_or_create(fqdn='_acme-challenge.{domain}');"
+    "domain.save();"
+    "dup, _ = DomainUserPermission.objects.get_or_create(domain=domain, user=user);"
+    "dup.save()"
 )
 REVOKE_DOMAIN_USER_PERMISSION_TEMPLATE = (
     "from django.contrib.auth.models import User;"
@@ -33,7 +36,8 @@ REVOKE_DOMAIN_USER_PERMISSION_TEMPLATE = (
     "from httprequest_lego_provider.models import DomainUserPermission;"
     "user = User.objects.get(username='{username}');"
     "domain = Domain.objects.get(fqdn='_acme-challenge.{domain}');"
-    "DomainUserPermission.objects.filter(domain=domain, user=user).delete()"
+    "dup, _ = DomainUserPermission.objects.filter(domain=domain, user=user).delete();"
+    "dup.save()"
 )
 LIST_DOMAINS_TEMPLATE = (
     "from django.contrib.auth.models import User;"
@@ -91,14 +95,14 @@ class Observer(ops.Object):
         if not container.can_connect() or not self.charm._databases.is_ready():
             raise NotReadyError("Container or database not ready.")
         process = container.exec(
-            ["python3", "manage.py", "shell" f'--command="{script}"'],
-            working_dir=self.charm._BASE_DIR / "app",
+            ["python3", "manage.py", "shell", f'--command="{script}"'],
+            working_dir=str(self.charm._BASE_DIR / "app"),
             environment=self.charm.gen_env(),
         )
         try:
             stdout, stderr = process.wait_output()
         except ops.pebble.ExecError as ex:
-            logger.exception("Action failed: %s", ex.stdout)
+            logger.exception("Action %s failed: %s", ex.command, ex.stdout)
             raise
         return stdout, stderr
 
@@ -129,7 +133,7 @@ class Observer(ops.Object):
         domains = event.params["domains"].split(",")
         for domain in domains:
             script = GRANT_DOMAIN_USER_PERMISSION_TEMPLATE.format(
-                username=username, domains=domain
+                username=username, domain=domain
             )
             try:
                 self._execute_script(script)
@@ -149,7 +153,7 @@ class Observer(ops.Object):
         domains = event.params["domains"].split(",")
         for domain in domains:
             script = REVOKE_DOMAIN_USER_PERMISSION_TEMPLATE.format(
-                username=username, domains=domain
+                username=username, domain=domain
             )
             try:
                 self._execute_script(script)
