@@ -102,7 +102,7 @@ class Observer(ops.Object):
         try:
             stdout, stderr = process.wait_output()
         except ops.pebble.ExecError as ex:
-            logger.exception("Action %s failed: %s", ex.command, ex.stdout)
+            logger.exception("Action %s failed: %s %s", ex.command, ex.stdout, ex.stderr)
             raise
         return stdout, stderr
 
