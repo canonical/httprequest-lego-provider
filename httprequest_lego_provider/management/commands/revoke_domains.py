@@ -51,4 +51,4 @@ class Command(BaseCommand):
             domain, _ = Domain.objects.get_or_create(fqdn=f"{FQDN_PREFIX}{domain_name}")
             DomainUserPermission.objects.filter(domain=domain, user=user).delete()
 
-        self.stdout.write(self.style.SUCCESS(f'Revoked "{domains}" for "{username}"'))
+        self.stdout.write(self.style.SUCCESS(f'Revoked "{", ".join(domains)}" for "{username}"'))

@@ -49,4 +49,4 @@ class Command(BaseCommand):
             domain, _ = Domain.objects.get_or_create(fqdn=f"{FQDN_PREFIX}{domain_name}")
             DomainUserPermission.objects.get_or_create(domain=domain, user=user)
 
-        self.stdout.write(self.style.SUCCESS(f'Granted "{domains}" for "{username}"'))
+        self.stdout.write(self.style.SUCCESS(f'Granted "{", ".join(domains)}" for "{username}"'))

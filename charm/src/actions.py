@@ -85,8 +85,8 @@ class Observer(ops.Object):
             event: The event fired by the action.
         """
         username = event.params["username"]
-        domains = " ".join(event.params["domains"].split(","))
-        self._execute_command(["allow_domains", username, domains], event)
+        domains = event.params["domains"].split(",")
+        self._execute_command(["allow_domains", username] + domains, event)
 
     def _revoke_domains(self, event: ops.ActionEvent) -> None:
         """Handle the allow-domains action.
@@ -95,8 +95,8 @@ class Observer(ops.Object):
             event: The event fired by the action.
         """
         username = event.params["username"]
-        domains = " ".join(event.params["domains"].split(","))
-        self._execute_command(["revoke_domains", username, domains], event)
+        domains = event.params["domains"].split(",")
+        self._execute_command(["revoke_domains", username] + domains, event)
 
     def _list_domains(self, event: ops.ActionEvent) -> None:
         """Handle the allow-domains action.

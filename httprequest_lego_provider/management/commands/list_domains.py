@@ -44,4 +44,4 @@ class Command(BaseCommand):
             raise CommandError(f'User "{username}" does not exist') from exc
         dups = DomainUserPermission.objects.filter(user=user)
 
-        self.stdout.write(self.style.SUCCESS([dup.domain.fqdn for dup in dups]))
+        self.stdout.write(self.style.SUCCESS(", ".join([dup.domain.fqdn for dup in dups])))
