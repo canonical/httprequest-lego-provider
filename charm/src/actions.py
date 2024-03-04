@@ -27,7 +27,6 @@ class Observer(ops.Object):
 
         Args:
             charm: The parent charm to attach the observer to.
-            state: The Jenkins charm state.
         """
         super().__init__(charm, "actions-observer")
         self.charm = charm
