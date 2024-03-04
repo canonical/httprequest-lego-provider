@@ -7,6 +7,7 @@
 import pytest
 from django.contrib.auth.models import User
 from django.core.management import call_command
+from django.core.management.base import CommandError
 
 from httprequest_lego_provider.forms import FQDN_PREFIX
 from httprequest_lego_provider.models import DomainUserPermission
@@ -23,3 +24,14 @@ def test_allow_domains(user: User, fqdns: list[str]):
 
     dups = DomainUserPermission.objects.filter(user=user)
     assert [dup.domain.fqdn for dup in dups] == [f"{FQDN_PREFIX}{fqdn}" for fqdn in fqdns]
+
+
+@pytest.mark.django_db
+def test_allow_domains_raises_exception(fqdns: list[str]):
+    """
+    arrange: do nothing.
+    act: call the allow_domains command for a non existing user.
+    assert: a CommandError exception is raised.
+    """
+    with pytest.raises(CommandError):
+        call_command("allow_domains", "non-existing-user", *fqdns)

@@ -6,6 +6,7 @@ from io import StringIO
 
 import pytest
 from django.core.management import call_command
+from django.core.management.base import CommandError
 
 from httprequest_lego_provider.models import DomainUserPermission
 
@@ -21,3 +22,14 @@ def test_list_domains(domain_user_permissions: list[DomainUserPermission]):
     call_command("list_domains", domain_user_permissions[0].user.username, stdout=out)
     print(out.getvalue())
     assert out.getvalue() == [dup.domain.fqdn for dup in domain_user_permissions]
+
+
+@pytest.mark.django_db
+def test_list_domains_raises_exception(fqdns: list[str]):
+    """
+    arrange: do nothing.
+    act: call the list_domains command for a non existing user.
+    assert: a CommandError exception is raised.
+    """
+    with pytest.raises(CommandError):
+        call_command("allow_domains", "non-existing-user", *fqdns)
