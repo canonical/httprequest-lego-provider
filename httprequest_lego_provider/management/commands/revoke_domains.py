@@ -5,7 +5,10 @@
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand, CommandError
 
+from httprequest_lego_provider.forms import FQDN_PREFIX
 from httprequest_lego_provider.models import Domain, DomainUserPermission
+
+# pylint:disable=duplicate-code
 
 
 class Command(BaseCommand):
@@ -43,7 +46,7 @@ class Command(BaseCommand):
         except User.DoesNotExist as exc:
             raise CommandError(f'User "{username}" does not exist') from exc
         for domain_name in domains:
-            domain, _ = Domain.objects.get_or_create(fqdn=f"_acme-challenge.{domain_name}")
+            domain, _ = Domain.objects.get_or_create(fqdn=f"{FQDN_PREFIX}{domain_name}")
             DomainUserPermission.objects.filter(domain=domain, user=user).delete()
 
         self.stdout.write(self.style.SUCCESS(f'Revoked "{domains}" for "{username}"'))

@@ -1,6 +1,6 @@
 """Allow domains module."""
 
-# pylint:disable=imported-auth-user
+# pylint:disable=duplicate-code,imported-auth-user
 
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand, CommandError
