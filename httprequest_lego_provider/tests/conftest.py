@@ -70,13 +70,13 @@ def admin_user_auth_token_fixture(
 @pytest.fixture(scope="module", name="fqdn")
 def fqdn_fixture() -> str:
     """Provide a valid FQDN."""
-    return f"{FQDN_PREFIX}example.com"
+    return "example.com"
 
 
 @pytest.fixture(scope="function", name="domain")
 def domain_fixture(fqdn: str) -> Domain:
     """Provide a valid domain."""
-    return Domain.objects.create(fqdn=fqdn)
+    return Domain.objects.create(fqdn=f"{FQDN_PREFIX}{fqdn}")
 
 
 @pytest.fixture(scope="function", name="domain_user_permission")

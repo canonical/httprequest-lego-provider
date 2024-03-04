@@ -63,7 +63,6 @@ def test_write_dns_record(
         "sïte1 600 IN TXT \042sometoken\042\n"
         "site3 600 IN TXT \042sometoken\042\n"
     )
-
     write_dns_record(fqdn, token)
 
     repo_patch.assert_called_once_with("git+ssh://user@git.server/repo_name", ANY, branch="lego")
