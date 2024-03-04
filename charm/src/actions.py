@@ -20,7 +20,7 @@ class NotReadyError(Exception):
 
 
 class Observer(ops.Object):
-    """Jenkins-k8s charm actions observer."""
+    """Charm actions observer."""
 
     def __init__(self, charm: xiilib.django.Charm):
         """Initialize the observer and register actions handlers.
