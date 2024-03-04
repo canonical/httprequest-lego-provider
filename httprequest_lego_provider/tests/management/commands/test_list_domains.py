@@ -32,4 +32,4 @@ def test_list_domains_raises_exception(fqdns: list[str]):
     assert: a CommandError exception is raised.
     """
     with pytest.raises(CommandError):
-        call_command("allow_domains", "non-existing-user", *fqdns)
+        call_command("list_domains", "non-existing-user")
