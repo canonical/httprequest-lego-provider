@@ -9,7 +9,7 @@ from httprequest_lego_provider.models import DomainUserPermission
 
 
 @pytest.mark.django_db
-def test_allow_domains(domain_user_permissions: list[DomainUserPermission]):
+def test_revoke_domains(domain_user_permissions: list[DomainUserPermission]):
     """
     arrange: given a user.
     act: call the revoke_domains command.
