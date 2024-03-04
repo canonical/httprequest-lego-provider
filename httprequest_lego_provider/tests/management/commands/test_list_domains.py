@@ -20,8 +20,8 @@ def test_list_domains(domain_user_permissions: list[DomainUserPermission]):
     """
     out = StringIO()
     call_command("list_domains", domain_user_permissions[0].user.username, stdout=out)
-    print(out.getvalue())
-    assert out.getvalue() == [dup.domain.fqdn for dup in domain_user_permissions]
+    for dup in domain_user_permissions:
+        assert dup.domain.fqdn in out.getvalue()
 
 
 @pytest.mark.django_db

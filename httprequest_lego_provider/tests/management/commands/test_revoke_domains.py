@@ -23,7 +23,7 @@ def test_revoke_domains(domain_user_permissions: list[DomainUserPermission]):
     call_command("revoke_domains", domain_user_permissions[0].user.username, *revoke_fqdns)
 
     dups = DomainUserPermission.objects.filter(user=domain_user_permissions[0].user)
-    assert [dup.domain.fqdn for dup in dups] == [f"{FQDN_PREFIX}{fqdn}" for fqdn in allowed_fqdns]
+    assert [dup.domain.fqdn for dup in dups] == allowed_fqdns
 
 
 @pytest.mark.django_db
