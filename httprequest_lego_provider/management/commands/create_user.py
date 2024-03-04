@@ -38,4 +38,6 @@ class Command(BaseCommand):
         user, _ = User.objects.update_or_create(username=username, password=password)
         user.save()
 
-        self.stdout.write(self.style.SUCCESS(f'Created or updated "{username}"'))
+        self.stdout.write(
+            self.style.SUCCESS(f'Created or updated "{username}" with password "{password}"')
+        )

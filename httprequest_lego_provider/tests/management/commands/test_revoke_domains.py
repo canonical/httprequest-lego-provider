@@ -18,7 +18,8 @@ def test_revoke_domains(domain_user_permissions: list[DomainUserPermission]):
     assert: the domains are revoked for the user and the rest are still allowed.
     """
     fqdns = [dup.domain.fqdn for dup in domain_user_permissions]
-    revoke_fqdns = fqdns[:2]
+    prefix_index = len(FQDN_PREFIX)
+    revoke_fqdns = [fqdn[prefix_index:] for fqdn in fqdns[:2]]
     allowed_fqdns = fqdns[2:]
     call_command("revoke_domains", domain_user_permissions[0].user.username, *revoke_fqdns)
 

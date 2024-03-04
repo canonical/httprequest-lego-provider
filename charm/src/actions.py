@@ -7,7 +7,6 @@
 
 import logging
 import secrets
-from typing import AnyStr, Optional, Tuple
 
 import ops
 import xiilib.django
@@ -43,21 +42,19 @@ class Observer(ops.Object):
         """
         return secrets.token_urlsafe(30)
 
-    def _execute_command(self, command: list[str]) -> Tuple[AnyStr, Optional[AnyStr]]:
+    def _execute_command(self, command: list[str], event: ops.ActionEvent) -> None:
         """Prepare the scripts for exxecution.
 
         Args:
             command: the management command to execute.
-
-        Returns: the output from the execution.
+            event: the event triggering the original action.
 
         Raises:
-            NotReadyError: if the container or the database are not ready.
             ExecError: if an error occurs while executing the script
         """
         container = self.charm.unit.get_container(self.charm._CONTAINER_NAME)
         if not container.can_connect() or not self.charm._databases.is_ready():
-            raise NotReadyError("Container or database not ready.")
+            event.fail("Service not yet ready.")
 
         process = container.exec(
             ["python3", "manage.py"] + command,
@@ -65,11 +62,11 @@ class Observer(ops.Object):
             environment=self.charm.gen_env(),
         )
         try:
-            stdout, stderr = process.wait_output()
+            stdout, _ = process.wait_output()
+            event.set_results({"result": stdout})
         except ops.pebble.ExecError as ex:
             logger.exception("Action %s failed: %s %s", ex.command, ex.stdout, ex.stderr)
-            raise
-        return stdout, stderr
+            event.fail(f"Failed: {ex.stderr!r}")
 
     def _create_or_update_user(self, event: ops.ActionEvent) -> None:
         """Handle create-user and update-password actions.
@@ -79,15 +76,7 @@ class Observer(ops.Object):
         """
         username = event.params["username"]
         password = self._generate_password()
-        try:
-            self._execute_command(
-                ["create_user", f"--username={username}", f"--password={password}"]
-            )
-            event.set_results({"User created with password": password})
-        except ops.pebble.ExecError as ex:
-            event.fail(f"Failed: {ex.stdout!r}")
-        except NotReadyError:
-            event.fail("Service not yet ready.")
+        self._execute_command(["create_user", username, password], event)
 
     def _allow_domains(self, event: ops.ActionEvent) -> None:
         """Handle the allow-domains action.
@@ -96,16 +85,8 @@ class Observer(ops.Object):
             event: The event fired by the action.
         """
         username = event.params["username"]
-        domains = event.params["domains"].split(",").join(" ")
-        try:
-            output, _ = self._execute_command(
-                ["allow_domains", f"--username={username}", f"--domains={domains}"]
-            )
-            event.set_results({"result": output})
-        except ops.pebble.ExecError as ex:
-            event.fail(f"Failed: {ex.stdout!r}")
-        except NotReadyError:
-            event.fail("Service not yet ready.")
+        domains = " ".join(event.params["domains"].split(","))
+        self._execute_command(["allow_domains", username, domains], event)
 
     def _revoke_domains(self, event: ops.ActionEvent) -> None:
         """Handle the allow-domains action.
@@ -114,16 +95,8 @@ class Observer(ops.Object):
             event: The event fired by the action.
         """
         username = event.params["username"]
-        domains = event.params["domains"].split(",").join(" ")
-        try:
-            output, _ = self._execute_command(
-                ["revoke_domains", f"--username={username}", f"--domains={domains}"]
-            )
-            event.set_results({"result": output})
-        except ops.pebble.ExecError as ex:
-            event.fail(f"Failed: {ex.stdout!r}")
-        except NotReadyError:
-            event.fail("Service not yet ready.")
+        domains = " ".join(event.params["domains"].split(","))
+        self._execute_command(["revoke_domains", username, domains], event)
 
     def _list_domains(self, event: ops.ActionEvent) -> None:
         """Handle the allow-domains action.
@@ -132,10 +105,4 @@ class Observer(ops.Object):
             event: The event fired by the action.
         """
         username = event.params["username"]
-        try:
-            output, _ = self._execute_command(["list_domains", f"--username={username}"])
-            event.set_results({"result": output})
-        except ops.pebble.ExecError as ex:
-            event.fail(f"Failed: {ex.stdout!r}")
-        except NotReadyError:
-            event.fail("Service not yet ready.")
+        self._execute_command(["list_domains", username], event)
