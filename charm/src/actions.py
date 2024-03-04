@@ -83,7 +83,7 @@ class Observer(ops.Object):
             self._execute_command(
                 ["create_user", f"--username={username}", f"--password={password}"]
             )
-            event.set_results({"password": password})
+            event.set_results({"User created with password": password})
         except ops.pebble.ExecError as ex:
             event.fail(f"Failed: {ex.stdout!r}")
         except NotReadyError:
@@ -98,9 +98,10 @@ class Observer(ops.Object):
         username = event.params["username"]
         domains = event.params["domains"].split(",").join(" ")
         try:
-            self._execute_command(
+            output, _ = self._execute_command(
                 ["allow_domains", f"--username={username}", f"--domains={domains}"]
             )
+            event.set_results({"result": output})
         except ops.pebble.ExecError as ex:
             event.fail(f"Failed: {ex.stdout!r}")
         except NotReadyError:
@@ -115,9 +116,10 @@ class Observer(ops.Object):
         username = event.params["username"]
         domains = event.params["domains"].split(",").join(" ")
         try:
-            self._execute_command(
+            output, _ = self._execute_command(
                 ["revoke_domains", f"--username={username}", f"--domains={domains}"]
             )
+            event.set_results({"result": output})
         except ops.pebble.ExecError as ex:
             event.fail(f"Failed: {ex.stdout!r}")
         except NotReadyError:
