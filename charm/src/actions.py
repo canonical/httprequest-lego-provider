@@ -15,40 +15,6 @@ import xiilib.django
 logger = logging.getLogger(__name__)
 
 
-CREATE_OR_UPDATE_USER_TEMPLATE = (
-    "from django.contrib.auth.models import User;"
-    "user, _ = User.objects.update_or_create(username='{username}', password='{password}');"
-    "user.save()"
-)
-GRANT_DOMAIN_USER_PERMISSION_TEMPLATE = (
-    "from django.contrib.auth.models import User;"
-    "from httprequest_lego_provider.models import Domain;"
-    "from httprequest_lego_provider.models import DomainUserPermission;"
-    "user = User.objects.get(username='{username}');"
-    "domain, _ = Domain.objects.get_or_create(fqdn='_acme-challenge.{domain}');"
-    "domain.save();"
-    "dup, _ = DomainUserPermission.objects.get_or_create(domain=domain, user=user);"
-    "dup.save()"
-)
-REVOKE_DOMAIN_USER_PERMISSION_TEMPLATE = (
-    "from django.contrib.auth.models import User;"
-    "from httprequest_lego_provider.models import Domain;"
-    "from httprequest_lego_provider.models import DomainUserPermission;"
-    "user = User.objects.get(username='{username}');"
-    "domain = Domain.objects.get(fqdn='_acme-challenge.{domain}');"
-    "dup, _ = DomainUserPermission.objects.filter(domain=domain, user=user).delete();"
-    "dup.save()"
-)
-LIST_DOMAINS_TEMPLATE = (
-    "from django.contrib.auth.models import User;"
-    "from httprequest_lego_provider.models import Domain;"
-    "from httprequest_lego_provider.models import DomainUserPermission;"
-    "user = User.objects.get(username='{username}');"
-    "dups = DomainUserPermission.objects.filter(user=user);"
-    "print([dup.domain.fqdn for dup in dups])"
-)
-
-
 class NotReadyError(Exception):
     """Exception thrown when needed resources are not ready."""
 
@@ -67,7 +33,6 @@ class Observer(ops.Object):
         self.charm = charm
 
         charm.framework.observe(charm.on.create_user_action, self._create_or_update_user)
-        charm.framework.observe(charm.on.reset_password_action, self._create_or_update_user)
         charm.framework.observe(charm.on.allow_domains_action, self._allow_domains)
         charm.framework.observe(charm.on.revoke_domains_action, self._revoke_domains)
         charm.framework.observe(charm.on.list_domains_action, self._list_domains)
@@ -79,11 +44,11 @@ class Observer(ops.Object):
         """
         return secrets.token_urlsafe(30)
 
-    def _execute_script(self, script: str) -> Tuple[AnyStr, Optional[AnyStr]]:
+    def _execute_command(self, command: str) -> Tuple[AnyStr, Optional[AnyStr]]:
         """Prepare the scripts for exxecution.
 
         Args:
-            script: the script to execute.
+            command: the management command to execute.
 
         Returns: the output from the execution.
 
@@ -94,8 +59,9 @@ class Observer(ops.Object):
         container = self.charm.unit.get_container(self.charm._CONTAINER_NAME)
         if not container.can_connect() or not self.charm._databases.is_ready():
             raise NotReadyError("Container or database not ready.")
+        
         process = container.exec(
-            ["python3", "manage.py", "shell", f'--command="{script}"'],
+            ["python3", "manage.py"] + command,
             working_dir=str(self.charm._BASE_DIR / "app"),
             environment=self.charm.gen_env(),
         )
@@ -114,9 +80,8 @@ class Observer(ops.Object):
         """
         username = event.params["username"]
         password = self._generate_password()
-        script = CREATE_OR_UPDATE_USER_TEMPLATE.format(username=username, password=password)
         try:
-            self._execute_script(script)
+            self._execute_command(["create_user", f"--username={username}", f"--password={password}"])
             event.set_results({"password": password})
         except ops.pebble.ExecError as ex:
             event.fail(f"Failed: {ex.stdout!r}")
@@ -130,18 +95,13 @@ class Observer(ops.Object):
             event: The event fired by the action.
         """
         username = event.params["username"]
-        domains = event.params["domains"].split(",")
-        for domain in domains:
-            script = GRANT_DOMAIN_USER_PERMISSION_TEMPLATE.format(
-                username=username, domain=domain
-            )
-            try:
-                self._execute_script(script)
-            except ops.pebble.ExecError as ex:
-                event.fail(f"Failed: {ex.stdout!r}")
-            except NotReadyError:
-                event.fail("Service not yet ready.")
-            break
+        domains = event.params["domains"].split(",").join(" ")
+        try:
+            self._execute_command(["allow_domains", f"--username={username}", f"--domains={domains}"])
+        except ops.pebble.ExecError as ex:
+            event.fail(f"Failed: {ex.stdout!r}")
+        except NotReadyError:
+            event.fail("Service not yet ready.")
 
     def _revoke_domains(self, event: ops.ActionEvent) -> None:
         """Handle the allow-domains action.
@@ -150,19 +110,13 @@ class Observer(ops.Object):
             event: The event fired by the action.
         """
         username = event.params["username"]
-        domains = event.params["domains"].split(",")
-        for domain in domains:
-            script = REVOKE_DOMAIN_USER_PERMISSION_TEMPLATE.format(
-                username=username, domain=domain
-            )
-            try:
-                self._execute_script(script)
-            except ops.pebble.ExecError as ex:
-                event.fail(f"Failed: {ex.stdout!r}")
-                break
-            except NotReadyError:
-                event.fail("Service not yet ready.")
-                break
+        domains = event.params["domains"].split(",").join(" ")
+        try:
+            self._execute_command(["revoke_domains", f"--username={username}", f"--domains={domains}"])
+        except ops.pebble.ExecError as ex:
+            event.fail(f"Failed: {ex.stdout!r}")
+        except NotReadyError:
+            event.fail("Service not yet ready.")
 
     def _list_domains(self, event: ops.ActionEvent) -> None:
         """Handle the allow-domains action.
@@ -171,9 +125,8 @@ class Observer(ops.Object):
             event: The event fired by the action.
         """
         username = event.params["username"]
-        script = LIST_DOMAINS_TEMPLATE.format(username=username)
         try:
-            output, _ = self._execute_script(script)
+            output, _ = self._execute_command(["list_domains", f"--username={username}"])
             event.set_results({"result": output})
         except ops.pebble.ExecError as ex:
             event.fail(f"Failed: {ex.stdout!r}")

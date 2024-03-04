@@ -53,19 +53,15 @@ config:
 
 actions:
   create-user:
-      description: Create a user for the services that will be requesting the domains.
+      description: >
+        Create a user for the services that will be requesting the domains.
+        If it exists, the password will be updated.
       properties:
         username:
           description: User name to be created.
           type: string
       required:
         - username
-  reset-password:
-      description: Reset the password for a user.
-      properties:
-        username:
-          description: User name to reset the password for.
-          type: string
       required:
         - username
   allow-domains:
