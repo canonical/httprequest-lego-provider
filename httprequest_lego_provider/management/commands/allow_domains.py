@@ -1,3 +1,5 @@
+# Copyright 2024 Canonical Ltd.
+# See LICENSE file for licensing details.
 """Allow domains module."""
 
 # pylint:disable=duplicate-code,imported-auth-user
