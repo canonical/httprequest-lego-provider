@@ -70,6 +70,10 @@ actions:
         username:
           description: User name to grant access for.
           type: string
+        domains:
+          description: >
+            Comma separated list of domains to access access for.
+            The domains will be prefixed by '_acme-challenge.'
       required:
         - username
         - domains
@@ -80,7 +84,9 @@ actions:
           description: User name to revoke access for.
           type: string
         domains:
-          description: Comma separated list of domains to revoke access to.
+          description: >
+            Comma separated list of domains to revoke access to.
+            The domains will be prefixed by '_acme-challenge.'
           type: string
       required:
         - username

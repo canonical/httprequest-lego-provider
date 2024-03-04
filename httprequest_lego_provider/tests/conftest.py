@@ -88,7 +88,7 @@ def domain_user_permission_fixture(domain: Domain, user: User) -> DomainUserPerm
 @pytest.fixture(scope="module", name="fqdns")
 def fqdns_fixture() -> list[str]:
     """Provide a list of valid FQDNs."""
-    return [f"{FQDN_PREFIX}some.com", f"{FQDN_PREFIX}example2.com", f"{FQDN_PREFIX}example.es"]
+    return ["some.com", "example2.com", "example.es"]
 
 
 @pytest.fixture(scope="module", name="domains")
@@ -96,7 +96,7 @@ def domains_fixture(fqdns: list[str]) -> list[Domain]:
     """Provide a list of valid domains."""
     domains = []
     for fqdn in fqdns:
-        domain = Domain.objects.create(fqdn=fqdn)
+        domain = Domain.objects.create(fqdn=f"{FQDN_PREFIX}{fqdn}")
         domains.append(domain)
     return domains
 

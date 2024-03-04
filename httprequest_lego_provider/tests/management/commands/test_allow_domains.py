@@ -8,6 +8,7 @@ import pytest
 from django.contrib.auth.models import User
 from django.core.management import call_command
 
+from httprequest_lego_provider.forms import FQDN_PREFIX
 from httprequest_lego_provider.models import DomainUserPermission
 
 
@@ -21,4 +22,4 @@ def test_allow_domains(user: User, fqdns: list[str]):
     call_command("allow_domains", user.username, *fqdns)
 
     dups = DomainUserPermission.objects.filter(user=user)
-    assert [dup.domain.fqdn for dup in dups] == fqdns
+    assert [dup.domain.fqdn for dup in dups] == [f"{FQDN_PREFIX}{fqdn}" for fqdn in fqdns]
