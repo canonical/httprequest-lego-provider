@@ -3,7 +3,7 @@
 
 """Fixtures for unit tests."""
 
-# pylint:disable=imported-auth-user,unused-argument
+# pylint:disable=unused-argument
 
 import base64
 import secrets
@@ -68,9 +68,9 @@ def admin_user_auth_token_fixture(
 
 
 @pytest.fixture(scope="module", name="fqdn")
-def fqdn_fixture():
+def fqdn_fixture() -> str:
     """Provide a valid FQDN."""
-    yield f"{FQDN_PREFIX}example.com"
+    return f"{FQDN_PREFIX}example.com"
 
 
 @pytest.fixture(scope="function", name="domain")
@@ -81,5 +81,33 @@ def domain_fixture(fqdn: str) -> Domain:
 
 @pytest.fixture(scope="function", name="domain_user_permission")
 def domain_user_permission_fixture(domain: Domain, user: User) -> DomainUserPermission:
-    """Provide a valid domain."""
+    """Provide a valid domain user permission."""
     return DomainUserPermission.objects.create(domain=domain, user=user)
+
+
+@pytest.fixture(scope="module", name="fqdns")
+def fqdns_fixture() -> list[str]:
+    """Provide a list of valid FQDNs."""
+    return [f"{FQDN_PREFIX}some.com", f"{FQDN_PREFIX}example2.com", f"{FQDN_PREFIX}example.es"]
+
+
+@pytest.fixture(scope="module", name="domains")
+def domains_fixture(fqdns: list[str]) -> list[Domain]:
+    """Provide a list of valid domains."""
+    domains = []
+    for fqdn in fqdns:
+        domain = Domain.objects.create(fqdn=fqdn)
+        domains.append(domain)
+    return domains
+
+
+@pytest.fixture(scope="function", name="domain_user_permissions")
+def domain_user_permissions_fixture(
+    domains: list[Domain], user: User
+) -> list[DomainUserPermission]:
+    """Provide list of valid domain user permissions."""
+    dups = []
+    for domain in domains:
+        dup = DomainUserPermission.objects.create(domain=domain, user=user)
+        dups.append(dup)
+    return dups

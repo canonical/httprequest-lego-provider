@@ -1,23 +1,39 @@
+"""Create user module."""
+
+# pylint:disable=imported-auth-user
+
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
+
 class Command(BaseCommand):
-    """Command for user creation."""
+    """Command for user creation.
+
+    Attrs:
+        help: help message to display.
+    """
 
     help = "Create an user or update its password."
 
     def add_arguments(self, parser):
-        """Argument parser."""
+        """Argument parser.
+
+        Args:
+            parser: the cmd line parser.
+        """
         parser.add_argument("username", nargs=None, type=str)
         parser.add_argument("password", nargs=None, type=str)
 
     def handle(self, *args, **options):
-        """Command handler."""
+        """Command handler.
+
+        Args:
+            args: args.
+            options: options.
+        """
         username = options["username"]
         password = options["password"]
         user, _ = User.objects.update_or_create(username=username, password=password)
         user.save()
 
-        self.stdout.write(
-            self.style.SUCCESS('Successfully created or updated "%s"' % username)
-        )
+        self.stdout.write(self.style.SUCCESS(f'Created or updated "{username}"'))

@@ -44,7 +44,7 @@ class Observer(ops.Object):
         """
         return secrets.token_urlsafe(30)
 
-    def _execute_command(self, command: str) -> Tuple[AnyStr, Optional[AnyStr]]:
+    def _execute_command(self, command: list[str]) -> Tuple[AnyStr, Optional[AnyStr]]:
         """Prepare the scripts for exxecution.
 
         Args:
@@ -59,7 +59,7 @@ class Observer(ops.Object):
         container = self.charm.unit.get_container(self.charm._CONTAINER_NAME)
         if not container.can_connect() or not self.charm._databases.is_ready():
             raise NotReadyError("Container or database not ready.")
-        
+
         process = container.exec(
             ["python3", "manage.py"] + command,
             working_dir=str(self.charm._BASE_DIR / "app"),
@@ -81,7 +81,9 @@ class Observer(ops.Object):
         username = event.params["username"]
         password = self._generate_password()
         try:
-            self._execute_command(["create_user", f"--username={username}", f"--password={password}"])
+            self._execute_command(
+                ["create_user", f"--username={username}", f"--password={password}"]
+            )
             event.set_results({"password": password})
         except ops.pebble.ExecError as ex:
             event.fail(f"Failed: {ex.stdout!r}")
@@ -97,7 +99,9 @@ class Observer(ops.Object):
         username = event.params["username"]
         domains = event.params["domains"].split(",").join(" ")
         try:
-            self._execute_command(["allow_domains", f"--username={username}", f"--domains={domains}"])
+            self._execute_command(
+                ["allow_domains", f"--username={username}", f"--domains={domains}"]
+            )
         except ops.pebble.ExecError as ex:
             event.fail(f"Failed: {ex.stdout!r}")
         except NotReadyError:
@@ -112,7 +116,9 @@ class Observer(ops.Object):
         username = event.params["username"]
         domains = event.params["domains"].split(",").join(" ")
         try:
-            self._execute_command(["revoke_domains", f"--username={username}", f"--domains={domains}"])
+            self._execute_command(
+                ["revoke_domains", f"--username={username}", f"--domains={domains}"]
+            )
         except ops.pebble.ExecError as ex:
             event.fail(f"Failed: {ex.stdout!r}")
         except NotReadyError:
