@@ -2,6 +2,8 @@
 # See LICENSE file for licensing details.
 """Test settings."""
 
+# pylint:disable=wildcard-import,unused-wildcard-import
+
 import os
 import secrets
 from pathlib import Path

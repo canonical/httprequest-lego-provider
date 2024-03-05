@@ -7,8 +7,8 @@
 import logging
 import typing
 
+import actions
 import ops
-
 import xiilib.django
 
 logger = logging.getLogger(__name__)
@@ -18,6 +18,7 @@ DJANGO_USER = "_daemon_"
 DJANGO_GROUP = "_daemon_"
 KNOWN_HOSTS_PATH = "/var/lib/pebble/default/.ssh/known_hosts"
 RSA_PATH = "/var/lib/pebble/default/.ssh/id_rsa"
+
 
 class DjangoCharm(xiilib.django.Charm):
     """Flask Charm service."""
@@ -29,10 +30,11 @@ class DjangoCharm(xiilib.django.Charm):
             args: passthrough to CharmBase.
         """
         super().__init__(*args)
+        self.actions_observer = actions.Observer(self)
         self.framework.observe(self.on.collect_app_status, self._on_collect_app_status)
 
     def _on_config_changed(self, _event: ops.ConfigChangedEvent) -> None:
-        """"Config changed handler.
+        """Config changed handler.
 
         Args:
             event: the event triggering the handler.
@@ -41,7 +43,7 @@ class DjangoCharm(xiilib.django.Charm):
         super()._on_config_changed(_event)
 
     def _on_django_app_pebble_ready(self, _event: ops.PebbleReadyEvent) -> None:
-        """"Pebble ready handler.
+        """Pebble ready handler.
 
         Args:
             event: the event triggering the handler.
@@ -77,9 +79,9 @@ class DjangoCharm(xiilib.django.Charm):
             group=DJANGO_GROUP,
             permissions=0o600,
         )
-    
+
     def _on_collect_app_status(self, _: ops.CollectStatusEvent) -> None:
-        """"Handle the status changes.
+        """Handle the status changes.
 
         Args:
             event: the event triggering the handler.
@@ -92,5 +94,5 @@ class DjangoCharm(xiilib.django.Charm):
             return
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     ops.main.main(DjangoCharm)

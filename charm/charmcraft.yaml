@@ -50,3 +50,52 @@ config:
     git_ssh_key:
       type: string
       description: The private key for SSH authentication.
+
+actions:
+  create-user:
+      description: >
+        Create a user for the services that will be requesting the domains.
+        If it exists, the password will be updated.
+      properties:
+        username:
+          description: User name to be created.
+          type: string
+      required:
+        - username
+      required:
+        - username
+  allow-domains:
+      description: Grant user access to domains.
+      properties:
+        username:
+          description: User name to grant access for.
+          type: string
+        domains:
+          description: >
+            Comma separated list of domains to access access for.
+            The domains will be prefixed by '_acme-challenge.'
+      required:
+        - username
+        - domains
+  revoke-domains:
+      description: Revoke user access to domains.
+      properties:
+        username:
+          description: User name to revoke access for.
+          type: string
+        domains:
+          description: >
+            Comma separated list of domains to revoke access to.
+            The domains will be prefixed by '_acme-challenge.'
+          type: string
+      required:
+        - username
+        - domains
+  list-domains:
+      description: List the domains an user has access to.
+      properties:
+        username:
+          description: User name to query for.
+          type: string
+      required:
+        - username

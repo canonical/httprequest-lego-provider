@@ -1,6 +1,10 @@
 # Copyright 2024 Canonical Ltd.
 # See LICENSE file for licensing details.
 """Unit tests for the views module."""
+
+# imported-auth-user has to be disable as the conflicting import is needed for typing
+# pylint:disable=imported-auth-user
+
 import base64
 import json
 import secrets
@@ -61,7 +65,7 @@ def test_post_present_when_logged_in_and_no_fqdn(client: Client, user_auth_token
     value = secrets.token_hex()
     response = client.post(
         "/present",
-        data={"fqdn": fqdn, "value": value},
+        data={"fqdn": f"{FQDN_PREFIX}{fqdn}", "value": value},
         format="json",
         headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
     )
