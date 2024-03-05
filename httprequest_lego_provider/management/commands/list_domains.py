@@ -18,7 +18,7 @@ class Command(BaseCommand):
         help: help message to display.
     """
 
-    help = "Create an user or update its password."
+    help = "Create a user or update its password."
 
     def add_arguments(self, parser):
         """Argument parser.
