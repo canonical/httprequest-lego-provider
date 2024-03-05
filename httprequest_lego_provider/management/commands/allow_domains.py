@@ -13,7 +13,7 @@ from httprequest_lego_provider.models import Domain, DomainUserPermission
 
 
 class Command(BaseCommand):
-    """Command to grant access to domains to an user.
+    """Command to grant access to domains to a user.
 
     Attrs:
         help: help message to display.
