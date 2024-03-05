@@ -2,6 +2,7 @@
 # See LICENSE file for licensing details.
 """Unit tests for the create_user module."""
 
+# imported-auth-user has to be disable as the conflicting import is needed for typing
 # pylint:disable=imported-auth-user
 
 from io import StringIO

@@ -2,6 +2,7 @@
 # See LICENSE file for licensing details.
 """Revoke domains module."""
 
+# imported-auth-user has to be disable as the conflicting import is needed for typing
 # pylint:disable=imported-auth-user
 
 from django.contrib.auth.models import User

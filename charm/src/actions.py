@@ -30,7 +30,7 @@ class Observer(ops.Object):
         super().__init__(charm, "actions-observer")
         self.charm = charm
 
-        charm.framework.observe(charm.on.create_user_action, self._create_or_update_user)
+        charm.framework.observe(charm.on.create_user_action, self._create_user_action)
         charm.framework.observe(charm.on.allow_domains_action, self._allow_domains)
         charm.framework.observe(charm.on.revoke_domains_action, self._revoke_domains)
         charm.framework.observe(charm.on.list_domains_action, self._list_domains)
@@ -68,7 +68,7 @@ class Observer(ops.Object):
             logger.exception("Action %s failed: %s %s", ex.command, ex.stdout, ex.stderr)
             event.fail(f"Failed: {ex.stderr!r}")
 
-    def _create_or_update_user(self, event: ops.ActionEvent) -> None:
+    def _create_user_action(self, event: ops.ActionEvent) -> None:
         """Handle create-user and update-password actions.
 
         Args:
