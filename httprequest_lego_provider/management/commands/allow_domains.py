@@ -47,7 +47,12 @@ class Command(BaseCommand):
         except User.DoesNotExist as exc:
             raise CommandError(f'User "{username}" does not exist') from exc
         for domain_name in domains:
-            domain, _ = Domain.objects.get_or_create(fqdn=f"{FQDN_PREFIX}{domain_name}")
+            fqdn = (
+                domain_name
+                if domain_name.startswith(FQDN_PREFIX)
+                else f"{FQDN_PREFIX}{domain_name}"
+            )
+            domain, _ = Domain.objects.get_or_create(fqdn=fqdn)
             DomainUserPermission.objects.get_or_create(domain=domain, user=user)
 
         self.stdout.write(self.style.SUCCESS(f'Granted "{", ".join(domains)}" for "{username}"'))

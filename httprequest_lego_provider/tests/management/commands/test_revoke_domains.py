@@ -19,7 +19,7 @@ def test_revoke_domains(domain_user_permissions: list[DomainUserPermission]):
     """
     fqdns = [dup.domain.fqdn for dup in domain_user_permissions]
     prefix_index = len(FQDN_PREFIX)
-    revoke_fqdns = [fqdn[prefix_index:] for fqdn in fqdns[:2]]
+    revoke_fqdns = [fqdns[0][prefix_index:], fqdns[1]]
     allowed_fqdns = fqdns[2:]
     call_command("revoke_domains", domain_user_permissions[0].user.username, *revoke_fqdns)
 

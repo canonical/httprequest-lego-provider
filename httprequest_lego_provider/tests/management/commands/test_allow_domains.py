@@ -21,7 +21,9 @@ def test_allow_domains(user: User, fqdns: list[str]):
     act: call the allow_domains command.
     assert: new domains are created an associated to the user.
     """
-    call_command("allow_domains", user.username, *fqdns)
+    mixed_prefix_fqdns = fqdns.copy()
+    mixed_prefix_fqdns[0] = f"{FQDN_PREFIX}{fqdns[0]}"
+    call_command("allow_domains", user.username, *mixed_prefix_fqdns)
 
     dups = DomainUserPermission.objects.filter(user=user)
     assert [dup.domain.fqdn for dup in dups] == [f"{FQDN_PREFIX}{fqdn}" for fqdn in fqdns]
