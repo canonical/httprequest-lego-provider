@@ -14,4 +14,9 @@ Run
 
 ## Listing domains
 To query the list of allowed domains for a user, run
-`juju run --wait=5s httprequest-lego-provider/0 list-domains username=example"`.
+`juju run --wait=5s httprequest-lego-provider/0 list-domains username=example`
+and the list of domains will be returned as in
+```bash
+result: |
+  _acme-challenge.example.domain.com, _acme-challenge.example2.domain.com
+```
