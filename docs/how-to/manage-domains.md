@@ -3,10 +3,15 @@
 To manage the list of domains a user is allowed to request changes to, the following actions are available
 
 ## Allowing domains
-Run `juju run --wait=5s httprequest-lego-provider/0 allow-domains username=example domains="example.domain.com,example2.domain.com" to add domains to the list of allowed domains.
+Run
+`juju run --wait=5s httprequest-lego-provider/0 allow-domains username=example domains="example.domain.com,example2.domain.com"`
+ to add domains to the list of allowed domains.
 
 ## Revoking domains
-Run `juju run --wait=5s httprequest-lego-provider/0 revoke-domains username=example domains="example.domain.com,example2.domain.com" to remove domains to the list of allowed domains.
+Run
+`juju run --wait=5s httprequest-lego-provider/0 revoke-domains username=example domains="example.domain.com,example2.domain.com"`
+ to remove domains to the list of allowed domains.
 
 ## Listing domains
-To query the list of allowed domains for a user, run `juju run --wait=5s httprequest-lego-provider/0 list-domains username=example".
+To query the list of allowed domains for a user, run
+`juju run --wait=5s httprequest-lego-provider/0 list-domains username=example"`.
