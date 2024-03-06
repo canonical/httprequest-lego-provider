@@ -10,7 +10,7 @@ Run
 ## Revoking domains
 Run
 `juju run --wait=5s httprequest-lego-provider/0 revoke-domains username=example domains="example.domain.com,example2.domain.com"`
- to remove domains to the list of allowed domains.
+ to remove domains from the list of allowed domains.
 
 ## Listing domains
 To query the list of allowed domains for a user, run
