@@ -147,6 +147,10 @@ REST_FRAMEWORK = {
     ],
 }
 
+SIMPLE_JWT = {
+    "ROTATE_REFRESH_TOKENS": True,
+}
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
