@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+import datetime
 import json
 import os
 import urllib
@@ -148,7 +149,10 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": datetime.timedelta(days=1),
+    "REFRESH_TOKEN_LIFETIME": datetime.timedelta(days=7),
     "ROTATE_REFRESH_TOKENS": True,
+    "SIGNING_KEY": SECRET_KEY,
 }
 
 LOGGING = {
