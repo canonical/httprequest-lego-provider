@@ -2,6 +2,9 @@
 # See LICENSE file for licensing details.
 """Serializers."""
 
+# imported-auth-user has to be disabled as the import is needed for UserSerializer
+# pylint:disable=imported-auth-user
+from django.contrib.auth.models import User
 from rest_framework import serializers
 
 from .models import Domain, DomainUserPermission
@@ -35,3 +38,18 @@ class DomainUserPermissionSerializer(serializers.ModelSerializer):
 
         model = DomainUserPermission
         fields = "__all__"
+
+
+class UserSerializer(serializers.ModelSerializer):
+    """Serializer for the User objects."""
+
+    class Meta:
+        """Serializer configuration.
+
+        Attributes:
+            model: the model to serialize.
+            fields: fields to serialize.
+        """
+
+        model = User
+        fields = ["url", "username", "email", "groups"]

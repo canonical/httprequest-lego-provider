@@ -7,6 +7,9 @@
 
 from typing import Optional
 
+# imported-auth-user has to be disabled as the import is needed for UserViewSet
+# pylint:disable=imported-auth-user
+from django.contrib.auth.models import User
 from django.http import HttpRequest, HttpResponse
 from rest_framework import viewsets
 from rest_framework.decorators import api_view
@@ -15,7 +18,7 @@ from rest_framework.permissions import IsAdminUser
 from .dns import remove_dns_record, write_dns_record
 from .forms import CleanupForm, PresentForm
 from .models import Domain, DomainUserPermission
-from .serializers import DomainSerializer, DomainUserPermissionSerializer
+from .serializers import DomainSerializer, DomainUserPermissionSerializer, UserSerializer
 
 
 @api_view(["POST"])
@@ -100,4 +103,18 @@ class DomainUserPermissionViewSet(viewsets.ModelViewSet):
 
     queryset = DomainUserPermission.objects.all()
     serializer_class = DomainUserPermissionSerializer
+    permission_classes = [IsAdminUser]
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    """Views for the User.
+
+    Attributes:
+        queryset: query for the objects in the model.
+        serializer_class: class used for serialization.
+        permission_classes: list of classes to match permissions.
+    """
+
+    queryset = User.objects.all().order_by("-date_joined")
+    serializer_class = UserSerializer
     permission_classes = [IsAdminUser]

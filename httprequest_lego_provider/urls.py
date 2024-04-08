@@ -10,6 +10,7 @@ from . import views
 router = DefaultRouter()
 router.register("domains", views.DomainViewSet)
 router.register("domain-user-permissions", views.DomainUserPermissionViewSet)
+router.register("users", views.UserViewSet)
 
 urlpatterns = [
     path("cleanup", views.handle_cleanup, name="cleanup"),

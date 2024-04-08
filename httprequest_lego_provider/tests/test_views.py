@@ -453,3 +453,60 @@ def test_post_domain_user_permission_when_logged_in_as_admin_user(
 
     assert DomainUserPermission.objects.filter(user=99, domain=domain) is not None
     assert response.status_code == 201
+
+
+@pytest.mark.django_db
+def test_post_user_when_logged_in_as_non_admin_user(client: Client, user_auth_token: str):
+    """
+    arrange: log in a non-admin user.
+    act: submit a POST request for the user URL.
+    assert: a 403 is returned and the user is not inserted in the database.
+    """
+    response = client.post(
+        "/api/v1/users/",
+        data={"username": "non-existing-user"},
+        format="json",
+        headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
+    )
+
+    assert response.status_code == 403
+    with pytest.raises(User.DoesNotExist):
+        User.objects.get(username="non-existing-user")
+
+
+@pytest.mark.django_db
+def test_post_user_when_logged_in_as_admin_user(client: Client, admin_user_auth_token: str):
+    """
+    arrange: log in an admin user.
+    act: submit a POST request for the user URL.
+    assert: a 201 is returned and the user is inserted in the database.
+    """
+    response = client.post(
+        "/api/v1/users/",
+        data={"username": "new-user"},
+        format="json",
+        headers={"AUTHORIZATION": f"Basic {admin_user_auth_token}"},
+    )
+
+    assert response.status_code == 201
+    assert User.objects.get(username="new-user") is not None
+
+
+@pytest.mark.django_db
+def test_post_user_when_logged_in_as_admin_user_and_user_invalid(
+    client: Client, admin_user_auth_token: str
+):
+    """
+    arrange: log in a admin user.
+    act: submit a POST request with an invalid value for the user URL.
+    assert: a 400 is returned.
+    """
+    existing = User.objects.all()[0]
+    response = client.post(
+        "/api/v1/users/",
+        data={"username": existing.username},
+        format="json",
+        headers={"AUTHORIZATION": f"Basic {admin_user_auth_token}"},
+    )
+
+    assert response.status_code == 400
