@@ -23,5 +23,5 @@ def test_create_user(username: str, user_password: str):
     call_command("create_user", username, user_password, stdout=out)
     user = User.objects.get(username=username)
     assert user.username == username
-    assert user.password == user_password
-    assert user.password in out.getvalue()
+    assert user.check_password(user_password)
+    assert user_password in out.getvalue()

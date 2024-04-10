@@ -36,7 +36,8 @@ class Command(BaseCommand):
         """
         username = options["username"]
         password = options["password"]
-        user, _ = User.objects.get_or_create(username=username, defaults={"password": password})
+        user, _ = User.objects.get_or_create(username=username)
+        user.set_password(password)
         user.save()
 
         self.stdout.write(
