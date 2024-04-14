@@ -322,6 +322,62 @@ def test_test_jwt_token_login(
 
 
 @pytest.mark.django_db
+def test_get_domain_when_logged_in_as_non_admin_user(client: Client, user_auth_token: str):
+    """
+    arrange: log in a non-admin user.
+    act: submit a GET request for the domain URL.
+    assert: a 403 is returned
+    """
+    response = client.get(
+        "/api/v1/domains/",
+        format="json",
+        headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
+    )
+
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_get_domain_when_logged_in_as_admin_user(
+    client: Client, admin_user_auth_token: str, domains: list
+):
+    """
+    arrange: log in an admin user.
+    act: submit a GET request for the domain URL.
+    assert: a 200 is returned and the domains are all returned.
+    """
+    assert len(Domain.objects.all()) != 0
+    response = client.get(
+        "/api/v1/domains/",
+        format="json",
+        headers={"AUTHORIZATION": f"Basic {admin_user_auth_token}"},
+    )
+    json = response.json()
+
+    assert response.status_code == 200
+    assert len(json) == len(domains)
+
+
+@pytest.mark.django_db
+def test_get_domain_with_fqdn_filter(client: Client, admin_user_auth_token: str, domains: list):
+    """
+    arrange: log in an admin user.
+    act: submit a GET request for the domain URL.
+    assert: a 200 is returned and the domain matching FQDN is returned.
+    """
+    response = client.get(
+        "/api/v1/domains/?fqdn=example2.com",
+        format="json",
+        headers={"AUTHORIZATION": f"Basic {admin_user_auth_token}"},
+    )
+    json = response.json()
+
+    assert response.status_code == 200
+    assert len(json) == 1
+    assert json[0]["fqdn"] == f"{FQDN_PREFIX}example2.com"
+
+
+@pytest.mark.django_db
 def test_post_domain_when_logged_in_as_non_admin_user(client: Client, user_auth_token: str):
     """
     arrange: log in a non-admin user.
@@ -377,6 +433,75 @@ def test_post_domain_when_logged_in_as_admin_user_and_domain_invalid(
     with pytest.raises(Domain.DoesNotExist):
         Domain.objects.get(fqdn="invalid-value")
     assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_get_domain_user_permission_when_logged_in_as_non_admin_user(
+    client: Client, user_auth_token: str, domain: Domain, user: User
+):
+    """
+    arrange: log in a non-admin user.
+    act: submit a GET request for the domain user permission URL.
+    assert: a 403 is returned
+    """
+    response = client.get(
+        "/api/v1/domain-user-permissions/",
+        format="json",
+        headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
+    )
+
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_get_domain_user_permission_when_logged_in_as_admin_user(
+    client: Client,
+    admin_user_auth_token: str,
+    user: User,
+    domain_user_permissions: list,
+):
+    """
+    arrange: log in an admin user.
+    act: submit a GET request for the domain user permission URL for a existing domain.
+    assert: a 200 is returned, the json result does not contain unwanted domain-user-permissions.
+    """
+    assert len(DomainUserPermission.objects.all()) != 0
+    response = client.get(
+        "/api/v1/domain-user-permissions/",
+        headers={"AUTHORIZATION": f"Basic {admin_user_auth_token}"},
+    )
+    json = response.json()
+
+    assert response.status_code == 200
+    assert len(json) == len(DomainUserPermission.objects.all())
+
+
+@pytest.mark.django_db
+def test_get_domain_user_permission_with_filters(
+    client: Client,
+    admin_user_auth_token: str,
+    user: User,
+    domain_user_permissions: list,
+):
+    """
+    arrange: log in an admin user.
+    act: submit a GET request for the domain user permission URL for a existing domain.
+    assert: a 200 is returned, the json result does not contain unwanted domain-user-permissions.
+    """
+    assert len(DomainUserPermission.objects.filter()) != 0
+    response = client.get(
+        "/api/v1/domain-user-permissions/",
+        data={"fqdn": "example2.com", "username": user.username},
+        headers={"AUTHORIZATION": f"Basic {admin_user_auth_token}"},
+    )
+    json = response.json()
+
+    assert response.status_code == 200
+    assert len(json) > 0
+
+    for entry in json:
+        assert entry["domain"] == Domain.objects.get(fqdn=f"{FQDN_PREFIX}example2.com").id
+        assert entry["user"] == User.objects.get(username=user.username).id
 
 
 @pytest.mark.django_db
@@ -493,6 +618,28 @@ def test_get_user_when_logged_in_as_admin_user(
     assert len(json) == len(User.objects.all())
     for entry in json:
         assert "password" not in entry
+
+
+@pytest.mark.django_db
+def test_get_user_with_username_filter(client: Client, admin_user_auth_token: str, user: User):
+    """
+    arrange: log in an admin user.
+    act: submit a GET request for the user URL.
+    assert: a 200 is returned and the json result matches the requested username.
+    """
+    response = client.get(
+        "/api/v1/users/",
+        data={"username": user.username},
+        format="json",
+        headers={"AUTHORIZATION": f"Basic {admin_user_auth_token}"},
+    )
+    json = response.json()
+
+    assert len(User.objects.all()) > 0
+    assert response.status_code == 200
+    assert len(json) == 1
+    for entry in json:
+        assert entry["username"] == user.username
 
 
 @pytest.mark.django_db

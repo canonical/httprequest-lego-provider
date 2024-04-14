@@ -33,6 +33,18 @@ def user_fixture(username: str, user_password: str) -> User:
     return User.objects.create_user(username, password=user_password)
 
 
+@pytest.fixture(scope="module", name="other_username")
+def other_username_fixture() -> str:
+    """Provide another user username."""
+    return "other_user"
+
+
+@pytest.fixture(scope="function", name="other_user")
+def other_user_fixture(other_username: str) -> User:
+    """Provide another user."""
+    return User.objects.create_user(other_username, password=None)
+
+
 @pytest.fixture(scope="function", name="user_auth_token")
 def user_auth_token_fixture(username: str, user_password: str, user: User) -> str:
     """Provide the auth_token for the default user."""
@@ -77,6 +89,15 @@ def fqdn_fixture() -> str:
 def domain_fixture(fqdn: str) -> Domain:
     """Provide a valid domain."""
     return Domain.objects.create(fqdn=f"{FQDN_PREFIX}{fqdn}")
+
+
+@pytest.fixture(scope="function", name="domains")
+def domains_fixture(fqdns: list) -> list:
+    """Create all domains and return the list of Domain objects."""
+    domains = []
+    for fqdn in fqdns:
+        domains.append(Domain.objects.create(fqdn=f"{FQDN_PREFIX}{fqdn}"))
+    return domains
 
 
 @pytest.fixture(scope="function", name="domain_user_permission")
