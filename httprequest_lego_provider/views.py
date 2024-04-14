@@ -16,7 +16,7 @@ from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAdminUser
 
 from .dns import remove_dns_record, write_dns_record
-from .forms import CleanupForm, PresentForm
+from .forms import FQDN_PREFIX, CleanupForm, PresentForm
 from .models import Domain, DomainUserPermission
 from .serializers import DomainSerializer, DomainUserPermissionSerializer, UserSerializer
 
@@ -91,6 +91,18 @@ class DomainViewSet(viewsets.ModelViewSet):
     serializer_class = DomainSerializer
     permission_classes = [IsAdminUser]
 
+    def get_queryset(self):
+        """Optionally restricts the returned object list to a given domain.
+
+        Returns:
+            a filtered queryset against a `fqdn` query parameter in the URL.
+        """
+        queryset = self.queryset
+        fqdn = self.request.query_params.get("fqdn")
+        if fqdn is not None:
+            queryset = queryset.filter(fqdn=f"{FQDN_PREFIX}{fqdn}")
+        return queryset
+
 
 class DomainUserPermissionViewSet(viewsets.ModelViewSet):
     """Views for the DomainUserPermission.
@@ -105,6 +117,21 @@ class DomainUserPermissionViewSet(viewsets.ModelViewSet):
     serializer_class = DomainUserPermissionSerializer
     permission_classes = [IsAdminUser]
 
+    def get_queryset(self):
+        """Optionally restricts the returned object list to a given user/domain.
+
+        Returns:
+            A filtered queryset against `username` / `fqdn` query parameters in the URL.
+        """
+        queryset = self.queryset
+        username = self.request.query_params.get("username")
+        if username is not None:
+            queryset = queryset.filter(user__username=username)
+        fqdn = self.request.query_params.get("fqdn")
+        if fqdn is not None:
+            queryset = queryset.filter(domain__fqdn=f"{FQDN_PREFIX}{fqdn}")
+        return queryset
+
 
 class UserViewSet(viewsets.ModelViewSet):
     """Views for the User.
@@ -118,3 +145,15 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().order_by("-date_joined")
     serializer_class = UserSerializer
     permission_classes = [IsAdminUser]
+
+    def get_queryset(self):
+        """Optionally restricts the returned object list to a given user.
+
+        Returns:
+            A filtered queryset against a `username` query parameter in the URL.
+        """
+        queryset = self.queryset
+        username = self.request.query_params.get("username")
+        if username is not None:
+            queryset = queryset.filter(username=username)
+        return queryset
