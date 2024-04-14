@@ -11,6 +11,7 @@ import secrets
 from unittest.mock import patch
 
 import pytest
+from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import User
 from django.test import Client
 
@@ -456,6 +457,45 @@ def test_post_domain_user_permission_when_logged_in_as_admin_user(
 
 
 @pytest.mark.django_db
+def test_get_user_when_logged_in_as_non_admin_user(client: Client, user_auth_token: str):
+    """
+    arrange: log in a non-admin user.
+    act: submit a GET request for the user URL.
+    assert: a 403 is returned.
+    """
+    response = client.get(
+        "/api/v1/users/",
+        format="json",
+        headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
+    )
+
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_get_user_when_logged_in_as_admin_user(
+    client: Client, admin_user_auth_token: str, user: User
+):
+    """
+    arrange: log in an admin user.
+    act: submit a GET request for the user URL.
+    assert: a 200 is returned and the json result does not contain passwords.
+    """
+    response = client.get(
+        "/api/v1/users/",
+        format="json",
+        headers={"AUTHORIZATION": f"Basic {admin_user_auth_token}"},
+    )
+    json = response.json()
+
+    assert len(User.objects.all()) > 0
+    assert response.status_code == 200
+    assert len(json) == len(User.objects.all())
+    for entry in json:
+        assert "password" not in entry
+
+
+@pytest.mark.django_db
 def test_post_user_when_logged_in_as_non_admin_user(client: Client, user_auth_token: str):
     """
     arrange: log in a non-admin user.
@@ -483,13 +523,15 @@ def test_post_user_when_logged_in_as_admin_user(client: Client, admin_user_auth_
     """
     response = client.post(
         "/api/v1/users/",
-        data={"username": "new-user"},
+        data={"username": "new-user", "password": "test!pw"},
         format="json",
         headers={"AUTHORIZATION": f"Basic {admin_user_auth_token}"},
     )
 
     assert response.status_code == 201
-    assert User.objects.get(username="new-user") is not None
+    newu = User.objects.get(username="new-user")
+    assert newu is not None
+    assert check_password("test!pw", newu.password) is True
 
 
 @pytest.mark.django_db

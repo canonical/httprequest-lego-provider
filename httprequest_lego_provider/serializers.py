@@ -2,6 +2,8 @@
 # See LICENSE file for licensing details.
 """Serializers."""
 
+from django.contrib.auth.hashers import make_password
+
 # imported-auth-user has to be disabled as the import is needed for UserSerializer
 # pylint:disable=imported-auth-user
 from django.contrib.auth.models import User
@@ -49,7 +51,23 @@ class UserSerializer(serializers.ModelSerializer):
         Attributes:
             model: the model to serialize.
             fields: fields to serialize.
+            extra_kwargs: extra per-field parameters.
         """
 
         model = User
-        fields = ["url", "username", "email", "groups"]
+        fields = ["url", "username", "email", "groups", "password"]
+        extra_kwargs = {
+            "password": {"write_only": True},
+        }
+
+    def create(self, validated_data):
+        """Override default ModelSerializer create call to hash the password.
+
+        Arguments:
+            validated_data: Serializer validated data
+
+        Returns:
+            The created User object.
+        """
+        validated_data["password"] = make_password(validated_data["password"])
+        return super().create(validated_data)
