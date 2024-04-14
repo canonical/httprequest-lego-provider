@@ -7,6 +7,7 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
+from .forms import FQDN_PREFIX
 from .models import Domain, DomainUserPermission
 
 
@@ -23,6 +24,18 @@ class DomainSerializer(serializers.ModelSerializer):
 
         model = Domain
         fields = "__all__"
+
+    def create(self, validated_data):
+        """Override default ModelSerializer create call to add the FQDN prefix.
+
+        Arguments:
+            validated_data: Serializer validated data
+
+        Returns:
+            The created Domain object.
+        """
+        validated_data["fqdn"] = f"{FQDN_PREFIX}{validated_data['fqdn']}"
+        return super().create(validated_data)
 
 
 class DomainUserPermissionSerializer(serializers.ModelSerializer):
