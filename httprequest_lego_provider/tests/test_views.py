@@ -354,7 +354,7 @@ def test_post_domain_when_logged_in_as_admin_user(client: Client, admin_user_aut
         headers={"AUTHORIZATION": f"Basic {admin_user_auth_token}"},
     )
 
-    assert Domain.objects.get(fqdn="example.com") is not None
+    assert Domain.objects.get(fqdn=f"{FQDN_PREFIX}example.com") is not None
     assert response.status_code == 201
 
 
