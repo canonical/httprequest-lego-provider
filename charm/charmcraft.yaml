@@ -62,8 +62,6 @@ actions:
           type: string
       required:
         - username
-      required:
-        - username
   allow-domains:
       description: Grant user access to domains.
       properties:
