@@ -17,6 +17,10 @@ platforms:
 extensions:
     - django-framework
 
+services:
+    django:
+        command: "/bin/python3 -m gunicorn -c /django/gunicorn.conf.py app.wsgi:application"
+
 parts:
     # Exclude pyproject.yaml so that the python plugin doesn't handle this project as a package
     django-framework/dependencies:
@@ -27,6 +31,11 @@ parts:
             rm -f pyproject.toml
             craftctl default
     django-framework/install-app:
+        plugin: dump
+        source: .
+        organize:
+            '*': django/app/
+            .*: django/app/
         prime:
             - "django/app/httprequest_lego_provider"
             - "django/app/app"
