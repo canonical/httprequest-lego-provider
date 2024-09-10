@@ -12,13 +12,13 @@ from httprequest_lego_provider.models import DomainUserPermission
 
 
 class Command(BaseCommand):
-    """Command to list the domains an user has access to.
+    """Command to list the domains a user has access to.
 
     Attrs:
         help: help message to display.
     """
 
-    help = "Create a user or update its password."
+    help = "List domains a user has access to. Use '*' for all users."
 
     def add_arguments(self, parser):
         """Argument parser.
@@ -39,10 +39,18 @@ class Command(BaseCommand):
             CommandError: if the user is not found.
         """
         username = options["username"]
-        try:
-            user = User.objects.get(username=username)
-        except User.DoesNotExist as exc:
-            raise CommandError(f'User "{username}" does not exist') from exc
-        dups = DomainUserPermission.objects.filter(user=user)
+        if username == "*":
+            output = []
+            for user in User.objects.iterator():
+                output.append(f"{user}:")
+                dups = DomainUserPermission.objects.filter(user=user)
+                output.append(", ".join([dup.domain.fqdn for dup in dups]))
+            self.stdout.write(self.style.SUCCESS("\n".join(output)))
+        else:
+            try:
+                user = User.objects.get(username=username)
+            except User.DoesNotExist as exc:
+                raise CommandError(f'User "{username}" does not exist') from exc
+            dups = DomainUserPermission.objects.filter(user=user)
 
-        self.stdout.write(self.style.SUCCESS(", ".join([dup.domain.fqdn for dup in dups])))
+            self.stdout.write(self.style.SUCCESS(", ".join([dup.domain.fqdn for dup in dups])))

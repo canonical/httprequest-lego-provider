@@ -25,6 +25,26 @@ def test_list_domains(domain_user_permissions: list[DomainUserPermission]):
 
 
 @pytest.mark.django_db
+def test_list_domains_all_users(domain_user_permissions: list[DomainUserPermission]):
+    """
+    arrange: given existing domains allowed for all users.
+    act: call the list_domains command.
+    assert: the list of associated domains is returned in the stdout.
+    """
+    out = StringIO()
+    call_command("list_domains", "*", stdout=out)
+    # Username on one line with a semi-colon followed by list of domains
+    # they have access to. Leading and trailing control characters for terminal
+    # output.
+    expected_output = (
+        "\x1b[32;1mtest_user:\n"
+        "_acme-challenge.some.com, _acme-challenge.example2.com, "
+        "_acme-challenge.example.es\x1b[0m\n"
+    )
+    assert out.getvalue() == expected_output
+
+
+@pytest.mark.django_db
 def test_list_domains_raises_exception(fqdns: list[str]):
     """
     arrange: do nothing.
