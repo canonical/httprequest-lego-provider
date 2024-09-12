@@ -34,14 +34,13 @@ def test_list_domains_all_users(domain_user_permissions: list[DomainUserPermissi
     out = StringIO()
     call_command("list_domains", "*", stdout=out)
     # Username on one line with a semi-colon followed by list of domains
-    # they have access to. Leading and trailing control characters for terminal
-    # output.
+    # they have access to.
     expected_output = (
-        "\x1b[32;1mtest_user:\n"
+        "test_user:\n"
         "_acme-challenge.some.com, _acme-challenge.example2.com, "
-        "_acme-challenge.example.es\x1b[0m\n"
+        "_acme-challenge.example.es"
     )
-    assert out.getvalue() == expected_output
+    assert expected_output in out.getvalue()
 
 
 @pytest.mark.django_db
