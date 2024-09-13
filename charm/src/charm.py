@@ -9,7 +9,7 @@ import typing
 
 import actions
 import ops
-import xiilib.django
+import paas_app_charmer.django
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ KNOWN_HOSTS_PATH = "/var/lib/pebble/default/.ssh/known_hosts"
 RSA_PATH = "/var/lib/pebble/default/.ssh/id_rsa"
 
 
-class DjangoCharm(xiilib.django.Charm):
+class DjangoCharm(paas_app_charmer.django.Charm):
     """Flask Charm service."""
 
     def __init__(self, *args: typing.Any) -> None:

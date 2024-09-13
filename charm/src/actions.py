@@ -9,7 +9,7 @@ import logging
 import secrets
 
 import ops
-import xiilib.django
+import paas_app_charmer.django
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class NotReadyError(Exception):
 class Observer(ops.Object):
     """Charm actions observer."""
 
-    def __init__(self, charm: xiilib.django.Charm):
+    def __init__(self, charm: paas_app_charmer.django.Charm):
         """Initialize the observer and register actions handlers.
 
         Args:
