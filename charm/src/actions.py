@@ -52,14 +52,13 @@ class Observer(ops.Object):
         Raises:
             ExecError: if an error occurs while executing the script
         """
-        container = self.charm.unit.get_container(self.charm._CONTAINER_NAME)
-        if not container.can_connect() or not self.charm._databases.is_ready():
+        if not self.charm.is_ready():
             event.fail("Service not yet ready.")
 
-        process = container.exec(
+        process = self.charm._container.exec(
             ["python3", "manage.py"] + command,
-            working_dir=str(self.charm._BASE_DIR / "app"),
-            environment=self.charm.gen_env(),
+            working_dir=str(self.charm._workload_config.base_dir / "app"),
+            environment=self.charm._gen_environment(),
         )
         try:
             stdout, _ = process.wait_output()
