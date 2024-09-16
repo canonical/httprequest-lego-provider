@@ -28,7 +28,7 @@ async def test_build_and_deploy(ops_test: OpsTest, pytestconfig: pytest.Config):
     await ops_test.model.deploy(
         os.path.abspath(charm),
         config={
-            "git_repo": "git@github.com:canonical/httprequest-lego-provider.git",
+            "git_repo": "git+ssh://git@github.com/canonical/httprequest-lego-provider.git@main",
             "git_ssh_key": textwrap.dedent(
                 """\
                 -----BEGIN OPENSSH PRIVATE KEY-----
