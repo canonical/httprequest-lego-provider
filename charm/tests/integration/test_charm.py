@@ -45,3 +45,5 @@ async def test_build_and_deploy(ops_test: OpsTest, pytestconfig: pytest.Config):
     await ops_test.model.deploy("postgresql-k8s", channel="14/stable", trust=True)
     await ops_test.model.integrate("httprequest-lego-provider", "postgresql-k8s")
     await ops_test.model.wait_for_idle(timeout=900)
+
+async def test_build_and_deploy()

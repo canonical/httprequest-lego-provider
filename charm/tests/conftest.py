@@ -3,16 +3,8 @@
 
 """Fixtures for charm tests."""
 
-import pathlib
-import typing
-from unittest.mock import patch
-
-import ops.testing
-import pytest
-
-import chrony
-import keychain
-from charm import ChronyCharm
+import pytest_asyncio
+from pytest_operator.plugin import OpsTest
 
 
 def pytest_addoption(parser):
@@ -23,3 +15,14 @@ def pytest_addoption(parser):
     """
     parser.addoption("--charm-file", action="store")
     parser.addoption("--httprequest-lego-provider-image", action="store")
+
+
+@pytest_asyncio.fixture
+def run_action(ops_test: OpsTest):
+    async def _run_action(application_name, action_name, **params):
+        app = ops_test.model.applications[application_name]
+        action = await app.units[0].run_action(action_name, **params)
+        await action.wait()
+        return action.results
+
+    return _run_action
