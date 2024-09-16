@@ -55,9 +55,9 @@ class DjangoCharm(paas_app_charmer.django.Charm):
         """Copy files needed by git."""
         if not self._container.can_connect():
             return
-        if not self.config.get("git_repo") or not self.config.get("git_ssh_key"):
+        if not self.config.get("git-repo") or not self.config.get("git-ssh-key"):
             return
-        hostname = self.config.get("git_repo").split("@")[1].split("/")[0]
+        hostname = self.config.get("git-repo").split("@")[1].split("/")[0]
         process = self._container.exec(["ssh-keyscan", "-t", "rsa", hostname])
         output, _ = process.wait_output()
         self._container.push(
@@ -71,7 +71,7 @@ class DjangoCharm(paas_app_charmer.django.Charm):
         )
         self._container.push(
             RSA_PATH,
-            self.config.get("git_ssh_key"),
+            self.config.get("git-ssh-key"),
             encoding="utf-8",
             make_dirs=True,
             user=DJANGO_USER,
@@ -81,11 +81,11 @@ class DjangoCharm(paas_app_charmer.django.Charm):
 
     def _on_collect_app_status(self, _: ops.CollectStatusEvent) -> None:
         """Handle the status changes."""
-        if not self.config.get("git_repo"):
-            self.unit.status = ops.WaitingStatus("Config git_repo is required")
+        if not self.config.get("git-repo"):
+            self.unit.status = ops.WaitingStatus("Config git-repo is required")
             return
-        if not self.config.get("git_ssh_key"):
-            self.unit.status = ops.WaitingStatus("Config git_ssh_key is required")
+        if not self.config.get("git-ssh-key"):
+            self.unit.status = ops.WaitingStatus("Config git-ssh-key is required")
             return
 
 

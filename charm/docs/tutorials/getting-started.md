@@ -37,17 +37,17 @@ httprequest-lego-provider-0      2/2     Running   0          9m36s
 Run [`juju status`](https://juju.is/docs/olm/juju-status) to see the current status of the deployment. In the Unit list, you can see that the charm is waiting:
 
 ```bash
-httprequest-lego-provider/0*  waiting   idle   10.1.180.77         Config git_repo is required
+httprequest-lego-provider/0*  waiting   idle   10.1.180.77         Config git-repo is required
 ```
 
 This means the required configurations have not been set yet.
 
 ## Configure the Httprequest Lego Provider charm
- Provide the configurations `git_repo` and `git_ssh_key` required by the charm:
+ Provide the configurations `git-repo` and `git-ssh-key` required by the charm:
 
  ```bash
-juju config httprequest-lego-provider git_repo=git+ssh://username@host/repo@branch
-juju config httprequest-lego-provider git_ssh_key=**REDACTED**
+juju config httprequest-lego-provider git-repo=git+ssh://username@host/repo@branch
+juju config httprequest-lego-provider git-ssh-key=**REDACTED**
 ```
 You can see the message has changed:
 
@@ -73,7 +73,7 @@ httprequest-lego-provider           active       1  httprequest-lego-provider  l
 In order to access the HTTP endpoints, you'll need configure a hostname and add it to Django's allow list and configure the path routes that will be accessible:
 ```bash
 juju config nginx-ingress-integrator service-hostname=lego.local
-juju config httprequest-lego-provider django_allowed_hosts=localhost,127.0.0.1,lego.local
+juju config httprequest-lego-provider django-allowed-hosts=localhost,127.0.0.1,lego.local
 juju config nginx-ingress-integrator path-routes="/admin,/present,/cleanup"
 ```
 
