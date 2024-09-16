@@ -2,12 +2,14 @@
 # See LICENSE file for licensing details.
 
 """Charm Integration tests."""
-
+import logging
 import os
 import textwrap
 
 import pytest
 from pytest_operator.plugin import OpsTest
+
+logger = logging.getLogger(__name__)
 
 
 @pytest.mark.abort_on_fail
@@ -46,4 +48,22 @@ async def test_build_and_deploy(ops_test: OpsTest, pytestconfig: pytest.Config):
     await ops_test.model.integrate("httprequest-lego-provider", "postgresql-k8s")
     await ops_test.model.wait_for_idle(timeout=900)
 
-async def test_build_and_deploy()
+
+async def test_actions(run_action):
+    """
+    arrange: deploy the httprequest-lego-provider charm and related it to the postgresql-k8s charm.
+    act: run charm actions on the httprequest-lego-provider charm.
+    assert: httprequest-lego-provider should response to the action correctly.
+    """
+    result = await run_action("httprequest-lego-provider", "create-user", username="test")
+    assert "result" in result
+    stdout = result["result"]
+    logger.info("create-user result: %s", stdout)
+    assert "password" in stdout
+    result = await run_action(
+        "httprequest-lego-provider", "allow-domain", username="test", domains="example.com"
+    )
+    assert "result" in result
+    stdout = result["result"]
+    logger.info("allow-domain result: %s", stdout)
+    assert "example.com" in stdout

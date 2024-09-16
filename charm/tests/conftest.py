@@ -19,7 +19,9 @@ def pytest_addoption(parser):
 
 @pytest_asyncio.fixture
 def run_action(ops_test: OpsTest):
+    """Run a charm action."""
     async def _run_action(application_name, action_name, **params):
+        """Run a charm action."""
         app = ops_test.model.applications[application_name]
         action = await app.units[0].run_action(action_name, **params)
         await action.wait()
