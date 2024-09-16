@@ -61,9 +61,9 @@ async def test_actions(run_action):
     logger.info("create-user result: %s", stdout)
     assert "password" in stdout
     result = await run_action(
-        "httprequest-lego-provider", "allow-domain", username="test", domains="example.com"
+        "httprequest-lego-provider", "allow-domains", username="test", domains="example.com"
     )
     assert "result" in result
     stdout = result["result"]
-    logger.info("allow-domain result: %s", stdout)
+    logger.info("allow-domains result: %s", stdout)
     assert "example.com" in stdout
