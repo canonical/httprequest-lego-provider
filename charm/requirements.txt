@@ -1,1 +1,1 @@
-paas-app-charmer==1.*
+https://github.com/canonical/xiilib/archive/feat-12f-django.tar.gz

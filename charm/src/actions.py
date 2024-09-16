@@ -9,7 +9,7 @@ import logging
 import secrets
 
 import ops
-import paas_app_charmer.django
+import xiilib.django
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class NotReadyError(Exception):
 class Observer(ops.Object):
     """Charm actions observer."""
 
-    def __init__(self, charm: paas_app_charmer.django.Charm):
+    def __init__(self, charm: xiilib.django.Charm):
         """Initialize the observer and register actions handlers.
 
         Args:
@@ -52,13 +52,14 @@ class Observer(ops.Object):
         Raises:
             ExecError: if an error occurs while executing the script
         """
-        if not self.charm.is_ready():
+        container = self.charm.unit.get_container(self.charm._CONTAINER_NAME)
+        if not container.can_connect() or not self.charm._databases.is_ready():
             event.fail("Service not yet ready.")
 
-        process = self.charm._container.exec(
+        process = container.exec(
             ["python3", "manage.py"] + command,
-            working_dir=str(self.charm._workload_config.base_dir / "app"),
-            environment=self.charm._gen_environment(),
+            working_dir=str(self.charm._BASE_DIR / "app"),
+            environment=self.charm.gen_env(),
         )
         try:
             stdout, _ = process.wait_output()

@@ -9,7 +9,7 @@ import typing
 
 import actions
 import ops
-import paas_app_charmer.django
+import xiilib.django
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ KNOWN_HOSTS_PATH = "/var/lib/pebble/default/.ssh/known_hosts"
 RSA_PATH = "/var/lib/pebble/default/.ssh/id_rsa"
 
 
-class DjangoCharm(paas_app_charmer.django.Charm):
+class DjangoCharm(xiilib.django.Charm):
     """Flask Charm service."""
 
     def __init__(self, *args: typing.Any) -> None:
@@ -37,7 +37,7 @@ class DjangoCharm(paas_app_charmer.django.Charm):
         """Config changed handler.
 
         Args:
-            _event: the event triggering the handler.
+            event: the event triggering the handler.
         """
         self._copy_files()
         super()._on_config_changed(_event)
@@ -46,21 +46,22 @@ class DjangoCharm(paas_app_charmer.django.Charm):
         """Pebble ready handler.
 
         Args:
-            _event: the event triggering the handler.
+            event: the event triggering the handler.
         """
         self._copy_files()
         super()._on_django_app_pebble_ready(_event)
 
     def _copy_files(self) -> None:
         """Copy files needed by git."""
-        if not self._container.can_connect():
+        container = self.unit.get_container(self._CONTAINER_NAME)
+        if not container.can_connect():
             return
         if not self.config.get("git_repo") or not self.config.get("git_ssh_key"):
             return
         hostname = self.config.get("git_repo").split("@")[1].split("/")[0]
-        process = self._container.exec(["ssh-keyscan", "-t", "rsa", hostname])
+        process = container.exec(["ssh-keyscan", "-t", "rsa", hostname])
         output, _ = process.wait_output()
-        self._container.push(
+        container.push(
             KNOWN_HOSTS_PATH,
             output,
             encoding="utf-8",
@@ -69,7 +70,7 @@ class DjangoCharm(paas_app_charmer.django.Charm):
             group=DJANGO_GROUP,
             permissions=0o600,
         )
-        self._container.push(
+        container.push(
             RSA_PATH,
             self.config.get("git_ssh_key"),
             encoding="utf-8",
@@ -80,7 +81,11 @@ class DjangoCharm(paas_app_charmer.django.Charm):
         )
 
     def _on_collect_app_status(self, _: ops.CollectStatusEvent) -> None:
-        """Handle the status changes."""
+        """Handle the status changes.
+
+        Args:
+            event: the event triggering the handler.
+        """
         if not self.config.get("git_repo"):
             self.unit.status = ops.WaitingStatus("Config git_repo is required")
             return
