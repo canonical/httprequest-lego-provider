@@ -1,4 +1,4 @@
-# Quick guide
+# Deploy the Httprequest Lego Provider charm for the first time
 
 ## What you’ll do
 
