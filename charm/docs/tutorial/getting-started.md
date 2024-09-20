@@ -6,7 +6,7 @@
 - Integrate with [the PostgreSQL K8s charm](https://charmhub.io/postgresql-k8s).
 - Integrate with [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/#what-is-ingress) by using [NGINX Ingress Integrator](https://charmhub.io/nginx-ingress-integrator/).
 
-## Prerequisites
+## Requirements
 
 - Juju 3 installed.
 - Juju controller and model created.
