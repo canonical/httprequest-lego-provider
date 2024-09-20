@@ -35,7 +35,7 @@ juju trust postgresql-k8s --scope=cluster
 juju deploy httprequest-lego-provider --channel=latest/edge
 ```
 
-To see the pod created by the charm, run `kubectl get pods` on the namespace for the Juju model you've deployed the charm to. The output is similar to the following:
+To see the pod created by the charm, run `kubectl get pods -n httprequest-lego-provider-tutorial`. The output is similar to the following:
 
 ```bash
 NAME                             READY   STATUS    RESTARTS   AGE
@@ -85,3 +85,9 @@ juju config httprequest-lego-provider django-allowed-hosts=localhost,127.0.0.1,l
 juju config nginx-ingress-integrator path-routes="/admin,/present,/cleanup"
 ```
 
+### Clean up the environment
+Congratulations! You have successfully finished the httprequest-lego-provider tutorial. You can now remove the model environment that you've created using the following command.
+
+```
+juju destroy-model --destroy-storage httprequest-lego-provider-tutorial
+```
