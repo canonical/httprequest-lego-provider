@@ -42,14 +42,14 @@ class DjangoCharm(paas_app_charmer.django.Charm):
         self._copy_files()
         super()._on_config_changed(_event)
 
-    def _on_django_app_pebble_ready(self, _event: ops.PebbleReadyEvent) -> None:
+    def _on_pebble_ready(self, _event: ops.PebbleReadyEvent) -> None:
         """Pebble ready handler.
 
         Args:
             _event: the event triggering the handler.
         """
         self._copy_files()
-        super()._on_django_app_pebble_ready(_event)
+        super()._on_pebble_ready(_event)
 
     def _copy_files(self) -> None:
         """Copy files needed by git."""
