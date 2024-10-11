@@ -32,6 +32,15 @@ description: |
   into multiple environments for testing of changes, and supports scaling out for
   enterprise deployments.
 
+links:
+  website:
+    - https://charmhub.io/httprequest-lego-provider
+  source:
+    - https://github.com/canonical/httprequest-lego-provider
+  issues:
+    - https://github.com/canonical/httprequest-lego-provider/issues
+  documentation: https://discourse.charmhub.io/t/httprequest-lego-provider-documentation-overview/15783
+
 extensions:
   - django-framework
 
@@ -45,7 +54,7 @@ config:
     git-repo:
       type: string
       description: >
-        The repository URL where the DNS records are stored. The username has to be provided as in 
+        The repository URL where the DNS records are stored. The username has to be provided as in
         git+ssh://username@repository@branch, where the branch is optional.
     git-ssh-key:
       type: string

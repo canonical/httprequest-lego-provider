@@ -1,3 +1,3 @@
-# Integrations
+# Configurations
 
-See [Integrations](https://charmhub.io/httprequest-lego-provider/integrations).
+See [Configurations](https://charmhub.io/httprequest-lego-provider/configure).
