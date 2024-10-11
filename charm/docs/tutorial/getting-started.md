@@ -16,6 +16,8 @@ For more information about how to install Juju, see [Get started with Juju](http
 :warning: When using a Multipass VM, make sure to replace `127.0.0.1` IP addresses with the
 VM IP in steps that assume you're running locally. To get the IP address of the
 Multipass instance run ```multipass info my-juju-vm```.
+
+## Steps
 ### Shell into the Multipass VM
 > NOTE: If you're working locally, you don't need to do this step.
 
@@ -24,7 +26,6 @@ To be able to work inside the Multipass VM first you need to log in with the fol
 multipass shell my-juju-vm
 ```
 
-## Steps
 ### Set up the tutorial model
 To easily clean up the resources and to separate your workload from the contents of this tutorial, set up a new model with the following command.
 
