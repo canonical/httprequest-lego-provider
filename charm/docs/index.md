@@ -35,7 +35,7 @@ If there's a particular area of documentation that you'd like to see that's miss
 
 HTTPRequest Lego Provider is an open-source project that welcomes community contributions, suggestions, fixes and constructive feedback.
 - [Read our Code of Conduct](https://ubuntu.com/community/code-of-conduct)
-- [Get support](https://discourse.charmhub.io/tag/mattermost)
+- [Get support](https://discourse.charmhub.io/tag/lego)
 - [Join our online chat](https://matrix.to/#/#charmhub-charmdev:ubuntu.com)
 - Contribute and report bugs to [the HTTPRequest Lego Provider](https://github.com/canonical/httprequest-lego-provider/issues)
 
