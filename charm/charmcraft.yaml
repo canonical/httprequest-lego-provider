@@ -1,0 +1,108 @@
+# Copyright 2024 Canonical Ltd.
+# See LICENSE file for licensing details.
+name: httprequest-lego-provider
+type: charm
+
+bases:
+  - build-on:
+    - name: ubuntu
+      channel: "22.04"
+    run-on:
+    - name: ubuntu
+      channel: "22.04"
+
+summary: HTTPRequest Lego provider.
+
+description: |
+  A [Juju](https://juju.is/) [charm](https://juju.is/docs/olm/charmed-operators)
+  deploying and managing [HTTP request Lego provider](https://go-acme.github.io/lego/dns/httpreq/)
+  on Kubernetes. HTTP request Lego provider is a web application implementing the [DNS HTTP request
+  provider as defined by ACME](https://go-acme.github.io/lego/dns/httpreq/) to manage DNS records.
+
+  This charm simplifies initial deployment and "day N" operations of the HTTP request Lego
+  provider on Kubernetes, enabling the automation of DNS management. It allows for deployment
+  on many different Kubernetes platforms, from [MicroK8s](https://microk8s.io) to
+  [Charmed Kubernetes](https://ubuntu.com/kubernetes) and public cloud Kubernetes offerings.
+
+  As such, the charm makes it easy for those looking to host their own ACME provider, and gives
+  them the freedom to deploy on the Kubernetes platform of their choice.
+
+  For DevOps or SRE teams this charm will make operating HTTP request Lego provider simple and
+  straightforward through Juju's clean interface. It will allow easy deployment
+  into multiple environments for testing of changes, and supports scaling out for
+  enterprise deployments.
+
+links:
+  website:
+    - https://charmhub.io/httprequest-lego-provider
+  source:
+    - https://github.com/canonical/httprequest-lego-provider
+  issues:
+    - https://github.com/canonical/httprequest-lego-provider/issues
+  documentation: https://discourse.charmhub.io/t/httprequest-lego-provider-documentation-overview/15783
+
+extensions:
+  - django-framework
+
+requires:
+  postgresql:
+    interface: postgresql_client
+    limit: 1
+
+config:
+  options:
+    git-repo:
+      type: string
+      description: >
+        The repository URL where the DNS records are stored. The username has to be provided as in
+        git+ssh://username@repository@branch, where the branch is optional.
+    git-ssh-key:
+      type: string
+      description: The private key for SSH authentication.
+
+actions:
+  create-user:
+      description: >
+        Create a user for the services that will be requesting the domains.
+        If it exists, the password will be updated.
+      properties:
+        username:
+          description: User name to be created.
+          type: string
+      required:
+        - username
+  allow-domains:
+      description: Grant user access to domains.
+      properties:
+        username:
+          description: User name to grant access for.
+          type: string
+        domains:
+          description: >
+            Comma separated list of domains to access access for.
+            The domains will be prefixed by '_acme-challenge.'
+      required:
+        - username
+        - domains
+  revoke-domains:
+      description: Revoke user access to domains.
+      properties:
+        username:
+          description: User name to revoke access for.
+          type: string
+        domains:
+          description: >
+            Comma separated list of domains to revoke access to.
+            The domains will be prefixed by '_acme-challenge.'
+          type: string
+      required:
+        - username
+        - domains
+  list-domains:
+      description: List the domains an user has access to.
+      properties:
+        username:
+          description: User name to query for.
+          type: string
+      required:
+        - username
