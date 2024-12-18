@@ -5,10 +5,8 @@
 
 # HTTPRequest Lego Provider
 
-A Juju charm deploying and managing [HTTP request Lego provider](https://go-acme.github.io/lego/dns/httpreq/)
-on Kubernetes. HTTP request Lego provider is a web application implementing the [DNS HTTP request
-provider as defined by ACME](https://go-acme.github.io/lego/dns/httpreq/) to manage DNS records.
-HTTPRequest Lego Provider is a Let’s Encrypt client. It allows for deployment on
+A Juju charm deploying and managing [HTTP request Lego provider as defined by ACME](https://go-acme.github.io/lego/dns/httpreq/)
+to manage DNS records. It allows for deployment on
 many different Kubernetes platforms, from [MicroK8s](https://microk8s.io) to
 [Charmed Kubernetes](https://ubuntu.com/kubernetes) to public cloud Kubernetes
 offerings.
