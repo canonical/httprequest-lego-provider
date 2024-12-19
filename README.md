@@ -39,7 +39,7 @@ You can check out the [full list of actions here](https://charmhub.io/httpreques
 This charm can be integrated with other Juju charms and services:
 
   - [Loki](https://charmhub.io/loki-k8s): Loki is a horizontally scalable, highly available, multi-tenant log aggregation system inspired by Prometheus.
-  - [Postgresql](https://charmhub.io/postgresql-k8s): PostgreSQL is a powerful, open source object-relational database system. It has more than 15 years of active development and a proven architecture that has earned it a strong reputation for reliability, data integrity, and correctness.
+  - [PostgreSQL](https://charmhub.io/postgresql-k8s): PostgreSQL is a powerful, open source object-relational database system.
 
 You can find the full list of integrations [here](https://charmhub.io/httprequest-lego-provider/integrations).
 
