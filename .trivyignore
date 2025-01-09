@@ -1,5 +1,5 @@
 CVE-2022-40897
 CVE-2024-6345
-CVE-2024-34156 # https://github.com/canonical/pebble/issues/498
+# statsd-exporter
 CVE-2024-45338 # golang.org/x/net
 CVE-2024-45337 # golang.org/x/crypto
