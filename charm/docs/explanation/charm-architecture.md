@@ -25,7 +25,7 @@ For this charm, in addition to the event handling provided by the framework, the
 ## Charm code overview
 
 The `src/charm.py` is the default entry point for a charm and has the DjangoCharm Python class which inherits from paas_app_charmer.django.Charm, the base class 
-from which all Djando 12-factor charms are formed, defined by [the Django framework extension for charmcraft](https://canonical-charmcraft.readthedocs-hosted.com/en/stable/reference/extensions/django-framework-extension/).
+from which all Django 12-factor charms are formed, defined by the Django framework extension for Charmcraft.
 
 > See more in the Charmcraft docs: [Django framework extension](https://canonical-charmcraft.readthedocs-hosted.com/en/stable/reference/extensions/django-framework-extension/)
 
