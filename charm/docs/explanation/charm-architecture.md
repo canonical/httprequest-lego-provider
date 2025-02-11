@@ -17,7 +17,7 @@ They are published to [Charmhub](https://charmhub.io/), the official repository 
 
 For this charm, in addition to the event handling provided by the framework, the following Juju events are observed:
 
-1. pebble_ready: fired on Kubernetes charms when the requested container is ready. Action: copy the necessary configuration files and trigger the default handler as defined by the framework.
+1. [pebble_ready](https://canonical-juju.readthedocs-hosted.com/en/latest/user/reference/hook/#container-pebble-ready): fired on Kubernetes charms when the requested container is ready. Action: copy the necessary configuration files and trigger the default handler as defined by the framework.
 2. config_changed:  usually fired in response to a configuration change using the CLI. Action: copy the necessary configuration files and trigger the default handler as defined by the framework.
 
 > See more in the Juju docs: [Event](https://juju.is/docs/sdk/event)
