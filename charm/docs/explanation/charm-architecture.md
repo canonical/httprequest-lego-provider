@@ -6,7 +6,7 @@ It leverages the [12-factor](https://canonical-12-factor-app-support.readthedocs
 
 ## OCI images
 
-We use [Rockcraft's Django framework extension](https://documentation.ubuntu.com/rockcraft/en/stable/tutorial/django.html) to build OCI Images for HTTP Request LEGO provider. 
+We use [Rockcraft's Django framework extension](https://documentation.ubuntu.com/rockcraft/en/stable/reference/extensions/django-framework.html) to build OCI Images for HTTP Request LEGO provider. 
 The images are defined in [HTTP Request LEGO provider rock](https://github.com/canonical/httprequest-lego-provider/blob/main/rockcraft.yaml).
 They are published to [Charmhub](https://charmhub.io/), the official repository of charms.
 
@@ -25,7 +25,7 @@ For this charm, in addition to the event handling provided by the framework, the
 ## Charm code overview
 
 The `src/charm.py` is the default entry point for a charm and has the DjangoCharm Python class which inherits from paas_app_charmer.django.Charm, the base class 
-from which all Django 12-factor charms are formed, defined by the Django framework extension for Charmcraft.
+from which all Djando 12-factor charms are formed, defined by [the Django framework extension for charmcraft](https://documentation.ubuntu.com/rockcraft/en/stable/reference/extensions/django-framework.html).
 
 > See more in the Charmcraft docs: [Django framework extension](https://canonical-charmcraft.readthedocs-hosted.com/en/stable/reference/extensions/django-framework-extension/)
 
