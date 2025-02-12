@@ -4,7 +4,7 @@ The HTTPRequest lego provider is, at its core, a Juju charm deploying and managi
 
 It leverages the [12-factor](https://canonical-12-factor-app-support.readthedocs-hosted.com/en/latest/) support to pack a [Django](https://www.djangoproject.com/) application providing the functionality as defined by the standard.
 
-For a complete view on the architecture of a 12-factor charm, refer to the [12-factor architecture documentation](https://canonical-12-factor-app-support.readthedocs-hosted.com/en/latest/explanation/charm-architecture/). Below are detailed the HTTPRequest LEGO provider specifics.
+For a complete view on the architecture of a 12-factor charm, refer to the [12-factor architecture documentation](https://canonical-12-factor-app-support.readthedocs-hosted.com/en/latest/explanation/charm-architecture/). The rest of this document details the HTTPRequest LEGO provider specifics.
 
 ## OCI images
 
