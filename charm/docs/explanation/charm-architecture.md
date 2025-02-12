@@ -1,13 +1,15 @@
 # Charm architecture
 
-The HTTP Request lego provider is, at its core, a Juju charm deploying and managing [HTTP request Lego provider as defined by ACME](https://go-acme.github.io/lego/dns/httpreq/) to manage DNS records.
+The HTTPRequest lego provider is, at its core, a Juju charm deploying and managing [HTTPRequest Lego provider as defined by ACME](https://go-acme.github.io/lego/dns/httpreq/) to manage DNS records.
 
 It leverages the [12-factor](https://canonical-12-factor-app-support.readthedocs-hosted.com/en/latest/) support to pack a [Django](https://www.djangoproject.com/) application providing the functionality as defined by the standard.
 
+For a complete view on the architecture of a 12-factor charm, refer to the [12-factor architecture documentation](https://canonical-12-factor-app-support.readthedocs-hosted.com/en/latest/explanation/charm-architecture/). Below are detailed the HTTPRequest LEGO provider specifics.
+
 ## OCI images
 
-We use [Rockcraft's Django framework extension](https://documentation.ubuntu.com/rockcraft/en/stable/reference/extensions/django-framework.html) to build OCI Images for HTTP Request LEGO provider. 
-The images are defined in [HTTP Request LEGO provider rock](https://github.com/canonical/httprequest-lego-provider/blob/main/rockcraft.yaml).
+We use [Rockcraft's Django framework extension](https://documentation.ubuntu.com/rockcraft/en/stable/reference/extensions/django-framework.html) to build OCI Images for HTTPRequest LEGO provider. 
+The images are defined in [HTTPRequest LEGO provider rock](https://github.com/canonical/httprequest-lego-provider/blob/main/rockcraft.yaml).
 They are published to [Charmhub](https://charmhub.io/), the official repository of charms.
 
 > See more: [How to publish your charm on Charmhub](https://juju.is/docs/sdk/publishing)
