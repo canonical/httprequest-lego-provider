@@ -5,11 +5,10 @@
 # imported-auth-user has to be disable as the conflicting import is needed for typing
 # pylint:disable=duplicate-code,imported-auth-user
 
-from django.contrib.auth.models import User
-from django.core.management.base import BaseCommand, CommandError
-
 from api.forms import FQDN_PREFIX
 from api.models import Domain, DomainUserPermission
+from django.contrib.auth.models import User
+from django.core.management.base import BaseCommand, CommandError
 
 
 class Command(BaseCommand):

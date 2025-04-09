@@ -3,11 +3,10 @@
 """Unit tests for the revoke_domains module."""
 
 import pytest
-from django.core.management import call_command
-from django.core.management.base import CommandError
-
 from api.forms import FQDN_PREFIX
 from api.models import DomainUserPermission
+from django.core.management import call_command
+from django.core.management.base import CommandError
 
 
 @pytest.mark.django_db

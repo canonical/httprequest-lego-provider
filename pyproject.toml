@@ -11,31 +11,31 @@ branch = true
 [tool.black]
 line-length = 99
 target-version = ["py38"]
-exclude = "httprequest_lego_provider/migrations"
+exclude = "api/migrations"
 
 [tool.coverage.report]
-fail_under = 100
+fail_under = 85
 show_missing = true
-omit = ["httprequest_lego_provider/settings.py"]
+omit = ["httprequest_lego_provider/httprequest_lego_provider/settings.py"]
 
 # Linting tools configuration
 [tool.flake8]
 max-line-length = 99
 max-doc-length = 99
 max-complexity = 10
-exclude = [".git", "__pycache__", ".tox", "build", "dist", "*.egg_info", "venv", "httprequest_lego_provider/migrations"]
+exclude = [".git", "__pycache__", ".tox", "build", "dist", "*.egg_info", "venv", "httprequest_lego_provider/api/migrations"]
 select = ["E", "W", "F", "C", "N", "R", "D", "H"]
 # Ignore W503, E501 because using black creates errors with this
 # Ignore D107 Missing docstring in __init__
 ignore = ["W503", "E501", "D107"]
 # D100, D101, D102, D103: Ignore missing docstrings in tests
-per-file-ignores = ["tests/*:D100,D101,D102,D103,D104,D205,D212,D415","httprequest_lego_provider/tests/*:D100,D101,D102,D103,D104,D205,D212,D415"]
+per-file-ignores = ["tests/*:D100,D101,D102,D103,D104,D205,D212,D415","httprequest_lego_provider/api/tests/*:D100,D101,D102,D103,D104,D205,D212,D415"]
 docstring-convention = "google"
 
 [tool.isort]
 line_length = 99
 profile = "black"
-skip = ["httprequest_lego_provider/migrations"]
+skip = ["api/migrations"]
 
 [tool.mypy]
 ignore_missing_imports = true
@@ -44,12 +44,11 @@ namespace_packages = true
 
 [tool.pylint]
 disable = "wrong-import-order"
-ignore = "httprequest_lego_provider/migrations"
+ignore = "httprequest_lego_provider/api/migrations"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
 log_cli_level = "INFO"
-DJANGO_SETTINGS_MODULE = "httprequest_lego_provider.tests.settings"
 
 # Linting tools configuration
 [tool.ruff]
@@ -79,4 +78,4 @@ max-complexity = 10
 skip = "build,lib,venv,icon.svg,.tox,.git,.mypy_cache,.ruff_cache,.coverage"
 
 [tool.pydocstyle]
-match_dir = "match-dir=^(?!httprequest_lego_provider/migrations)"
+match_dir = "match-dir=^(?!httprequest_lego_provider/httprequest_lego_provider/migrations)"

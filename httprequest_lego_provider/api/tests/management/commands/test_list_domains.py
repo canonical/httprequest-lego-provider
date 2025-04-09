@@ -5,10 +5,9 @@
 from io import StringIO
 
 import pytest
+from api.models import DomainUserPermission
 from django.core.management import call_command
 from django.core.management.base import CommandError
-
-from api.models import DomainUserPermission
 
 
 @pytest.mark.django_db
