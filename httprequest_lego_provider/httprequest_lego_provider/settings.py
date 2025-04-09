@@ -24,12 +24,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get("DEBUG", False)
+DEBUG = os.getenv("DJANGO_DEBUG", "").lower() == "true"
 
-ALLOWED_HOSTS = json.loads(os.environ.get("DJANGO_ALLOWED_HOSTS", "[]"))
+try:
+    env_allowed_hosts = json.loads(os.getenv("DJANGO_ALLOWED_HOSTS", "[]"))
+except json.decoder.JSONDecodeError:
+    env_allowed_hosts = []
+ALLOWED_HOSTS = env_allowed_hosts
 
 
 # Application definition
@@ -41,7 +45,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "httprequest_lego_provider",
+    "api",
     "rest_framework",
     "rest_framework_simplejwt",
 ]
@@ -56,7 +60,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "app.urls"
+ROOT_URLCONF = "httprequest_lego_provider.urls"
 
 TEMPLATES = [
     {
@@ -82,7 +86,6 @@ WSGI_APPLICATION = "app.wsgi.application"
 
 db_url = os.environ.get("POSTGRESQL_DB_CONNECT_STRING", "")
 parsed_db_url = urllib.parse.urlparse(db_url)
-
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -91,7 +94,7 @@ DATABASES = {
         "PASSWORD": parsed_db_url.password,
         "HOST": parsed_db_url.hostname,
         "PORT": parsed_db_url.port or "5432",
-    }
+    },
 }
 
 

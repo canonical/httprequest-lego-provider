@@ -1,21 +1,19 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
-"""Revoke domains module."""
+"""Allow domains module."""
 
 # imported-auth-user has to be disable as the conflicting import is needed for typing
-# pylint:disable=imported-auth-user
+# pylint:disable=duplicate-code,imported-auth-user
 
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand, CommandError
 
-from httprequest_lego_provider.forms import FQDN_PREFIX
-from httprequest_lego_provider.models import Domain, DomainUserPermission
-
-# pylint:disable=duplicate-code
+from api.forms import FQDN_PREFIX
+from api.models import Domain, DomainUserPermission
 
 
 class Command(BaseCommand):
-    """Command to revoke access to domains to a user.
+    """Command to grant access to domains to a user.
 
     Attrs:
         help: help message to display.
@@ -55,6 +53,6 @@ class Command(BaseCommand):
                 else f"{FQDN_PREFIX}{domain_name}"
             )
             domain, _ = Domain.objects.get_or_create(fqdn=fqdn)
-            DomainUserPermission.objects.filter(domain=domain, user=user).delete()
+            DomainUserPermission.objects.get_or_create(domain=domain, user=user)
 
-        self.stdout.write(self.style.SUCCESS(f'Revoked "{", ".join(domains)}" for "{username}"'))
+        self.stdout.write(self.style.SUCCESS(f'Granted "{", ".join(domains)}" for "{username}"'))

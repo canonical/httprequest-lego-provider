@@ -5,8 +5,8 @@
 from django.apps import AppConfig
 
 
-class HttpRequestLegoProviderConfig(AppConfig):
-    """HTTPRequest Lego Provider app configuration.
+class ApiConfig(AppConfig):
+    """API configuration.
 
     Attributes:
         default_auto_field: default auto-field.
@@ -14,4 +14,4 @@ class HttpRequestLegoProviderConfig(AppConfig):
     """
 
     default_auto_field = "django.db.models.BigAutoField"
-    name = "httprequest_lego_provider"
+    name = "api"

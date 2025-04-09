@@ -13,6 +13,8 @@ from git import GitCommandError, Repo
 
 from .settings import GIT_REPO_URL
 
+logger = logging.getLogger(__name__)
+
 FILENAME_TEMPLATE = "{domain}.domain"
 RECORD_CONTENT = "{record} 600 IN TXT \042{value}\042\n"
 

@@ -9,10 +9,9 @@ import base64
 import secrets
 
 import pytest
+from api.forms import FQDN_PREFIX
+from api.models import Domain, DomainUserPermission
 from django.contrib.auth.models import User
-
-from httprequest_lego_provider.forms import FQDN_PREFIX
-from httprequest_lego_provider.models import Domain, DomainUserPermission
 
 
 @pytest.fixture(scope="module", name="username")

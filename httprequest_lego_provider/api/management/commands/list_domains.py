@@ -5,10 +5,9 @@
 # imported-auth-user has to be disable as the conflicting import is needed for typing
 # pylint:disable=imported-auth-user
 
+from api.models import DomainUserPermission
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand, CommandError
-
-from httprequest_lego_provider.models import DomainUserPermission
 
 
 class Command(BaseCommand):

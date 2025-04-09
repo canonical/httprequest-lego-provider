@@ -12,33 +12,15 @@ license: Apache-2.0
 platforms:
     amd64:
 
-# To ensure the django-framework extension works properly, your Django application
-# should have an `wsgi.py` file with an `application` object as the WSGI entrypoint.
 extensions:
-    - django-framework
-
-services:
-    django:
-        command: "/bin/python3 -m gunicorn -c /django/gunicorn.conf.py app.wsgi:application"
+  - django-framework
 
 parts:
-    # Exclude pyproject.yaml so that the python plugin doesn't handle this project as a package
-    django-framework/dependencies:
-        stage-packages:
-            - git
-            - openssh-client
-        override-build: |
-            rm -f pyproject.toml
-            craftctl default
-    django-framework/install-app:
-        plugin: dump
-        source: .
-        organize:
-            '*': django/app/
-            .*: django/app/
-        prime:
-            - "django/app/httprequest_lego_provider"
-            - "django/app/app"
-            - "django/app/LICENSE"
-            - "django/app/manage.py"
-            - "django/app/requirements.txt"
+  django-framework/dependencies:
+    stage-packages:
+      - git
+      - openssh-client
+    override-build: |
+        # Exclude pyproject.yaml so that the python plugin doesn't handle this project as a package
+        rm -f pyproject.toml
+        craftctl default
