@@ -7,19 +7,18 @@ from pathlib import Path
 from unittest.mock import ANY, MagicMock, Mock, patch
 
 import pytest
-from git import GitCommandError, Repo
-
-from httprequest_lego_provider.dns import (
+from api.dns import (
     DnsSourceUpdateError,
     parse_repository_url,
     remove_dns_record,
     write_dns_record,
 )
+from git import GitCommandError, Repo
 
 
 @patch.object(Path, "write_text")
 @patch.object(Repo, "clone_from")
-@patch("httprequest_lego_provider.dns.GIT_REPO_URL", "git+ssh://user@git.server/repo_name")
+@patch("api.dns.GIT_REPO_URL", "git+ssh://user@git.server/repo_name")
 def test_write_dns_record_raises_exception(repo_patch: Mock, _):
     """
     arrange: mock the repo so that it raises a GitCommandError.
@@ -46,7 +45,7 @@ def test_write_dns_record_raises_exception(repo_patch: Mock, _):
 @patch.object(Path, "write_text")
 @patch.object(Path, "read_text")
 @patch.object(Repo, "clone_from")
-@patch("httprequest_lego_provider.dns.GIT_REPO_URL", "git+ssh://user@git.server/repo_name@lego")
+@patch("api.dns.GIT_REPO_URL", "git+ssh://user@git.server/repo_name@lego")
 def test_write_dns_record(
     repo_patch: Mock, read_patch: Mock, write_patch: Mock, fqdn: str, record: str
 ):
@@ -82,7 +81,7 @@ def test_write_dns_record(
 
 @patch.object(Path, "write_text")
 @patch.object(Repo, "clone_from")
-@patch("httprequest_lego_provider.dns.GIT_REPO_URL", "git+ssh://user@git.server/repo_name")
+@patch("api.dns.GIT_REPO_URL", "git+ssh://user@git.server/repo_name")
 def test_remove_dns_record_raises_exception(repo_patch: Mock, _):
     """
     arrange: mock the repo so that it raises a GitCommandError.
@@ -109,7 +108,7 @@ def test_remove_dns_record_raises_exception(repo_patch: Mock, _):
 @patch.object(Path, "write_text")
 @patch.object(Path, "read_text")
 @patch.object(Repo, "clone_from")
-@patch("httprequest_lego_provider.dns.GIT_REPO_URL", "git+ssh://user@git.server/repo_name")
+@patch("api.dns.GIT_REPO_URL", "git+ssh://user@git.server/repo_name")
 def test_remove_dns_record(
     repo_patch: Mock, read_patch: Mock, write_patch: Mock, fqdn: str, record: str
 ):

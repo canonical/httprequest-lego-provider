@@ -9,7 +9,7 @@ import os
 import secrets
 from pathlib import Path
 
-from app.settings import *  # noqa: F401, F403
+from httprequest_lego_provider.settings import *  # noqa: F401, F403
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent

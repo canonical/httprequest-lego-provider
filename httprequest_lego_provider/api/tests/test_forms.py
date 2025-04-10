@@ -2,7 +2,7 @@
 # See LICENSE file for licensing details.
 """Unit tests for the forms module."""
 
-from httprequest_lego_provider.forms import is_fqdn_compliant
+from api.forms import is_fqdn_compliant
 
 
 def test_is_fqdn_compliant():

@@ -71,6 +71,7 @@ class FQDNField(CharField):
         Returns:
             the FQDN without a trailing dot.
         """
+        value = str(value)
         return value.rstrip(".")
 
 

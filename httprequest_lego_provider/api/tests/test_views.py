@@ -11,12 +11,11 @@ import secrets
 from unittest.mock import patch
 
 import pytest
+from api.forms import FQDN_PREFIX
+from api.models import Domain, DomainUserPermission
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import User
 from django.test import Client
-
-from httprequest_lego_provider.forms import FQDN_PREFIX
-from httprequest_lego_provider.models import Domain, DomainUserPermission
 
 
 @pytest.mark.django_db
@@ -103,7 +102,7 @@ def test_post_present_when_logged_in_and_permission(
     act: submit a POST request for the present URL containing the fqdn above.
     assert: a 204 is returned.
     """
-    with patch("httprequest_lego_provider.views.write_dns_record") as mocked_dns_write:
+    with patch("api.views.write_dns_record") as mocked_dns_write:
         value = secrets.token_hex()
         response = client.post(
             "/present",
@@ -125,7 +124,7 @@ def test_post_present_when_logged_in_and_permission_with_trailing_dor(
     act: submit a POST request for the present URL containing the fqdn above.
     assert: a 204 is returned.
     """
-    with patch("httprequest_lego_provider.views.write_dns_record") as mocked_dns_write:
+    with patch("api.views.write_dns_record") as mocked_dns_write:
         value = secrets.token_hex()
         response = client.post(
             "/present",
@@ -145,7 +144,7 @@ def test_post_present_when_logged_in_and_fqdn_invalid(client: Client, user_auth_
     act: submit a POST request for the present URL containing an invalid FQDN.
     assert: a 400 is returned.
     """
-    with patch("httprequest_lego_provider.views.write_dns_record"):
+    with patch("api.views.write_dns_record"):
         value = secrets.token_hex()
         response = client.post(
             "/present",
@@ -228,7 +227,7 @@ def test_post_cleanup_when_logged_in_and_permission(
     act: submit a POST request for the cleanup URL containing the fqdn above.
     assert: a 200 is returned.
     """
-    with patch("httprequest_lego_provider.views.remove_dns_record") as mocked_dns_remove:
+    with patch("api.views.remove_dns_record") as mocked_dns_remove:
         value = secrets.token_hex()
         response = client.post(
             "/cleanup",
@@ -250,7 +249,7 @@ def test_post_cleanup_when_logged_in_and_permission_with_trailing_dot(
     act: submit a POST request for the cleanup URL containing the fqdn above.
     assert: a 200 is returned.
     """
-    with patch("httprequest_lego_provider.views.remove_dns_record") as mocked_dns_remove:
+    with patch("api.views.remove_dns_record") as mocked_dns_remove:
         value = secrets.token_hex()
         response = client.post(
             "/cleanup",
@@ -270,7 +269,7 @@ def test_post_cleanup_when_logged_in_and_fqdn_invalid(client: Client, user_auth_
     act: submit a POST request for the cleanup URL containing an invalid FQDN.
     assert: a 400 is returned.
     """
-    with patch("httprequest_lego_provider.views.remove_dns_record"):
+    with patch("api.views.remove_dns_record"):
         value = secrets.token_hex()
         response = client.post(
             "/cleanup",
@@ -309,7 +308,7 @@ def test_test_jwt_token_login(
     )
     token = json.loads(response.content)["access"]
 
-    with patch("httprequest_lego_provider.views.write_dns_record"):
+    with patch("api.views.write_dns_record"):
         value = secrets.token_hex()
         response = client.post(
             "/present",
