@@ -24,3 +24,8 @@ parts:
         # Exclude pyproject.yaml so that the python plugin doesn't handle this project as a package
         rm -f pyproject.toml
         craftctl default
+  django-framework/perms:
+    plugin: nil
+    after: [django-framework/dependencies]
+    override-prime: |
+      chmod -R 755 django
