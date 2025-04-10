@@ -2,6 +2,7 @@
 # See LICENSE file for licensing details.
 
 """Charm Integration tests."""
+import secrets
 import logging
 import os
 import textwrap
@@ -28,6 +29,8 @@ async def test_build_and_deploy(ops_test: OpsTest, pytestconfig: pytest.Config):
     await ops_test.model.deploy(
         os.path.abspath(charm),
         config={
+            "django-allowed-hosts": "*",
+            "django-secret-key": secrets.token_hex(),
             "git-repo": "git+ssh://git@github.com/canonical/httprequest-lego-provider.git@main",
             "git-ssh-key": textwrap.dedent(
                 """\
