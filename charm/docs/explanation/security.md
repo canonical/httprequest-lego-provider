@@ -1,0 +1,30 @@
+# Security
+
+This document outlines common risks and possible best practices for the HTTP request Lego provider charm. It focuses on configurations and protections available through the charm itself.
+
+## Risks
+
+The following items include descriptions of the risks, their corresponding best practices for mitigation, as well as links to related documentation and configuration guidelines.
+
+### Loss of data
+
+- The PostgreSQL database might be destroyed, corrupted, or become inaccessible.
+- The Git repository might be destroyed, corrupted, or become inaccessible.
+
+#### Best practices
+
+- Configure database backups:
+
+  Follow the [charm documentation](https://charmhub.io/httprequest-lego-provider/docs/how-to-backup-and-restore) for guidance on creating regular backups and restoring them when required.
+  
+- Configure repository backups:
+
+  Back up the Git repository with the appropriate strategy.
+
+### Security vulnerabilities
+
+Running HTTP request Lego provider with one or more weakness that can be exploited by attackers.
+
+#### Best practices
+
+- Keep the Juju and the charm updated. See more about Juju updates in the [documentation](https://documentation.ubuntu.com/juju/latest/explanation/juju-security/index.html#regular-updates-and-patches).

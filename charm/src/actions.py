@@ -1,7 +1,7 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-"""HTTPRequest LEGO provider charm actions."""
+"""HTTP request LEGO provider charm actions."""
 
 # pylint: disable=protected-access
 

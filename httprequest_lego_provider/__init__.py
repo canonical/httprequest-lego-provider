@@ -1,3 +1,3 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
-"""HTTPRequest Lego Provider module."""
+"""HTTP request Lego Provider module."""

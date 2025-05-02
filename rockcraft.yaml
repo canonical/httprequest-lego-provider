@@ -4,9 +4,9 @@
 name: httprequest-lego-provider
 base: ubuntu@22.04
 version: "0.1"
-summary: A Django application implementing HTTPRequest Lego Provider
+summary: A Django application implementing HTTP request Lego Provider
 description: |
-    A Django application implementing [HTTPRequest Lego Provider]
+    A Django application implementing [HTTP request Lego Provider]
     (https://go-acme.github.io/lego/dns/httpreq/)
 license: Apache-2.0
 platforms:

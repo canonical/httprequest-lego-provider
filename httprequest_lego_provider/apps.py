@@ -6,7 +6,7 @@ from django.apps import AppConfig
 
 
 class HttpRequestLegoProviderConfig(AppConfig):
-    """HTTPRequest Lego Provider app configuration.
+    """HTTP request Lego Provider app configuration.
 
     Attributes:
         default_auto_field: default auto-field.
