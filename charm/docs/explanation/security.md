@@ -8,8 +8,8 @@ The following items include descriptions of the risks, their corresponding best 
 
 ### Loss of data
 
-- The PostgreSQL database might be destroyed, corrupted, or become inaccessible.
-- The Git repository might be destroyed, corrupted, or become inaccessible.
+- The PostgreSQL database might become destroyed, corrupted, or may be destroyed.
+- The Git repository might become destroyed, corrupted, or may be destroyed.
 
 #### Best practices
 
@@ -23,7 +23,7 @@ The following items include descriptions of the risks, their corresponding best 
 
 ### Security vulnerabilities
 
-Running HTTP request Lego provider with one or more weakness that can be exploited by attackers.
+Running HTTP request Lego provider with one or more weaknesses that can be exploited by attackers.
 
 #### Best practices
 
