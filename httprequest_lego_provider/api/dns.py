@@ -2,16 +2,10 @@
 # See LICENSE file for licensing details.
 """DNS utiilities."""
 
-import io
 import logging
+import subprocess
 from collections.abc import Iterable
-from pathlib import Path
-from tempfile import TemporaryDirectory
 from typing import List, Tuple
-
-from git import GitCommandError, Repo
-
-from .settings import GIT_REPO_URL
 
 logger = logging.getLogger(__name__)
 
@@ -89,37 +83,41 @@ def _remove_subdomain_entries_from_file_content(
     return new_content
 
 
-def write_dns_record(fqdn: str, value: str) -> None:
+def write_dns_record(fqdn: str, rdata: str) -> None:
     """Write a DNS record.
 
     Args:
         fqdn: the FQDN for which to add a record.
-        value: ACME challenge for DNS record to add.
+        rdata: ACME challenge for DNS record to add.
 
     Raises:
         DnsSourceUpdateError: if an error while updating the repository occurs.
     """
-    user, base_url, branch = parse_repository_url(GIT_REPO_URL)
-    with TemporaryDirectory() as tmp_dir:
-        try:
-            repo = Repo.clone_from(base_url, tmp_dir, branch=branch)
-            config_writer = repo.config_writer()
-            config_writer.set_value("user", "name", user)
-            config_writer.release()
-            domain, subdomain = _get_domain_and_subdomain_from_fqdn(fqdn)
-            filename = FILENAME_TEMPLATE.format(domain=domain)
-            dns_record_file = Path(f"{repo.working_tree_dir}/{filename}")
-            content = dns_record_file.read_text("utf-8")
-            new_content = _remove_subdomain_entries_from_file_content(
-                io.StringIO(content), subdomain
-            )
-            new_content.append(RECORD_CONTENT.format(record=subdomain, value=value))
-            dns_record_file.write_text("".join(new_content), encoding="utf-8")
-            repo.index.add([filename])
-            repo.git.commit("-m", f"Add {fqdn} record")
-            repo.remote(name="origin").push()
-        except (GitCommandError, ValueError) as ex:
-            raise DnsSourceUpdateError from ex
+    try:
+        # Notify the charm that we need to request a DNS record
+        output = subprocess.check_output(
+            ["/usr/bin/pebble", "notify", "dns.local/write", f"fqdn='{fqdn}'", f"rdata='{rdata}'"],
+            stderr=subprocess.STDOUT,  # Capture stderr in output
+            timeout=10,
+        )
+
+        if b"Error" in output or b"error" in output:
+            raise DnsSourceUpdateError(f"Error executing Pebble command: {output.decode('utf-8')}")
+        logger.info("Pebble command executed successfully: %s", output.decode("utf-8"))
+
+    except subprocess.TimeoutExpired as e:
+        raise DnsSourceUpdateError(
+            f"Timeout executing Pebble command: {e.output.decode('utf-8')}"
+        ) from e
+
+    except subprocess.CalledProcessError as e:
+        raise DnsSourceUpdateError(
+            "Error executing Pebble command (exit code "
+            f"{e.returncode}): {e.output.decode('utf-8')}"
+        ) from e
+
+    except FileNotFoundError:
+        logger.error("Error executing Pebble command: 'pebble' command not found")
 
 
 def remove_dns_record(fqdn: str) -> None:
@@ -131,23 +129,35 @@ def remove_dns_record(fqdn: str) -> None:
     Raises:
         DnsSourceUpdateError: if an error while updating the repository occurs.
     """
-    user, base_url, branch = parse_repository_url(GIT_REPO_URL)
-    with TemporaryDirectory() as tmp_dir:
-        try:
-            repo = Repo.clone_from(base_url, tmp_dir, branch=branch)
-            config_writer = repo.config_writer()
-            config_writer.set_value("user", "name", user)
-            config_writer.release()
-            domain, subdomain = _get_domain_and_subdomain_from_fqdn(fqdn)
-            filename = FILENAME_TEMPLATE.format(domain=domain)
-            dns_record_file = Path(f"{repo.working_tree_dir}/{filename}")
-            content = dns_record_file.read_text("utf-8")
-            new_content = _remove_subdomain_entries_from_file_content(
-                io.StringIO(content), subdomain
-            )
-            dns_record_file.write_text("".join(new_content), encoding="utf-8")
-            repo.index.add([filename])
-            repo.git.commit("-m", f"Remove {fqdn} record")
-            repo.remote(name="origin").push()
-        except (GitCommandError, ValueError) as ex:
-            raise DnsSourceUpdateError from ex
+    try:
+        # Notify the charm that we need to remove a DNS record
+        output = subprocess.check_output(
+            [
+                "/usr/bin/pebble",
+                "notify",
+                "dns.local/remove",
+                f"fqdn='{fqdn}'",
+            ],
+            stderr=subprocess.STDOUT,  # Capture stderr in output
+            timeout=10,
+        )
+
+        if b"Error" in output or b"error" in output:
+            raise DnsSourceUpdateError(f"Error executing Pebble command: {output.decode('utf-8')}")
+        logger.info("Pebble command executed successfully: %s", output.decode("utf-8"))
+
+    except subprocess.TimeoutExpired as e:
+        raise DnsSourceUpdateError(
+            f"Timeout executing Pebble command: {e.output.decode('utf-8')}"
+        ) from e
+
+    except subprocess.CalledProcessError as e:
+        raise DnsSourceUpdateError(
+            "Error executing Pebble command (exit code "
+            f"{e.returncode}): {e.output.decode('utf-8')}"
+        ) from e
+
+    except FileNotFoundError as e:
+        raise DnsSourceUpdateError(
+            "Error executing Pebble command: 'pebble' command not found"
+        ) from e

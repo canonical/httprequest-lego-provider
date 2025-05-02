@@ -29,3 +29,8 @@ parts:
     after: [django-framework/dependencies]
     override-prime: |
       chmod -R 755 django
+services:
+  django:
+    # We need django to be root as a workaround for pebble notices
+    # The PebbleCustomNoticeEvent is not sent by juju if a _daemon_ user uses pebble notify
+    user: root
