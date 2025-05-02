@@ -3,9 +3,7 @@
 """DNS utiilities."""
 
 import logging
-import subprocess
-from collections.abc import Iterable
-from typing import List, Tuple
+import subprocess  # nosec B404
 
 logger = logging.getLogger(__name__)
 
@@ -17,23 +15,7 @@ class DnsSourceUpdateError(Exception):
     """Exception for DNS update errors."""
 
 
-def parse_repository_url(repository_url: str) -> Tuple[str, str, str | None]:
-    """Get the parsed connection details from the repository connection string.
-
-    Args:
-        repository_url: the repository's connection string.
-
-    Returns:
-        the repository user, url and branch.
-    """
-    splitted_url = repository_url.split("@")
-    user = splitted_url[0].split("//")[1]
-    base_url = "@".join(splitted_url[:2])
-    branch = splitted_url[2] if len(splitted_url) > 2 else None
-    return user, base_url, branch
-
-
-def _get_domain_and_subdomain_from_fqdn(fqdn: str) -> Tuple[str, str]:
+def _get_domain_and_subdomain_from_fqdn(fqdn: str) -> tuple[str, str]:
     """Get the domain and subdomain for the FQDN record provided.
 
     Args:
@@ -62,27 +44,6 @@ def _line_matches_subdomain(line: str, subdomain: str) -> bool:
     return not line.strip().startswith(";") and bool(line.split()) and line.split()[0] == subdomain
 
 
-def _remove_subdomain_entries_from_file_content(
-    content: Iterable[str], subdomain: str
-) -> List[str]:
-    """Remove from the file the entries matching a subdomain.
-
-    Args:
-        content: the file content.
-        subdomain: the subdomain for which to filter out the entries.
-
-    Returns:
-        the content excluding the entries for the  subdomain.
-    """
-    new_content = []
-    for line in content:
-        if not _line_matches_subdomain(line, subdomain):
-            new_content.append(line)
-        else:
-            logging.error("Subdomain %s already present as a DNS record.", subdomain)
-    return new_content
-
-
 def write_dns_record(fqdn: str, rdata: str) -> None:
     """Write a DNS record.
 
@@ -97,7 +58,7 @@ def write_dns_record(fqdn: str, rdata: str) -> None:
         # Notify the charm that we need to request a DNS record
         output = subprocess.check_output(
             ["/usr/bin/pebble", "notify", "dns.local/write", f"fqdn='{fqdn}'", f"rdata='{rdata}'"],
-            stderr=subprocess.STDOUT,  # Capture stderr in output
+            stderr=subprocess.STDOUT,  # nosec B603, B607
             timeout=10,
         )
 
@@ -138,9 +99,9 @@ def remove_dns_record(fqdn: str) -> None:
                 "dns.local/remove",
                 f"fqdn='{fqdn}'",
             ],
-            stderr=subprocess.STDOUT,  # Capture stderr in output
+            stderr=subprocess.STDOUT,
             timeout=10,
-        )
+        )  # nosec B603, B607
 
         if b"Error" in output or b"error" in output:
             raise DnsSourceUpdateError(f"Error executing Pebble command: {output.decode('utf-8')}")
