@@ -19,7 +19,7 @@ The following items include descriptions of the risks, their corresponding best 
   
 - Configure repository backups:
 
-  Back up the Git repository with the appropriate strategy.
+  Back up the Git repository with the appropriate strategy depending on your server.
 
 ### Security vulnerabilities
 
