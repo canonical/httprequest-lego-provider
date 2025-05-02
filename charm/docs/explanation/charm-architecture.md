@@ -9,7 +9,7 @@ For a complete view on the architecture of a 12-factor charm, refer to the [12-f
 ## OCI images
 
 We use [Rockcraft's Django framework extension](https://documentation.ubuntu.com/rockcraft/en/stable/reference/extensions/django-framework.html) to build OCI Images for HTTP request LEGO provider. 
-The images are defined in [HTTP request LEGO provider rock](https://github.com/canonical/httprequest-lego-provider/blob/main/rockcraft.yaml).
+The images are defined in [HTTP request Lego provider rock](https://github.com/canonical/httprequest-lego-provider/blob/main/rockcraft.yaml).
 They are published to [Charmhub](https://charmhub.io/), the official repository of charms.
 
 > See more: [How to publish your charm on Charmhub](https://juju.is/docs/sdk/publishing)
