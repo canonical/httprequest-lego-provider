@@ -2,7 +2,7 @@
 # See LICENSE file for licensing details.
 """Unit tests for the dns module."""
 
-import subprocess
+import subprocess  # nosec B404
 from unittest.mock import MagicMock
 
 from api.dns import remove_dns_record, write_dns_record
