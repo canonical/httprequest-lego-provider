@@ -35,7 +35,7 @@ juju add-model httprequest-lego-provider-tutorial
 
 ### Deploy the Httprequest Lego Provider charm
 
-The HTTPRequest Lego provider requires integration with [the PostgreSQL K8s charm](https://charmhub.io/postgresql-k8s) and [NGINX Ingress Integrator](https://charmhub.io/nginx-ingress-integrator/) for external access:
+The HTTP request Lego provider requires integration with [the PostgreSQL K8s charm](https://charmhub.io/postgresql-k8s) and [NGINX Ingress Integrator](https://charmhub.io/nginx-ingress-integrator/) for external access:
 
 Deploy the charms:
 

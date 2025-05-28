@@ -11,7 +11,7 @@ bases:
     - name: ubuntu
       channel: "22.04"
 
-summary: HTTPRequest Lego provider.
+summary: HTTP request Lego provider.
 
 description: |
   A [Juju](https://juju.is/) [charm](https://juju.is/docs/olm/charmed-operators)
