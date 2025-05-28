@@ -1,6 +1,7 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+import logging
 import datetime
 import json
 import os
@@ -23,6 +24,7 @@ DEBUG = os.getenv("DJANGO_DEBUG", "").lower() == "true"
 try:
     env_allowed_hosts = json.loads(os.getenv("DJANGO_ALLOWED_HOSTS", "[]"))
 except json.decoder.JSONDecodeError:
+    logging.warning("Failed to parse DJANGO_ALLOWED_HOSTS environment variable. Using empty list.")
     env_allowed_hosts = []
 ALLOWED_HOSTS = env_allowed_hosts
 

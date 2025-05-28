@@ -1,4 +1,4 @@
-# HTTPRequest Lego provider
+# HTTP request Lego provider
 
   A [Juju](https://juju.is/) [charm](https://juju.is/docs/olm/charmed-operators)
   deploying and managing [HTTP request Lego provider](https://go-acme.github.io/lego/dns/httpreq/)
@@ -22,7 +22,7 @@
 
 | | |
 |--|--|
-|  [Tutorials](https://discourse.charmhub.io/t/httprequest-lego-provider-docs-getting-started/15784)</br>  Get started - a hands-on introduction to using the HTTPRequest Lego provider for new users </br> |  [How-to guides](https://charmhub.io/httprequest-lego-provider/docs/authentication) </br> Step-by-step guides covering key operations and common tasks |
+|  [Tutorials](https://discourse.charmhub.io/t/httprequest-lego-provider-docs-getting-started/15784)</br>  Get started - a hands-on introduction to using the HTTP request Lego provider for new users </br> |  [How-to guides](https://charmhub.io/httprequest-lego-provider/docs/authentication) </br> Step-by-step guides covering key operations and common tasks |
 | [Reference](https://charmhub.io/httprequest-lego-provider/actions) </br> Technical information - specifications, APIs, architecture | [Explanation](https://charmhub.io/httprequest-lego-provider/docs/architecture) </br> Concepts - discussion and clarification of key topics  |
 
 ## Contributing to this documentation
@@ -33,11 +33,11 @@ If there's a particular area of documentation that you'd like to see that's miss
 
 ## Project and community
 
-HTTPRequest Lego Provider is an open-source project that welcomes community contributions, suggestions, fixes and constructive feedback.
+HTTP request Lego Provider is an open-source project that welcomes community contributions, suggestions, fixes and constructive feedback.
 - [Read our Code of Conduct](https://ubuntu.com/community/code-of-conduct)
 - [Get support](https://discourse.charmhub.io/tag/lego)
 - [Join our online chat](https://matrix.to/#/#charmhub-charmdev:ubuntu.com)
-- Contribute and report bugs to [the HTTPRequest Lego Provider](https://github.com/canonical/httprequest-lego-provider/issues)
+- Contribute and report bugs to [the HTTP request Lego Provider](https://github.com/canonical/httprequest-lego-provider/issues)
 
 # Navigation
 
