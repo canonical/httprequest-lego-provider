@@ -1,6 +1,6 @@
-# How to toubleshoot API timeouts
+# How to troubleshoot API timeouts
 
-Some of the API calls will excute behind the scenes requests over the network.
+Some of the API calls will execute behind the scenes requests over the network.
 
 In the event you have a slow network connection this might result in timeouts manifesting as HTTP 500 errors for the API caller. If this is your case, adjusting the [webserver-timeout](https://charmhub.io/httprequest-lego-provider/configurations#webserver-timeout) configuration can help you solve this.
 
