@@ -4,7 +4,7 @@ Some of the API calls will execute requests over the network from behind the sce
 
 In the event you have a slow network connection this might result in timeouts manifesting as HTTP 500 errors for the API caller. This is more likely for larger Git repositories. If this is your case, adjusting the [`webserver-timeout`](https://charmhub.io/httprequest-lego-provider/configurations#webserver-timeout) configuration can help you solve this.
 
-You should be able to find a log entry containing the  following for the scenario above:
+For the scenario described above, you should be able to find a log entry containing the following:
 ```
   File "/usr/lib/python3.10/subprocess.py", line 1154, in communicate
     stdout, stderr = self._communicate(input, endtime, timeout)
