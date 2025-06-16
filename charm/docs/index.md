@@ -50,6 +50,7 @@ HTTP request Lego Provider is an open-source project that welcomes community con
 | 1 | how-to| [How to]() |
 | 2 | manage-domains | [Manage Domains](/t/httprequest-lego-provider-docs-how-to-manage-domains/15786) |
 | 2 | manage-users | [Manage Users](/t/httprequest-lego-provider-docs-how-to-manage-users/15787) |
+| 2 | troubleshoot-api-timeouts | [Troubleshoot API timeouts](/t/httprequest-lego-provider-docs-how-to-troubleshoot-api-timeouts/18052) |
 | 1 | reference| [Reference]() |
 | 2 | reference-actions | [Actions](/t/httprequest-lego-provider-docs-actions/15788) |
 | 2 | reference-configurations | [Configurations](/t/httprequest-lego-provider-docs-configurations/15789) |
