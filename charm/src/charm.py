@@ -6,12 +6,11 @@
 
 import logging
 import typing
-import uuid
 
 import actions
 import ops
 import paas_app_charmer.django
-from charms.bind.v0 import dns_record
+from charms.dns_record.v0 import dns_record
 
 logger = logging.getLogger(__name__)
 
@@ -20,9 +19,6 @@ DJANGO_GROUP = "_daemon_"
 KNOWN_HOSTS_PATH = "/var/lib/pebble/default/.ssh/known_hosts"
 RSA_PATH = "/var/lib/pebble/default/.ssh/id_rsa"
 CONTAINER_NAME = "django-app"
-
-# the following UUID is used as namespace for the uuidv5 generation
-UUID_NAMESPACE = uuid.UUID("72d690d4-7af7-4a2e-868c-ec33aaf643d8")
 
 
 class DjangoCharm(paas_app_charmer.django.Charm):
@@ -47,40 +43,42 @@ class DjangoCharm(paas_app_charmer.django.Charm):
         Args:
             event: Pebble custom notice event.
         """
-        entries = []
+        if not self.model.unit.is_leader():
+            return
+        entries = self.dns_record.get_relation_data()
         known_notice = False
+
         if event.notice.key.startswith("dns.local/write"):
             fqdn = event.notice.last_data["fqdn"].strip("'").strip()
             rdata = event.notice.last_data["rdata"].strip("'").strip()
-            entry = dns_record.RequirerEntry(
-                host_label=fqdn.split(".")[0],
-                domain=fqdn.split(".", 1)[1],
-                ttl=600,
-                record_class="IN",
-                record_type="TXT",
-                record_data=rdata,
-                uuid=uuid.uuid5(UUID_NAMESPACE, f"{fqdn} {rdata}"),
+
+            try:
+                host_label = fqdn.split(".")[0]
+                domain = fqdn.split(".", 1)[1]
+            except IndexError:
+                logger.error("Faulty write notice received: %s, FQDN: %s", event.notice.key, fqdn)
+                return
+
+            entry = self.dns_record.create_record_request(
+                f"{host_label} {domain} 600 IN TXT {rdata}"
             )
+            entries.append(entry)
             logger.debug("DNS record request: %s", entry)
-            entries = [entry]
             known_notice = True
 
         if event.notice.key.startswith("dns.local/remove"):
-            # For now, we remove everything
-            # since the default is no entries, we have nothing to do here.
+            fqdn = event.notice.last_data["fqdn"].strip("'").strip()
             known_notice = True
+            # remove entries with the same fqdn
+            entries = [e for e in entries if fqdn != f"{entry.host_label}.{entry.domain}"]
 
         if not known_notice:
             # We received an unknown notice, nothing to do with it.
             logger.debug("Unknown notice: %s", event.notice.key)
             return
-
-        dns_record_requirer_data = dns_record.DNSRecordRequirerData(dns_entries=entries)
-        if not self.model.unit.is_leader():
-            return
         try:
             for relation in self.model.relations[self.dns_record.relation_name]:
-                self.dns_record.update_relation_data(relation, dns_record_requirer_data)
+                self.dns_record.update_relation_data(relation, entries)
         except ops.model.ModelError as e:
             logger.error("ERROR while updating relation data: %s", e)
             raise
