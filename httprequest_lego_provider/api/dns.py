@@ -2,16 +2,8 @@
 # See LICENSE file for licensing details.
 """DNS utiilities."""
 
-import io
 import logging
-from collections.abc import Iterable
-from pathlib import Path
-from tempfile import TemporaryDirectory
-from typing import List, Tuple
-
-from git import GitCommandError, Repo
-
-from .settings import GIT_REPO_URL
+import subprocess  # nosec B404
 
 logger = logging.getLogger(__name__)
 
@@ -19,27 +11,23 @@ FILENAME_TEMPLATE = "{domain}.domain"
 RECORD_CONTENT = "{record} 600 IN TXT \042{value}\042\n"
 
 
-class DnsSourceUpdateError(Exception):
-    """Exception for DNS update errors."""
+class HTTPRequestNotifyOutputError(Exception):
+    """if an error while notifying the charm."""
 
 
-def parse_repository_url(repository_url: str) -> Tuple[str, str, str | None]:
-    """Get the parsed connection details from the repository connection string.
-
-    Args:
-        repository_url: the repository's connection string.
-
-    Returns:
-        the repository user, url and branch.
-    """
-    splitted_url = repository_url.split("@")
-    user = splitted_url[0].split("//")[1]
-    base_url = "@".join(splitted_url[:2])
-    branch = splitted_url[2] if len(splitted_url) > 2 else None
-    return user, base_url, branch
+class HTTPRequestNotifyTimeoutError(Exception):
+    """if an error while notifying the charm."""
 
 
-def _get_domain_and_subdomain_from_fqdn(fqdn: str) -> Tuple[str, str]:
+class HTTPRequestNotifyProcessError(Exception):
+    """if an error while notifying the charm."""
+
+
+class HTTPRequestPebbleNotFoundError(Exception):
+    """if an error while notifying the charm."""
+
+
+def _get_domain_and_subdomain_from_fqdn(fqdn: str) -> tuple[str, str]:
     """Get the domain and subdomain for the FQDN record provided.
 
     Args:
@@ -68,58 +56,50 @@ def _line_matches_subdomain(line: str, subdomain: str) -> bool:
     return not line.strip().startswith(";") and bool(line.split()) and line.split()[0] == subdomain
 
 
-def _remove_subdomain_entries_from_file_content(
-    content: Iterable[str], subdomain: str
-) -> List[str]:
-    """Remove from the file the entries matching a subdomain.
-
-    Args:
-        content: the file content.
-        subdomain: the subdomain for which to filter out the entries.
-
-    Returns:
-        the content excluding the entries for the  subdomain.
-    """
-    new_content = []
-    for line in content:
-        if not _line_matches_subdomain(line, subdomain):
-            new_content.append(line)
-        else:
-            logging.error("Subdomain %s already present as a DNS record.", subdomain)
-    return new_content
-
-
-def write_dns_record(fqdn: str, value: str) -> None:
+def write_dns_record(fqdn: str, rdata: str) -> None:
     """Write a DNS record.
 
     Args:
         fqdn: the FQDN for which to add a record.
-        value: ACME challenge for DNS record to add.
+        rdata: ACME challenge for DNS record to add.
 
     Raises:
-        DnsSourceUpdateError: if an error while updating the repository occurs.
+        HTTPRequestNotifyOutputError: if an error while notifying the charm.
+        HTTPRequestNotifyTimeoutError: if an error while notifying the charm.
+        HTTPRequestNotifyProcessError: if an error while notifying the charm.
+        HTTPRequestPebbleNotFoundError: if an error while notifying the charm.
     """
-    user, base_url, branch = parse_repository_url(GIT_REPO_URL)
-    with TemporaryDirectory() as tmp_dir:
-        try:
-            repo = Repo.clone_from(base_url, tmp_dir, branch=branch)
-            config_writer = repo.config_writer()
-            config_writer.set_value("user", "name", user)
-            config_writer.release()
-            domain, subdomain = _get_domain_and_subdomain_from_fqdn(fqdn)
-            filename = FILENAME_TEMPLATE.format(domain=domain)
-            dns_record_file = Path(f"{repo.working_tree_dir}/{filename}")
-            content = dns_record_file.read_text("utf-8")
-            new_content = _remove_subdomain_entries_from_file_content(
-                io.StringIO(content), subdomain
+    try:
+        # Notify the charm that we need to request a DNS record
+        output = subprocess.check_output(
+            ["/usr/bin/pebble", "notify", "dns.local/write", f"fqdn='{fqdn}'", f"rdata='{rdata}'"],
+            stderr=subprocess.STDOUT,  # nosec B603, B607
+            timeout=10,
+        )
+
+        if b"Error" in output or b"error" in output:
+            raise HTTPRequestNotifyOutputError(
+                f"Error executing Pebble command: {output.decode('utf-8')}"
             )
-            new_content.append(RECORD_CONTENT.format(record=subdomain, value=value))
-            dns_record_file.write_text("".join(new_content), encoding="utf-8")
-            repo.index.add([filename])
-            repo.git.commit("-m", f"Add {fqdn} record")
-            repo.remote(name="origin").push()
-        except (GitCommandError, ValueError) as ex:
-            raise DnsSourceUpdateError from ex
+
+        logger.info("Pebble command executed successfully: %s", output.decode("utf-8"))
+
+    except subprocess.TimeoutExpired as e:
+        raise HTTPRequestNotifyTimeoutError(
+            f"Timeout executing Pebble command: {e.output.decode('utf-8')}"
+        ) from e
+
+    except subprocess.CalledProcessError as e:
+        raise HTTPRequestNotifyProcessError(
+            "Error executing Pebble command (exit code "
+            f"{e.returncode}): {e.output.decode('utf-8')}"
+        ) from e
+
+    except FileNotFoundError as e:
+        logger.error("Error executing Pebble command: 'pebble' command not found")
+        raise HTTPRequestPebbleNotFoundError(
+            "Error executing Pebble command: 'pebble' command not found"
+        ) from e
 
 
 def remove_dns_record(fqdn: str) -> None:
@@ -129,25 +109,43 @@ def remove_dns_record(fqdn: str) -> None:
         fqdn: the FQDN for which to delete the record.
 
     Raises:
-        DnsSourceUpdateError: if an error while updating the repository occurs.
+        HTTPRequestNotifyOutputError: if an error while notifying the charm.
+        HTTPRequestNotifyTimeoutError: if an error while notifying the charm.
+        HTTPRequestNotifyProcessError: if an error while notifying the charm.
+        HTTPRequestPebbleNotFoundError: if an error while notifying the charm.
     """
-    user, base_url, branch = parse_repository_url(GIT_REPO_URL)
-    with TemporaryDirectory() as tmp_dir:
-        try:
-            repo = Repo.clone_from(base_url, tmp_dir, branch=branch)
-            config_writer = repo.config_writer()
-            config_writer.set_value("user", "name", user)
-            config_writer.release()
-            domain, subdomain = _get_domain_and_subdomain_from_fqdn(fqdn)
-            filename = FILENAME_TEMPLATE.format(domain=domain)
-            dns_record_file = Path(f"{repo.working_tree_dir}/{filename}")
-            content = dns_record_file.read_text("utf-8")
-            new_content = _remove_subdomain_entries_from_file_content(
-                io.StringIO(content), subdomain
+    try:
+        # Notify the charm that we need to remove a DNS record
+        output = subprocess.check_output(
+            [
+                "/usr/bin/pebble",
+                "notify",
+                "dns.local/remove",
+                f"fqdn='{fqdn}'",
+            ],
+            stderr=subprocess.STDOUT,
+            timeout=10,
+        )  # nosec B603, B607
+
+        if b"Error" in output or b"error" in output:
+            raise HTTPRequestNotifyOutputError(
+                f"Error executing Pebble command: {output.decode('utf-8')}"
             )
-            dns_record_file.write_text("".join(new_content), encoding="utf-8")
-            repo.index.add([filename])
-            repo.git.commit("-m", f"Remove {fqdn} record")
-            repo.remote(name="origin").push()
-        except (GitCommandError, ValueError) as ex:
-            raise DnsSourceUpdateError from ex
+
+        logger.info("Pebble command executed successfully: %s", output.decode("utf-8"))
+
+    except subprocess.TimeoutExpired as e:
+        raise HTTPRequestNotifyTimeoutError(
+            f"Timeout executing Pebble command: {e.output.decode('utf-8')}"
+        ) from e
+
+    except subprocess.CalledProcessError as e:
+        raise HTTPRequestNotifyProcessError(
+            "Error executing Pebble command (exit code "
+            f"{e.returncode}): {e.output.decode('utf-8')}"
+        ) from e
+
+    except FileNotFoundError as e:
+        raise HTTPRequestPebbleNotFoundError(
+            "Error executing Pebble command: 'pebble' command not found"
+        ) from e
