@@ -11,8 +11,20 @@ FILENAME_TEMPLATE = "{domain}.domain"
 RECORD_CONTENT = "{record} 600 IN TXT \042{value}\042\n"
 
 
-class DnsSourceUpdateError(Exception):
-    """Exception for DNS update errors."""
+class HTTPRequestNotifyOutputError(Exception):
+    """if an error while notifying the charm."""
+
+
+class HTTPRequestNotifyTimeoutError(Exception):
+    """if an error while notifying the charm."""
+
+
+class HTTPRequestNotifyProcessError(Exception):
+    """if an error while notifying the charm."""
+
+
+class HTTPRequestPebbleNotFoundError(Exception):
+    """if an error while notifying the charm."""
 
 
 def _get_domain_and_subdomain_from_fqdn(fqdn: str) -> tuple[str, str]:
@@ -52,7 +64,10 @@ def write_dns_record(fqdn: str, rdata: str) -> None:
         rdata: ACME challenge for DNS record to add.
 
     Raises:
-        DnsSourceUpdateError: if an error while updating the repository occurs.
+        HTTPRequestNotifyOutputError: if an error while notifying the charm.
+        HTTPRequestNotifyTimeoutError: if an error while notifying the charm.
+        HTTPRequestNotifyProcessError: if an error while notifying the charm.
+        HTTPRequestPebbleNotFoundError: if an error while notifying the charm.
     """
     try:
         # Notify the charm that we need to request a DNS record
@@ -63,22 +78,28 @@ def write_dns_record(fqdn: str, rdata: str) -> None:
         )
 
         if b"Error" in output or b"error" in output:
-            raise DnsSourceUpdateError(f"Error executing Pebble command: {output.decode('utf-8')}")
-        logger.info("Pebble command executed successfully: %s", output.decode("utf-8"))
+            raise HTTPRequestNotifyOutputError(
+                f"Error executing Pebble command: {output.decode('utf-8')}"
+            )
+
+        logger.debug("Pebble command executed successfully: %s", output.decode("utf-8"))
 
     except subprocess.TimeoutExpired as e:
-        raise DnsSourceUpdateError(
+        raise HTTPRequestNotifyTimeoutError(
             f"Timeout executing Pebble command: {e.output.decode('utf-8')}"
         ) from e
 
     except subprocess.CalledProcessError as e:
-        raise DnsSourceUpdateError(
+        raise HTTPRequestNotifyProcessError(
             "Error executing Pebble command (exit code "
             f"{e.returncode}): {e.output.decode('utf-8')}"
         ) from e
 
-    except FileNotFoundError:
+    except FileNotFoundError as e:
         logger.error("Error executing Pebble command: 'pebble' command not found")
+        raise HTTPRequestPebbleNotFoundError(
+            "Error executing Pebble command: 'pebble' command not found"
+        ) from e
 
 
 def remove_dns_record(fqdn: str) -> None:
@@ -88,7 +109,10 @@ def remove_dns_record(fqdn: str) -> None:
         fqdn: the FQDN for which to delete the record.
 
     Raises:
-        DnsSourceUpdateError: if an error while updating the repository occurs.
+        HTTPRequestNotifyOutputError: if an error while notifying the charm.
+        HTTPRequestNotifyTimeoutError: if an error while notifying the charm.
+        HTTPRequestNotifyProcessError: if an error while notifying the charm.
+        HTTPRequestPebbleNotFoundError: if an error while notifying the charm.
     """
     try:
         # Notify the charm that we need to remove a DNS record
@@ -104,21 +128,24 @@ def remove_dns_record(fqdn: str) -> None:
         )  # nosec B603, B607
 
         if b"Error" in output or b"error" in output:
-            raise DnsSourceUpdateError(f"Error executing Pebble command: {output.decode('utf-8')}")
+            raise HTTPRequestNotifyOutputError(
+                f"Error executing Pebble command: {output.decode('utf-8')}"
+            )
+
         logger.info("Pebble command executed successfully: %s", output.decode("utf-8"))
 
     except subprocess.TimeoutExpired as e:
-        raise DnsSourceUpdateError(
+        raise HTTPRequestNotifyTimeoutError(
             f"Timeout executing Pebble command: {e.output.decode('utf-8')}"
         ) from e
 
     except subprocess.CalledProcessError as e:
-        raise DnsSourceUpdateError(
+        raise HTTPRequestNotifyProcessError(
             "Error executing Pebble command (exit code "
             f"{e.returncode}): {e.output.decode('utf-8')}"
         ) from e
 
     except FileNotFoundError as e:
-        raise DnsSourceUpdateError(
+        raise HTTPRequestPebbleNotFoundError(
             "Error executing Pebble command: 'pebble' command not found"
         ) from e
