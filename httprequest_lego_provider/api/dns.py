@@ -82,7 +82,7 @@ def write_dns_record(fqdn: str, rdata: str) -> None:
                 f"Error executing Pebble command: {output.decode('utf-8')}"
             )
 
-        logger.debug("Pebble command executed successfully: %s", output.decode("utf-8"))
+        logger.info("Pebble command executed successfully: %s", output.decode("utf-8"))
 
     except subprocess.TimeoutExpired as e:
         raise HTTPRequestNotifyTimeoutError(
