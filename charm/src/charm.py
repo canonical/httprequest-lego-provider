@@ -60,7 +60,7 @@ class DjangoCharm(paas_app_charmer.django.Charm):
                 return
 
             entry = self.dns_record.create_record_request(
-                f"{host_label} {domain} 600 IN TXT {rdata}"
+                [host_label, domain, 600, "IN", "TXT", rdata]
             )
             entries.append(entry)
             logger.debug("DNS record request: %s", entry)
