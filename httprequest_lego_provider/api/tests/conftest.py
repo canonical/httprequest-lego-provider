@@ -98,10 +98,20 @@ def domains_fixture(fqdns: list) -> list:
     return domains
 
 
-@pytest.fixture(scope="function", name="domain_user_permission")
-def domain_user_permission_fixture(domain: Domain, user: User) -> DomainUserPermission:
+@pytest.fixture(scope="function", name="domain_user_permission_domain")
+def domain_user_permission_domain_fixture(domain: Domain, user: User) -> DomainUserPermission:
     """Provide a valid domain user permission."""
-    return DomainUserPermission.objects.create(domain=domain, user=user)
+    return DomainUserPermission.objects.create(
+        domain=domain, user=user, access_level=AccessLevel.DOMAIN
+    )
+
+
+@pytest.fixture(scope="function", name="domain_user_permission_subdomain")
+def domain_user_permission_subdomain_fixture(domain: Domain, user: User) -> DomainUserPermission:
+    """Provide a valid domain user permission."""
+    return DomainUserPermission.objects.create(
+        domain=domain, user=user, access_level=AccessLevel.SUBDOMAIN
+    )
 
 
 @pytest.fixture(scope="module", name="fqdns")

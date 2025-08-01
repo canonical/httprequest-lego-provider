@@ -73,5 +73,4 @@ async def test_actions(run_action):
     assert "result" in result
     stdout = result["result"]
     logger.info("allow-domains result: %s", stdout)
-    assert "example.com" in stdout
-    assert "sub.example.com" in stdout
+    assert "Successfully granted access to all domains" in stdout
