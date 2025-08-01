@@ -27,13 +27,12 @@ class Migration(migrations.Migration):
                 (
                     "fqdn",
                     models.CharField(
-                        max_length=200,
-                        unique=True,
+                        max_length=255,
                         validators=[
                             django.core.validators.RegexValidator(
                                 code="invalid_fqdn",
                                 message="Enter a valid FQDN.",
-                                regex="(?=^.{4,253}$)(^((?!-)[a-zA-Z0-9-]{1,63}(?<!-)\\.)+[a-zA-Z]{2,63}$)",
+                                regex=r"(?=^.{4,253}$)(^((?!-)[a-zA-Z0-9-]{1,63}(?<!-)\.)+[a-zA-Z]{2,63}$)",
                             )
                         ],
                     ),
@@ -49,7 +48,16 @@ class Migration(migrations.Migration):
                         auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
                     ),
                 ),
-                ("text", models.TextField()),
+                (
+                    "access_level",
+                    models.CharField(
+                        max_length=20,
+                        choices=[
+                            ("DOMAIN", "domain"),
+                            ("SUBDOMAIN", "subdomain"),
+                        ],
+                    ),
+                ),
                 (
                     "domain",
                     models.ForeignKey(
@@ -60,7 +68,8 @@ class Migration(migrations.Migration):
                 (
                     "user",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
                     ),
                 ),
             ],

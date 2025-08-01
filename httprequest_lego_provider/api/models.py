@@ -15,8 +15,7 @@ class Domain(models.Model):
     """
 
     fqdn = models.CharField(
-        max_length=200,
-        unique=True,
+        max_length=255,
         validators=[
             RegexValidator(
                 regex=r"(?=^.{4,253}$)(^((?!-)[a-zA-Z0-9-]{1,63}(?<!-)\.)+[a-zA-Z]{2,63}$)",
@@ -27,15 +26,40 @@ class Domain(models.Model):
     )
 
 
+class AccessLevel(models.TextChoices):
+    """Access levels for the user.
+
+    Attributes:
+        SUBDOMAIN: subdomain access level.
+        DOMAIN: domain access level.
+    """
+
+    SUBDOMAIN = "subdomain"
+    DOMAIN = "domain"
+
+
 class DomainUserPermission(models.Model):
     """Relation between the user and the domains each user can manage.
 
     Attributes:
         domain: domain.
         user: user.
-        text: details.
+        access_level: levels of access.
     """
 
     domain = models.ForeignKey(Domain, on_delete=models.CASCADE)
     user = models.ForeignKey(auth.get_user_model(), on_delete=models.CASCADE)
-    text = models.TextField()
+    access_level = models.CharField(choices=AccessLevel.choices)
+
+    class Meta:
+        """Meta options for DomainUserPermission.
+
+        Attributes:
+            constraints: unique constraint for user, domain, and access level.
+        """
+
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "domain", "access_level"], name="unique_user_domain_accesslevel"
+            )
+        ]

@@ -11,8 +11,7 @@ import secrets
 from unittest.mock import patch
 
 import pytest
-from api.forms import FQDN_PREFIX
-from api.models import Domain, DomainUserPermission
+from api.models import AccessLevel, Domain, DomainUserPermission
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import User
 from django.test import Client
@@ -65,7 +64,7 @@ def test_post_present_when_logged_in_and_no_fqdn(client: Client, user_auth_token
     value = secrets.token_hex()
     response = client.post(
         "/present",
-        data={"fqdn": f"{FQDN_PREFIX}{fqdn}", "value": value},
+        data={"fqdn": fqdn, "value": value},
         format="json",
         headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
     )
@@ -148,7 +147,7 @@ def test_post_present_when_logged_in_and_fqdn_invalid(client: Client, user_auth_
         value = secrets.token_hex()
         response = client.post(
             "/present",
-            data={"fqdn": "example.com", "value": value},
+            data={"fqdn": "example-.com", "value": value},
             format="json",
             headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
         )
@@ -190,7 +189,7 @@ def test_post_cleanup_when_logged_in_and_no_fqdn(client: Client, user_auth_token
     value = secrets.token_hex()
     response = client.post(
         "/cleanup",
-        data={"fqdn": f"{FQDN_PREFIX}example.com", "value": value},
+        data={"fqdn": "example.com", "value": value},
         format="json",
         headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
     )
@@ -273,7 +272,7 @@ def test_post_cleanup_when_logged_in_and_fqdn_invalid(client: Client, user_auth_
         value = secrets.token_hex()
         response = client.post(
             "/cleanup",
-            data={"fqdn": "example.com", "value": value},
+            data={"fqdn": "example-.com", "value": value},
             format="json",
             headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
         )
@@ -373,7 +372,7 @@ def test_get_domain_with_fqdn_filter(client: Client, admin_user_auth_token: str,
 
     assert response.status_code == 200
     assert len(json) == 1
-    assert json[0]["fqdn"] == f"{FQDN_PREFIX}example2.com"
+    assert json[0]["fqdn"] == "example2.com"
 
 
 @pytest.mark.django_db
@@ -409,7 +408,7 @@ def test_post_domain_when_logged_in_as_admin_user(client: Client, admin_user_aut
         headers={"AUTHORIZATION": f"Basic {admin_user_auth_token}"},
     )
 
-    assert Domain.objects.get(fqdn=f"{FQDN_PREFIX}example.com") is not None
+    assert Domain.objects.get(fqdn="example.com") is not None
     assert response.status_code == 201
 
 
@@ -499,7 +498,7 @@ def test_get_domain_user_permission_with_filters(
     assert len(json) > 0
 
     for entry in json:
-        assert entry["domain"] == Domain.objects.get(fqdn=f"{FQDN_PREFIX}example2.com").id
+        assert entry["domain"] == Domain.objects.get(fqdn="example2.com").id
         assert entry["user"] == User.objects.get(username=user.username).id
 
 
@@ -514,12 +513,14 @@ def test_post_domain_user_permission_when_logged_in_as_non_admin_user(
     """
     response = client.post(
         "/api/v1/domain-user-permissions/",
-        data={"domain": domain.id, "user": user.id, "text": "whatever"},
+        data={"domain": domain.id, "user": user.id, "access_level": AccessLevel.DOMAIN},
         format="json",
         headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
     )
 
-    assert not DomainUserPermission.objects.filter(user=user, domain=domain)
+    assert not DomainUserPermission.objects.filter(
+        user=user, domain=domain, access_level=AccessLevel.DOMAIN
+    )
     assert response.status_code == 403
 
 
@@ -534,11 +535,13 @@ def test_post_domain_user_permission_with_invalid_domain_when_logged_in_as_admin
     """
     response = client.post(
         "/api/v1/domain-user-permissions/",
-        data={"domain": 1, "user": user.id, "text": "whatever"},
+        data={"domain": 1, "user": user.id, "access_level": AccessLevel.DOMAIN},
         headers={"AUTHORIZATION": f"Basic {admin_user_auth_token}"},
     )
 
-    assert not DomainUserPermission.objects.filter(user=user, domain=1)
+    assert not DomainUserPermission.objects.filter(
+        user=user, domain=1, access_level=AccessLevel.DOMAIN
+    )
     assert response.status_code == 400
 
 
@@ -553,11 +556,13 @@ def test_post_domain_user_permission_with_invalid_user_when_logged_in_as_admin_u
     """
     response = client.post(
         "/api/v1/domain-user-permissions/",
-        data={"domain": domain.id, "user": 99, "text": "whatever"},
+        data={"domain": domain.id, "user": 99, "access_level": AccessLevel.DOMAIN},
         headers={"AUTHORIZATION": f"Basic {admin_user_auth_token}"},
     )
 
-    assert not DomainUserPermission.objects.filter(user=99, domain=domain)
+    assert not DomainUserPermission.objects.filter(
+        user=99, domain=domain, access_level=AccessLevel.DOMAIN
+    )
     assert response.status_code == 400
 
 
@@ -572,11 +577,38 @@ def test_post_domain_user_permission_when_logged_in_as_admin_user(
     """
     response = client.post(
         "/api/v1/domain-user-permissions/",
-        data={"domain": domain.id, "user": user.id, "text": "whatever"},
+        data={"domain": domain.id, "user": user.id, "access_level": AccessLevel.DOMAIN},
         headers={"AUTHORIZATION": f"Basic {admin_user_auth_token}"},
     )
+    assert (
+        DomainUserPermission.objects.filter(
+            user=user.id, domain=domain, access_level=AccessLevel.DOMAIN
+        )
+        is not None
+    )
+    assert response.status_code == 201
 
-    assert DomainUserPermission.objects.filter(user=99, domain=domain) is not None
+
+@pytest.mark.django_db
+def test_post_subdomain_user_permission_when_logged_in_as_admin_user(
+    client: Client, admin_user_auth_token: str, user: User, domain: Domain
+):
+    """
+    arrange: log in an admin user.
+    act: submit a POST request for the domain user permission URL for a existing domain.
+    assert: a 201 is returned and the domain user permission is inserted in the database.
+    """
+    response = client.post(
+        "/api/v1/domain-user-permissions/",
+        data={"domain": domain.id, "user": user.id, "access_level": AccessLevel.SUBDOMAIN},
+        headers={"AUTHORIZATION": f"Basic {admin_user_auth_token}"},
+    )
+    assert (
+        DomainUserPermission.objects.filter(
+            user=user.id, domain=domain, access_level=AccessLevel.SUBDOMAIN
+        )
+        is not None
+    )
     assert response.status_code == 201
 
 

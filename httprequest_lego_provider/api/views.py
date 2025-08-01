@@ -16,7 +16,7 @@ from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAdminUser
 
 from .dns import remove_dns_record, write_dns_record
-from .forms import FQDN_PREFIX, CleanupForm, PresentForm
+from .forms import CleanupForm, PresentForm
 from .models import Domain, DomainUserPermission
 from .serializers import DomainSerializer, DomainUserPermissionSerializer, UserSerializer
 
@@ -100,7 +100,7 @@ class DomainViewSet(viewsets.ModelViewSet):
         queryset = self.queryset
         fqdn = self.request.query_params.get("fqdn")
         if fqdn is not None:
-            queryset = queryset.filter(fqdn=f"{FQDN_PREFIX}{fqdn}")
+            queryset = queryset.filter(fqdn=fqdn)
         return queryset
 
 
@@ -129,7 +129,7 @@ class DomainUserPermissionViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(user__username=username)
         fqdn = self.request.query_params.get("fqdn")
         if fqdn is not None:
-            queryset = queryset.filter(domain__fqdn=f"{FQDN_PREFIX}{fqdn}")
+            queryset = queryset.filter(domain__fqdn=fqdn)
         return queryset
 
 
