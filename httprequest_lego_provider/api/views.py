@@ -37,16 +37,19 @@ def handle_present(request: HttpRequest) -> Optional[HttpResponse]:
     if not form.is_valid():
         return HttpResponse(content=form.errors.as_json(), status=400)
     user = request.user
-    fqdn = form.cleaned_data["fqdn"].removeprefix(FQDN_PREFIX)
+    fqdn: str = form.cleaned_data["fqdn"]
+    fqdn_without_prefix = fqdn.removeprefix(FQDN_PREFIX)
     value = form.cleaned_data["value"]
 
     dups = DomainUserPermission.objects.filter(user=user)
     for dup in dups:
         domain_fqdn = dup.domain.fqdn
-        if dup.access_level == AccessLevel.DOMAIN and fqdn == domain_fqdn:
+        if dup.access_level == AccessLevel.DOMAIN and fqdn_without_prefix == domain_fqdn:
             write_dns_record(fqdn, value)
             return HttpResponse(status=204)
-        if dup.access_level == AccessLevel.SUBDOMAIN and fqdn.endswith("." + domain_fqdn):
+        if dup.access_level == AccessLevel.SUBDOMAIN and fqdn_without_prefix.endswith(
+            f".{domain_fqdn}"
+        ):
             write_dns_record(fqdn, value)
             return HttpResponse(status=204)
 
@@ -70,14 +73,17 @@ def handle_cleanup(request: HttpRequest) -> Optional[HttpResponse]:
     if not form.is_valid():
         return HttpResponse(content=form.errors.as_json(), status=400)
     user = request.user
-    fqdn = form.cleaned_data["fqdn"].removeprefix(FQDN_PREFIX)
+    fqdn: str = form.cleaned_data["fqdn"]
+    fqdn_without_prefix = fqdn.removeprefix(FQDN_PREFIX)
     dups = DomainUserPermission.objects.filter(user=user)
     for dup in dups:
         domain_fqdn = dup.domain.fqdn
-        if dup.access_level == AccessLevel.DOMAIN and fqdn == domain_fqdn:
+        if dup.access_level == AccessLevel.DOMAIN and fqdn_without_prefix == domain_fqdn:
             remove_dns_record(fqdn)
             return HttpResponse(status=204)
-        if dup.access_level == AccessLevel.SUBDOMAIN and fqdn.endswith("." + domain_fqdn):
+        if dup.access_level == AccessLevel.SUBDOMAIN and fqdn_without_prefix.endswith(
+            "." + domain_fqdn
+        ):
             remove_dns_record(fqdn)
             return HttpResponse(status=204)
 
