@@ -6,6 +6,14 @@ from django.conf import settings
 from django.db import migrations, models
 
 
+def strip_acme_prefix(apps, schema_editor):
+    Domain = apps.get_model("api", "Domain")
+    for domain in Domain.objects.all():
+        if domain.fqdn.startswith("_acme-challenge."):
+            domain.fqdn = domain.fqdn.removeprefix("_acme-challenge.")
+            domain.save(update_fields=["fqdn"])
+
+
 class Migration(migrations.Migration):
 
     initial = True
@@ -56,6 +64,7 @@ class Migration(migrations.Migration):
                             ("DOMAIN", "domain"),
                             ("SUBDOMAIN", "subdomain"),
                         ],
+                        default="DOMAIN",
                     ),
                 ),
                 (
@@ -74,4 +83,5 @@ class Migration(migrations.Migration):
                 ),
             ],
         ),
+        migrations.RunPython(strip_acme_prefix),
     ]
