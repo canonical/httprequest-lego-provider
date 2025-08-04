@@ -16,6 +16,7 @@ class Domain(models.Model):
 
     fqdn = models.CharField(
         max_length=255,
+        unique=True,
         validators=[
             RegexValidator(
                 regex=r"(?=^.{4,253}$)(^((?!-)[a-zA-Z0-9-]{1,63}(?<!-)\.)+[a-zA-Z]{2,63}$)",
