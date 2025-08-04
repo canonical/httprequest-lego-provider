@@ -10,6 +10,19 @@ from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand, CommandError
 
 
+class DomainRevokeError(CommandError):
+    """Raised when domain revocation fails due to missing or undeleted domains."""
+
+    def __init__(self, not_found=None, failed=None):
+        message = []
+        if not_found:
+            message.append(f"These domains do not exist and were skipped: {', '.join(not_found)}")
+        if failed:
+            message.append(f"Failed to delete the following domains: {', '.join(failed)}")
+
+        super().__init__("\n".join(message))
+
+
 class Command(BaseCommand):
     """Command to revoke access to domains to a user.
 
@@ -75,12 +88,7 @@ class Command(BaseCommand):
         for subdomain_name in subdomains:
             revoke_permission(subdomain_name, AccessLevel.SUBDOMAIN)
 
-        if not_found:
-            raise CommandError(
-                f"These domains do not exist and were skipped: {', '.join(not_found)}"
-            )
-
-        if failed:
-            raise CommandError(f"Failed to delete the following domains: {', '.join(failed)}")
+        if not_found or failed:
+            raise DomainRevokeError(not_found=not_found, failed=failed)
 
         self.stdout.write(self.style.SUCCESS("Successfully removed access to the domains."))

@@ -83,4 +83,3 @@ class CleanupForm(Form):
 
     fqdn = FQDNField(label="FQDN")
     value = CharField(label="value")
-    value = CharField(label="value")

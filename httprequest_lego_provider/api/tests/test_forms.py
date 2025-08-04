@@ -17,6 +17,8 @@ def test_is_fqdn_compliant():
     assert not is_fqdn_compliant("-example.com")
     assert not is_fqdn_compliant("example-.com")
     assert not is_fqdn_compliant("exa$mple.com")
+    assert not is_fqdn_compliant("*.example.com")
+    assert not is_fqdn_compliant("_acme-challenge.*.example.com")
     assert is_fqdn_compliant("smth.example.com")
     assert is_fqdn_compliant("example.com")
     assert is_fqdn_compliant("example.com.")

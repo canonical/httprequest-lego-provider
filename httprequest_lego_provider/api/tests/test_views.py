@@ -563,7 +563,12 @@ def test_post_domain_user_permission_when_logged_in_as_non_admin_user(
     """
     response = client.post(
         "/api/v1/domain-user-permissions/",
-        data={"domain": domain.id, "user": user.id, "access_level": AccessLevel.DOMAIN},
+        data={
+            "domain": domain.id,
+            "user": user.id,
+            "text": "whatever",
+            "access_level": AccessLevel.DOMAIN,
+        },
         format="json",
         headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
     )
@@ -585,7 +590,12 @@ def test_post_domain_user_permission_with_invalid_domain_when_logged_in_as_admin
     """
     response = client.post(
         "/api/v1/domain-user-permissions/",
-        data={"domain": 1, "user": user.id, "access_level": AccessLevel.DOMAIN},
+        data={
+            "domain": 1,
+            "user": user.id,
+            "text": "whatever",
+            "access_level": AccessLevel.DOMAIN,
+        },
         headers={"AUTHORIZATION": f"Basic {admin_user_auth_token}"},
     )
 
@@ -606,7 +616,12 @@ def test_post_domain_user_permission_with_invalid_user_when_logged_in_as_admin_u
     """
     response = client.post(
         "/api/v1/domain-user-permissions/",
-        data={"domain": domain.id, "user": 99, "access_level": AccessLevel.DOMAIN},
+        data={
+            "domain": domain.id,
+            "user": 99,
+            "text": "whatever",
+            "access_level": AccessLevel.DOMAIN,
+        },
         headers={"AUTHORIZATION": f"Basic {admin_user_auth_token}"},
     )
 
@@ -627,7 +642,12 @@ def test_post_domain_user_permission_when_logged_in_as_admin_user(
     """
     response = client.post(
         "/api/v1/domain-user-permissions/",
-        data={"domain": domain.id, "user": user.id, "access_level": AccessLevel.DOMAIN},
+        data={
+            "domain": domain.id,
+            "user": user.id,
+            "text": "whatever",
+            "access_level": AccessLevel.DOMAIN,
+        },
         headers={"AUTHORIZATION": f"Basic {admin_user_auth_token}"},
     )
     assert (
@@ -650,7 +670,12 @@ def test_post_subdomain_user_permission_when_logged_in_as_admin_user(
     """
     response = client.post(
         "/api/v1/domain-user-permissions/",
-        data={"domain": domain.id, "user": user.id, "access_level": AccessLevel.SUBDOMAIN},
+        data={
+            "domain": domain.id,
+            "user": user.id,
+            "text": "whatever",
+            "access_level": AccessLevel.SUBDOMAIN,
+        },
         headers={"AUTHORIZATION": f"Basic {admin_user_auth_token}"},
     )
     assert (

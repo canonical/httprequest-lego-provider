@@ -44,11 +44,13 @@ class DomainUserPermission(models.Model):
     Attributes:
         domain: domain.
         user: user.
+        text: details.
         access_level: levels of access.
     """
 
     domain = models.ForeignKey(Domain, on_delete=models.CASCADE)
     user = models.ForeignKey(auth.get_user_model(), on_delete=models.CASCADE)
+    text = models.TextField()
     access_level = models.CharField(choices=AccessLevel.choices)
 
     class Meta:

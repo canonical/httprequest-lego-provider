@@ -6,14 +6,6 @@ from django.conf import settings
 from django.db import migrations, models
 
 
-def strip_acme_prefix(apps, schema_editor):
-    Domain = apps.get_model("api", "Domain")
-    for domain in Domain.objects.all():
-        if domain.fqdn.startswith("_acme-challenge."):
-            domain.fqdn = domain.fqdn.removeprefix("_acme-challenge.")
-            domain.save(update_fields=["fqdn"])
-
-
 class Migration(migrations.Migration):
 
     initial = True
@@ -35,12 +27,13 @@ class Migration(migrations.Migration):
                 (
                     "fqdn",
                     models.CharField(
-                        max_length=255,
+                        max_length=200,
+                        unique=True,
                         validators=[
                             django.core.validators.RegexValidator(
                                 code="invalid_fqdn",
                                 message="Enter a valid FQDN.",
-                                regex=r"(?=^.{4,253}$)(^((?!-)[a-zA-Z0-9-]{1,63}(?<!-)\.)+[a-zA-Z]{2,63}$)",
+                                regex="(?=^.{4,253}$)(^((?!-)[a-zA-Z0-9-]{1,63}(?<!-)\\.)+[a-zA-Z]{2,63}$)",
                             )
                         ],
                     ),
@@ -56,17 +49,7 @@ class Migration(migrations.Migration):
                         auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
                     ),
                 ),
-                (
-                    "access_level",
-                    models.CharField(
-                        max_length=20,
-                        choices=[
-                            ("DOMAIN", "domain"),
-                            ("SUBDOMAIN", "subdomain"),
-                        ],
-                        default="DOMAIN",
-                    ),
-                ),
+                ("text", models.TextField()),
                 (
                     "domain",
                     models.ForeignKey(
@@ -77,11 +60,9 @@ class Migration(migrations.Migration):
                 (
                     "user",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE,
-                        to=settings.AUTH_USER_MODEL,
+                        on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL
                     ),
                 ),
             ],
         ),
-        migrations.RunPython(strip_acme_prefix),
     ]
