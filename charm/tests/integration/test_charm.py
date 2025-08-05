@@ -76,7 +76,7 @@ async def test_actions(run_action):
         "httprequest-lego-provider",
         "allow-domains",
         username="test",
-        domains="example.com, sub.example.com",
+        domains="example.com,sub.example.com",
         subdomains="example.com",
     )
     assert "result" in result

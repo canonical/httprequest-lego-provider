@@ -80,9 +80,14 @@ class Command(BaseCommand):
             try:
                 revoke_permission(user, domain_name, access_level)
             except Domain.DoesNotExist:
-                failed.append(f"[Domain: {domain_name}] Domain does not exist.")
+                failed.append(
+                    f"[Domain: {domain_name}, Access Level: {access_level}] Domain does not exist."
+                )
             except DomainPermissionRevocationError:
-                failed.append(f"[Domain: {domain_name}] Failed to delete domain user permission.")
+                failed.append(
+                    f"[Domain: {domain_name}, Access Level: {access_level}] "
+                    f"Failed to delete domain user permission."
+                )
 
         if failed:
             error_message = "Failed to revoke access to the following domains: \n" + "\n".join(

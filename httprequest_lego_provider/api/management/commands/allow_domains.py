@@ -83,7 +83,7 @@ class Command(BaseCommand):
                 grant_permission(user, domain_name, access_level)
             except ValidationError as e:
                 failed.append(
-                    f"[Permission: {domain_name}, Access: {access_level}] "
+                    f"[Domain: {domain_name}, Access: {access_level}] "
                     f"ValidationError: {e.messages}"
                 )
 
