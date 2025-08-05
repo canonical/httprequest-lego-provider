@@ -15,9 +15,9 @@ logger = logging.getLogger(__name__)
 LIST_DOMAINS_OUTPUT = """
 test:
     domains:
-        example.com
-    subdomains:
         example.com, sub.example.com
+    subdomains:
+        example.com
 """
 
 
