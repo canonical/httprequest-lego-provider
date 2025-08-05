@@ -80,21 +80,40 @@ def test_revoke_domains_raises_exception(fqdns: list[str]):
     act: call the revoke_domains command for a non existing user.
     assert: a CommandError exception is raised.
     """
-    with pytest.raises(CommandError):
-        call_command("revoke_domains", "non-existing-user", *fqdns)
+    with pytest.raises(CommandError) as exc:
+        call_command("revoke_domains", "non-existing-user", "--domains", ",".join(fqdns))
+    assert 'User "non-existing-user" does not exist' in str(exc.value)
 
 
 @pytest.mark.django_db
-def test_revoke_domains_fails(domain_user_permissions):
+def test_revoke_domains_non_existing_domain(domain_user_permissions):
     """
     arrange: do nothing.
     act: call the revoke_domains command for a existing user and non existing domain.
     assert: the command fails.
     """
-    with pytest.raises(CommandError):
+    with pytest.raises(CommandError) as exc:
         call_command(
             "revoke_domains",
             domain_user_permissions[0].user.username,
             "--domains",
             "non-existing-domain.co.uk",
         )
+    assert "Domain does not exist" in str(exc.value)
+
+
+@pytest.mark.django_db
+def test_revoke_domains_insufficient_permissions(domain, domain_user_permissions):
+    """
+    arrange: do nothing.
+    act: call the revoke_domains command for a existing user and domain without access to it.
+    assert: the command fails.
+    """
+    with pytest.raises(CommandError) as exc:
+        call_command(
+            "revoke_domains",
+            domain_user_permissions[0].user.username,
+            "--domains",
+            domain.fqdn,
+        )
+    assert "Failed to delete domain user permission" in str(exc.value)

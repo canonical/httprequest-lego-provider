@@ -7,7 +7,31 @@
 
 from api.models import AccessLevel, Domain, DomainUserPermission
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand, CommandError
+
+
+def grant_permission(user, domain_name, access_level):
+    """Grant permission to a domain.
+
+    Args:
+        user: the user.
+        domain_name: the domain name to grant access to.
+        access_level: the access level.
+    """
+    try:
+        domain = Domain.objects.get(fqdn=domain_name)
+    except Domain.DoesNotExist:
+        domain = Domain(fqdn=domain_name)
+        domain.full_clean()
+        domain.save()
+
+    try:
+        DomainUserPermission.objects.get(domain=domain, user=user, access_level=access_level)
+    except DomainUserPermission.DoesNotExist:
+        permission = DomainUserPermission(domain=domain, user=user, access_level=access_level)
+        permission.full_clean()
+        permission.save()
 
 
 class Command(BaseCommand):
@@ -37,11 +61,12 @@ class Command(BaseCommand):
             options: options.
 
         Raises:
-            CommandError: if the user is not found.
+            CommandError: if the command fails.
         """
         username = options["username"]
         domains = options["domains"].split(",") if options["domains"] else []
         subdomains = options["subdomains"].split(",") if options["subdomains"] else []
+
         try:
             user = User.objects.get(username=username)
         except User.DoesNotExist as exc:
@@ -49,30 +74,23 @@ class Command(BaseCommand):
 
         failed = []
 
-        def grant_permission(domain_name, access_level):
-            """Grant permission to a domain.
+        permissions = [(domain_name, AccessLevel.DOMAIN) for domain_name in domains] + [
+            (domain_name, AccessLevel.SUBDOMAIN) for domain_name in subdomains
+        ]
 
-            Args:
-                domain_name: the domain name to grant access to.
-                access_level: the access level.
-            """
-            domain, _ = Domain.objects.get_or_create(fqdn=domain_name)
-
-            _, created = DomainUserPermission.objects.get_or_create(
-                domain=domain, user=user, access_level=access_level
-            )
-            if not created:
-                failed.append(f"Domain: {domain_name}, Access Level: {access_level}")
-
-        for domain_name in domains:
-            grant_permission(domain_name, AccessLevel.DOMAIN)
-
-        for subdomain_name in subdomains:
-            grant_permission(subdomain_name, AccessLevel.SUBDOMAIN)
+        for domain_name, access_level in permissions:
+            try:
+                grant_permission(user, domain_name, access_level)
+            except ValidationError as e:
+                failed.append(
+                    f"[Permission: {domain_name}, Access: {access_level}] "
+                    f"ValidationError: {e.messages}"
+                )
 
         if failed:
-            raise CommandError(
-                f"Failed to grant access to the following domains: {', '.join(failed)}"
+            error_message = "Failed to grant access to the following domains: \n" + "\n".join(
+                failed
             )
+            raise CommandError(error_message)
 
         self.stdout.write(self.style.SUCCESS("Successfully granted access to all domains."))

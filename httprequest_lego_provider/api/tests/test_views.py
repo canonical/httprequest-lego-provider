@@ -11,6 +11,7 @@ import secrets
 from unittest.mock import patch
 
 import pytest
+from api.forms import FQDN_PREFIX
 from api.models import AccessLevel, Domain, DomainUserPermission
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import User
@@ -64,7 +65,7 @@ def test_post_present_when_logged_in_and_no_fqdn(client: Client, user_auth_token
     value = secrets.token_hex()
     response = client.post(
         "/present",
-        data={"fqdn": fqdn, "value": value},
+        data={"fqdn": f"{FQDN_PREFIX}{fqdn}", "value": value},
         format="json",
         headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
     )
@@ -84,7 +85,7 @@ def test_post_present_when_logged_in_and_no_permission(
     value = secrets.token_hex()
     response = client.post(
         "/present",
-        data={"fqdn": domain.fqdn, "value": value},
+        data={"fqdn": f"{FQDN_PREFIX}{domain.fqdn}", "value": value},
         format="json",
         headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
     )
@@ -102,14 +103,18 @@ def test_post_present_when_logged_in_and_permission_domain_access_level(
     assert: a 204 is returned.
     """
     with patch("api.views.write_dns_record") as mocked_dns_write:
+        fqdn = f"{FQDN_PREFIX}{domain_user_permission_domain.domain.fqdn}"
         value = secrets.token_hex()
         response = client.post(
             "/present",
-            data={"fqdn": domain_user_permission_domain.domain.fqdn, "value": value},
+            data={
+                "fqdn": fqdn,
+                "value": value,
+            },
             format="json",
             headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
         )
-        mocked_dns_write.assert_called_once_with(domain_user_permission_domain.domain.fqdn, value)
+        mocked_dns_write.assert_called_once_with(fqdn, value)
 
         assert response.status_code == 204
 
@@ -125,14 +130,13 @@ def test_post_present_when_logged_in_and_permission_subdomain_access_level(
     """
     with patch("api.views.write_dns_record") as mocked_dns_write:
         value = secrets.token_hex()
-        subdomain_fqdn = f"test.{domain_user_permission_subdomain.domain.fqdn}"
+        subdomain_fqdn = f"{FQDN_PREFIX}test.{domain_user_permission_subdomain.domain.fqdn}"
         response = client.post(
             "/present",
             data={"fqdn": subdomain_fqdn, "value": value},
             format="json",
             headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
         )
-        print(response.content)
         mocked_dns_write.assert_called_once_with(subdomain_fqdn, value)
 
         assert response.status_code == 204
@@ -148,14 +152,18 @@ def test_post_present_when_logged_in_and_permission_with_trailing_dot(
     assert: a 204 is returned.
     """
     with patch("api.views.write_dns_record") as mocked_dns_write:
+        fqdn = f"{FQDN_PREFIX}{domain_user_permission_domain.domain.fqdn}"
         value = secrets.token_hex()
         response = client.post(
             "/present",
-            data={"fqdn": f"{domain_user_permission_domain.domain.fqdn}.", "value": value},
+            data={
+                "fqdn": f"{fqdn}.",
+                "value": value,
+            },
             format="json",
             headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
         )
-        mocked_dns_write.assert_called_once_with(domain_user_permission_domain.domain.fqdn, value)
+        mocked_dns_write.assert_called_once_with(fqdn, value)
 
         assert response.status_code == 204
 
@@ -171,7 +179,7 @@ def test_post_present_when_logged_in_and_fqdn_invalid(client: Client, user_auth_
         value = secrets.token_hex()
         response = client.post(
             "/present",
-            data={"fqdn": "example-.com", "value": value},
+            data={"fqdn": f"{FQDN_PREFIX}example-.com", "value": value},
             format="json",
             headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
         )
@@ -213,7 +221,7 @@ def test_post_cleanup_when_logged_in_and_no_fqdn(client: Client, user_auth_token
     value = secrets.token_hex()
     response = client.post(
         "/cleanup",
-        data={"fqdn": "example.com", "value": value},
+        data={"fqdn": f"{FQDN_PREFIX}example.com", "value": value},
         format="json",
         headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
     )
@@ -233,7 +241,7 @@ def test_post_cleanup_when_logged_in_and_no_permission(
     value = secrets.token_hex()
     response = client.post(
         "/cleanup",
-        data={"fqdn": domain.fqdn, "value": value},
+        data={"fqdn": f"{FQDN_PREFIX}{domain.fqdn}", "value": value},
         format="json",
         headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
     )
@@ -251,14 +259,18 @@ def test_post_cleanup_when_logged_in_and_permission_access_level_domain(
     assert: a 200 is returned.
     """
     with patch("api.views.remove_dns_record") as mocked_dns_remove:
+        fqdn = f"{FQDN_PREFIX}{domain_user_permission_domain.domain.fqdn}"
         value = secrets.token_hex()
         response = client.post(
             "/cleanup",
-            data={"fqdn": domain_user_permission_domain.domain.fqdn, "value": value},
+            data={
+                "fqdn": fqdn,
+                "value": value,
+            },
             format="json",
             headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
         )
-        mocked_dns_remove.assert_called_once_with(domain_user_permission_domain.domain.fqdn)
+        mocked_dns_remove.assert_called_once_with(fqdn)
 
         assert response.status_code == 204
 
@@ -274,7 +286,7 @@ def test_post_cleanup_when_logged_in_and_permission_access_level_subdomain(
     """
     with patch("api.views.remove_dns_record") as mocked_dns_remove:
         value = secrets.token_hex()
-        subdomain_fqdn = f"test.{domain_user_permission_subdomain.domain.fqdn}"
+        subdomain_fqdn = f"{FQDN_PREFIX}test.{domain_user_permission_subdomain.domain.fqdn}"
         response = client.post(
             "/cleanup",
             data={"fqdn": subdomain_fqdn, "value": value},
@@ -296,14 +308,18 @@ def test_post_cleanup_when_logged_in_and_permission_with_trailing_dot(
     assert: a 200 is returned.
     """
     with patch("api.views.remove_dns_record") as mocked_dns_remove:
+        fqdn = f"{FQDN_PREFIX}{domain_user_permission_domain.domain.fqdn}"
         value = secrets.token_hex()
         response = client.post(
             "/cleanup",
-            data={"fqdn": f"{domain_user_permission_domain.domain.fqdn}.", "value": value},
+            data={
+                "fqdn": f"{fqdn}.",
+                "value": value,
+            },
             format="json",
             headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
         )
-        mocked_dns_remove.assert_called_once_with(domain_user_permission_domain.domain.fqdn)
+        mocked_dns_remove.assert_called_once_with(fqdn)
 
         assert response.status_code == 204
 
@@ -361,7 +377,10 @@ def test_test_jwt_token_login(
         value = secrets.token_hex()
         response = client.post(
             "/present",
-            data={"fqdn": domain_user_permission_domain.domain.fqdn, "value": value},
+            data={
+                "fqdn": f"{FQDN_PREFIX}{domain_user_permission_domain.domain.fqdn}",
+                "value": value,
+            },
             format="json",
             headers={"AUTHORIZATION": f"Bearer {token}"},
         )

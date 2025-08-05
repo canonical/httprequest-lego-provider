@@ -7,8 +7,10 @@ import re
 from django.core.exceptions import ValidationError
 from django.forms import CharField, Form
 
+FQDN_PREFIX = "_acme-challenge."
 
-def is_fqdn_compliant(fqdn: str) -> bool:
+
+def _is_fqdn(fqdn: str) -> bool:
     """Check if the argument is a valid FQDN.
 
     Args:
@@ -29,11 +31,23 @@ def is_fqdn_compliant(fqdn: str) -> bool:
     )
 
 
+def is_fqdn_compliant(fqdn: str) -> bool:
+    """Check if value consists only of a valid FQDNs prefixed by '_acme-challenge.'.
+
+    Args:
+        fqdn: the FQDN to validate.
+
+    Returns:
+        if the FQDN is valid.
+    """
+    return fqdn.startswith(FQDN_PREFIX) and _is_fqdn(fqdn.split(".", 1)[1])
+
+
 class FQDNField(CharField):
     """FQDN field class."""
 
     def validate(self, value) -> None:
-        """Check if value consists only of a valid FQDNs.
+        """Check if value consists only of a valid FQDNs prefixed by '_acme-challenge.'.
 
         Args:
             value: field value.

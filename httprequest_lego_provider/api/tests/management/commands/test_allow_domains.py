@@ -64,11 +64,24 @@ def test_domains_and_subdomains(user: User, fqdns: list[str]):
 
 
 @pytest.mark.django_db
-def test_allow_domains_raises_exception(fqdns: list[str]):
+def test_allow_domains_raises_exception_invalid_user(fqdns: list[str]):
     """
     arrange: do nothing.
     act: call the allow_domains command for a non existing user.
     assert: a CommandError exception is raised.
     """
-    with pytest.raises(CommandError):
-        call_command("allow_domains", "non-existing-user", *fqdns)
+    with pytest.raises(CommandError) as exc_info:
+        call_command("allow_domains", "non-existing-user", "--domains", ",".join(fqdns))
+    assert 'User "non-existing-user" does not exist' in str(exc_info.value)
+
+
+@pytest.mark.django_db
+def test_allow_domains_raises_exception_invalid_domain(user: User):
+    """
+    arrange: do nothing.
+    act: call the allow_domains command with an invalid domain.
+    assert: a CommandError exception is raised.
+    """
+    with pytest.raises(CommandError) as exc_info:
+        call_command("allow_domains", user, "--domains", "invalid_fqdn")
+    assert "Enter a valid FQDN" in str(exc_info.value)

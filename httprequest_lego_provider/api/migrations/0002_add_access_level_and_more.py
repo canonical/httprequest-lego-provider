@@ -30,6 +30,11 @@ class Migration(migrations.Migration):
             preserve_default=False,
         ),
         migrations.AlterField(
+            model_name="domainuserpermission",
+            name="text",
+            field=models.TextField(null=True, blank=True),
+        ),
+        migrations.AlterField(
             model_name="domain",
             name="fqdn",
             field=models.CharField(

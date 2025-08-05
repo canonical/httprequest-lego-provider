@@ -10,17 +10,27 @@ from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand, CommandError
 
 
-class DomainRevokeError(CommandError):
-    """Raised when domain revocation fails due to missing or undeleted domains."""
+class DomainPermissionRevocationError(Exception):
+    """Raised when revoking domain permissions fails."""
 
-    def __init__(self, not_found=None, failed=None):
-        message = []
-        if not_found:
-            message.append(f"These domains do not exist and were skipped: {', '.join(not_found)}")
-        if failed:
-            message.append(f"Failed to delete the following domains: {', '.join(failed)}")
 
-        super().__init__("\n".join(message))
+def revoke_permission(user, domain_name, access_level):
+    """Revoke access to a domain.
+
+    Args:
+        user: the user.
+        domain_name: the domain name to revoke access from.
+        access_level: the access level.
+
+    Raises:
+        DomainPermissionRevocationError: Raised when revoking domain permissions fails.
+    """
+    domain = Domain.objects.get(fqdn=domain_name)
+    deleted, _ = DomainUserPermission.objects.filter(
+        domain=domain, user=user, access_level=access_level
+    ).delete()
+    if not deleted:
+        raise DomainPermissionRevocationError("Failed to delete domain user permission.")
 
 
 class Command(BaseCommand):
@@ -42,7 +52,7 @@ class Command(BaseCommand):
         parser.add_argument("--domains", type=str, default=None)
         parser.add_argument("--subdomains", type=str, default=None)
 
-    def handle(self, *args, **options):  # noqa: C901
+    def handle(self, *args, **options):
         """Command handler.
 
         Args:
@@ -61,34 +71,23 @@ class Command(BaseCommand):
         except User.DoesNotExist as exc:
             raise CommandError(f'User "{username}" does not exist') from exc
 
-        not_found = []
         failed = []
+        permissions = [(domain_name, AccessLevel.DOMAIN) for domain_name in domains] + [
+            (domain_name, AccessLevel.SUBDOMAIN) for domain_name in subdomains
+        ]
 
-        def revoke_permission(domain_name, access_level):
-            """Revoke access to a domain.
-
-            Args:
-                domain_name: the domain name to revoke access from.
-                access_level: the access level.
-            """
+        for domain_name, access_level in permissions:
             try:
-                domain = Domain.objects.get(fqdn=domain_name)
+                revoke_permission(user, domain_name, access_level)
             except Domain.DoesNotExist:
-                not_found.append(domain_name)
-                return
-            deleted, _ = DomainUserPermission.objects.filter(
-                domain=domain, user=user, access_level=access_level
-            ).delete()
-            if not deleted:
-                failed.append(domain_name)
+                failed.append(f"[Domain: {domain_name}] Domain does not exist.")
+            except DomainPermissionRevocationError:
+                failed.append(f"[Domain: {domain_name}] Failed to delete domain user permission.")
 
-        for domain_name in domains:
-            revoke_permission(domain_name, AccessLevel.DOMAIN)
-
-        for subdomain_name in subdomains:
-            revoke_permission(subdomain_name, AccessLevel.SUBDOMAIN)
-
-        if not_found or failed:
-            raise DomainRevokeError(not_found=not_found, failed=failed)
+        if failed:
+            error_message = "Failed to revoke access to the following domains: \n" + "\n".join(
+                failed
+            )
+            raise CommandError(error_message)
 
         self.stdout.write(self.style.SUCCESS("Successfully removed access to the domains."))

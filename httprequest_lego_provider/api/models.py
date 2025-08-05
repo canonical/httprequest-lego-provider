@@ -51,7 +51,7 @@ class DomainUserPermission(models.Model):
 
     domain = models.ForeignKey(Domain, on_delete=models.CASCADE)
     user = models.ForeignKey(auth.get_user_model(), on_delete=models.CASCADE)
-    text = models.TextField()
+    text = models.TextField(null=True, blank=True)
     access_level = models.CharField(choices=AccessLevel.choices)
 
     class Meta:
