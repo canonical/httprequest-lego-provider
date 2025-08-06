@@ -1,4 +1,4 @@
-# Upgrade
+# How to upgrade
 
 Since the upgrade to the latest version involves running migration scripts in the database, it is essential to backup the postgresql database before upgrading to the latest version. 
 
