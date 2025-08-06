@@ -2,7 +2,7 @@
 
 Since the upgrade to the latest version involves running migration scripts in the database, it is essential to backup the postgresql database before upgrading to the latest version. 
 
-## Backup
+## Back up
 
 Follow the [PostgreSQL charm documentation](https://charmhub.io/postgresql/docs/h-configure-s3-aws) to back up the database.
 
