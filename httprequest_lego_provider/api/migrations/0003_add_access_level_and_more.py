@@ -16,7 +16,7 @@ def strip_acme_prefix(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("api", "0001_initial"),
+        ("api", "0002_migrate_domain_and_domainuserpermission_table"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
@@ -39,6 +39,7 @@ class Migration(migrations.Migration):
             name="fqdn",
             field=models.CharField(
                 max_length=255,
+                unique=True,
                 validators=[
                     django.core.validators.RegexValidator(
                         code="invalid_fqdn",
