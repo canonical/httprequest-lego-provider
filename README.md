@@ -3,7 +3,9 @@
 [![Promote charm](https://github.com/canonical/httprequest-lego-provider/actions/workflows/promote_charm.yaml/badge.svg)](https://github.com/canonical/httprequest-lego-provider/actions/workflows/promote_charm.yaml)
 [![Discourse Status](https://img.shields.io/discourse/status?server=https%3A%2F%2Fdiscourse.charmhub.io&style=flat&label=CharmHub%20Discourse)](https://discourse.charmhub.io)
 
-# HTTP Request Lego Provider
+<!-- vale Canonical.007-Headings-sentence-case = NO -->
+# HTTP request Lego provider
+<!-- vale Canonical.007-Headings-sentence-case = YES -->
 
 A Juju charm deploying and managing [HTTP request Lego provider as defined by ACME](https://go-acme.github.io/lego/dns/httpreq/)
 to manage DNS records. It allows for deployment on

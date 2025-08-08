@@ -1,4 +1,6 @@
+<!-- vale Canonical.007-Headings-sentence-case = NO -->
 # HTTP request Lego provider
+<!-- vale Canonical.007-Headings-sentence-case = YES -->
 
   A [Juju](https://juju.is/) [charm](https://juju.is/docs/olm/charmed-operators)
   deploying and managing [HTTP request Lego provider](https://go-acme.github.io/lego/dns/httpreq/)
@@ -46,7 +48,7 @@ HTTP request Lego Provider is an open-source project that welcomes community con
 | Level | Path | Navlink |
 | -- | -- | -- |
 | 1 | tutorial | [Tutorial]() |
-| 2 | tutorial-deploy-the-deploy-the-httprequest-lego-provider-charm-for-the-first-time | [ Deploy the Httprequest Lego Provider charm for the first time](/t/httprequest-lego-provider-docs-getting-started/15784) |
+| 2 | tutorial-deploy-the-deploy-the-httprequest-lego-provider-charm-for-the-first-time | [ Deploy the HTTP request Lego provider charm for the first time](/t/httprequest-lego-provider-docs-getting-started/15784) |
 | 1 | how-to| [How to]() |
 | 2 | manage-domains | [Manage Domains](/t/httprequest-lego-provider-docs-how-to-manage-domains/15786) |
 | 2 | manage-users | [Manage Users](/t/httprequest-lego-provider-docs-how-to-manage-users/15787) |

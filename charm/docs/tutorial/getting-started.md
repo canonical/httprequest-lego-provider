@@ -1,8 +1,10 @@
-# Deploy the Httprequest Lego Provider charm for the first time
+<!-- vale Canonical.007-Headings-sentence-case = NO -->
+# Deploy the HTTP request Lego provider charm for the first time
+<!-- vale Canonical.007-Headings-sentence-case = YES -->
 
 ## What you’ll do
 
-- Deploy the [Httprequest Lego Provider charm](https://charmhub.io/httprequest-lego-provider).
+- Deploy the [HTTP Request Lego Provider charm](https://charmhub.io/httprequest-lego-provider).
 - Integrate with [the PostgreSQL K8s charm](https://charmhub.io/postgresql-k8s).
 - Integrate with [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/#what-is-ingress) by using [NGINX Ingress Integrator](https://charmhub.io/nginx-ingress-integrator/).
 
@@ -33,7 +35,7 @@ To easily clean up the resources and to separate your workload from the contents
 juju add-model httprequest-lego-provider-tutorial
 ```
 
-### Deploy the Httprequest Lego Provider charm
+### Deploy
 
 The HTTP request Lego provider requires integration with [the PostgreSQL K8s charm](https://charmhub.io/postgresql-k8s) and [NGINX Ingress Integrator](https://charmhub.io/nginx-ingress-integrator/) for external access:
 
@@ -62,7 +64,7 @@ httprequest-lego-provider/0*  waiting   idle   10.1.180.77         Config git-re
 
 This means the required configurations have not been set yet.
 
-### Configure the Httprequest Lego Provider charm
+### Configure the charm
 > NOTE: For tutorial you can fork this [repo](https://github.com/canonical/httprequest-lego-provider/tree/main) and use you own fork and ssh key.
 > If you fork the repo the `git-repo` will be in the form `git+ssh://git@github.com/<username>/httprequest-lego-provider.git@main`.
 Provide the configurations `git-repo` and `git-ssh-key` required by the charm:
@@ -77,7 +79,7 @@ You can see the message has changed:
 httprequest-lego-provider/0*  waiting   idle   10.1.180.77         Waiting for database integrations
 ```
 
-### Integrate the Httprequest Lego Provider charm
+### Integrate the charm
 For the charm to reach active status, integrate the charm with the PostgreSQL K8s charm and the NGINX Ingress Integrator charm:
 
 ```
@@ -113,10 +115,10 @@ If you are following the tutorial in your local machine, modify your `/etc/hosts
 echo 127.0.0.1 lego.local >> /etc/hosts
 ```
 
-After that, visit `http://lego.local/present` to reach Httprequest Lego Provider, using the credentials returned from the `create-user` action to login.
+After that, visit `http://lego.local/present` to reach HTTP request Lego Provider, using the credentials returned from the `create-user` action to login.
 
 ### Clean up the environment
-Congratulations! You have successfully finished the httprequest-lego-provider tutorial. You can now remove the model environment that you've created using the following command.
+Congratulations! You have successfully finished the `httprequest-lego-provider` tutorial. You can now remove the model environment that you've created using the following command.
 
 ```
 juju destroy-model --destroy-storage httprequest-lego-provider-tutorial
