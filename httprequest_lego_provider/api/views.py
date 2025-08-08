@@ -16,9 +16,11 @@ from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAdminUser
 
 from .dns import remove_dns_record, write_dns_record
-from .forms import FQDN_PREFIX, CleanupForm, PresentForm
-from .models import Domain, DomainUserPermission
+from .forms import CleanupForm, PresentForm
+from .models import AccessLevel, Domain, DomainUserPermission
 from .serializers import DomainSerializer, DomainUserPermissionSerializer, UserSerializer
+
+FQDN_PREFIX = "_acme-challenge."
 
 
 @api_view(["POST"])
@@ -35,15 +37,22 @@ def handle_present(request: HttpRequest) -> Optional[HttpResponse]:
     if not form.is_valid():
         return HttpResponse(content=form.errors.as_json(), status=400)
     user = request.user
-    fqdn = form.cleaned_data["fqdn"]
-    try:
-        domain = Domain.objects.get(fqdn=fqdn)
-        value = form.cleaned_data["value"]
-        if DomainUserPermission.objects.filter(user=user, domain=domain):
-            write_dns_record(domain.fqdn, value)
+    fqdn: str = form.cleaned_data["fqdn"]
+    fqdn_without_prefix = fqdn.removeprefix(FQDN_PREFIX)
+    value = form.cleaned_data["value"]
+
+    dups = DomainUserPermission.objects.filter(user=user)
+    for dup in dups:
+        domain_fqdn = dup.domain.fqdn
+        if dup.access_level == AccessLevel.DOMAIN and fqdn_without_prefix == domain_fqdn:
+            write_dns_record(fqdn, value)
             return HttpResponse(status=204)
-    except Domain.DoesNotExist:
-        pass
+        if dup.access_level == AccessLevel.SUBDOMAIN and fqdn_without_prefix.endswith(
+            f".{domain_fqdn}"
+        ):
+            write_dns_record(fqdn, value)
+            return HttpResponse(status=204)
+
     return HttpResponse(
         status=403,
         content=f"The user {user} does not have permission to manage {fqdn}",
@@ -64,14 +73,20 @@ def handle_cleanup(request: HttpRequest) -> Optional[HttpResponse]:
     if not form.is_valid():
         return HttpResponse(content=form.errors.as_json(), status=400)
     user = request.user
-    fqdn = form.cleaned_data["fqdn"]
-    try:
-        domain = Domain.objects.get(fqdn=fqdn)
-        if DomainUserPermission.objects.filter(user=user, domain=domain):
-            remove_dns_record(domain.fqdn)
+    fqdn: str = form.cleaned_data["fqdn"]
+    fqdn_without_prefix = fqdn.removeprefix(FQDN_PREFIX)
+    dups = DomainUserPermission.objects.filter(user=user)
+    for dup in dups:
+        domain_fqdn = dup.domain.fqdn
+        if dup.access_level == AccessLevel.DOMAIN and fqdn_without_prefix == domain_fqdn:
+            remove_dns_record(fqdn)
             return HttpResponse(status=204)
-    except Domain.DoesNotExist:
-        pass
+        if dup.access_level == AccessLevel.SUBDOMAIN and fqdn_without_prefix.endswith(
+            "." + domain_fqdn
+        ):
+            remove_dns_record(fqdn)
+            return HttpResponse(status=204)
+
     return HttpResponse(
         status=403,
         content=f"The user {user} does not have permission to manage {fqdn}",
@@ -100,7 +115,7 @@ class DomainViewSet(viewsets.ModelViewSet):
         queryset = self.queryset
         fqdn = self.request.query_params.get("fqdn")
         if fqdn is not None:
-            queryset = queryset.filter(fqdn=f"{FQDN_PREFIX}{fqdn}")
+            queryset = queryset.filter(fqdn=fqdn)
         return queryset
 
 
@@ -129,7 +144,7 @@ class DomainUserPermissionViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(user__username=username)
         fqdn = self.request.query_params.get("fqdn")
         if fqdn is not None:
-            queryset = queryset.filter(domain__fqdn=f"{FQDN_PREFIX}{fqdn}")
+            queryset = queryset.filter(domain__fqdn=fqdn)
         return queryset
 
 

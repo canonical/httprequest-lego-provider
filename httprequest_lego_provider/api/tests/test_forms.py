@@ -11,6 +11,12 @@ def test_is_fqdn_compliant():
     act: do nothing.
     assert: FQDN should start with '_acme-challenge' and be valid.
     """
+    assert not is_fqdn_compliant("")
+    assert not is_fqdn_compliant("-example.com")
+    assert not is_fqdn_compliant("ex..ample.com")
+    assert not is_fqdn_compliant("*.example.com")
+    assert not is_fqdn_compliant("example-.com")
+    assert not is_fqdn_compliant("exa$mple.com")
     assert not is_fqdn_compliant("example.com")
     assert not is_fqdn_compliant("smth.example.com")
     assert not is_fqdn_compliant("_acme-challenge.")

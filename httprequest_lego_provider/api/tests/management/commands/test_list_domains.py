@@ -9,6 +9,14 @@ from api.models import DomainUserPermission
 from django.core.management import call_command
 from django.core.management.base import CommandError
 
+ALL_USERS_OUTPUT = """
+test_user:
+    domains:
+        example.es, example2.com, some.com
+    subdomains:
+        example.es, example2.com, some.com
+"""
+
 
 @pytest.mark.django_db
 def test_list_domains(domain_user_permissions: list[DomainUserPermission]):
@@ -31,15 +39,10 @@ def test_list_domains_all_users(domain_user_permissions: list[DomainUserPermissi
     assert: the list of associated domains is returned in the stdout.
     """
     out = StringIO()
-    call_command("list_domains", "*", stdout=out)
+    call_command("list_domains", "*", stdout=out, no_color=True)
     # Username on one line with a semi-colon followed by list of domains
     # they have access to.
-    expected_output = (
-        "test_user:\n"
-        "_acme-challenge.some.com, _acme-challenge.example2.com, "
-        "_acme-challenge.example.es"
-    )
-    assert expected_output in out.getvalue()
+    assert ALL_USERS_OUTPUT == out.getvalue()
 
 
 @pytest.mark.django_db

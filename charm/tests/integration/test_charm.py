@@ -2,15 +2,23 @@
 # See LICENSE file for licensing details.
 
 """Charm Integration tests."""
-import secrets
 import logging
 import os
+import secrets
 import textwrap
 
 import pytest
 from pytest_operator.plugin import OpsTest
 
 logger = logging.getLogger(__name__)
+
+LIST_DOMAINS_OUTPUT = """
+test:
+    domains:
+        example.com, sub.example.com
+    subdomains:
+        example.com
+"""
 
 
 @pytest.mark.abort_on_fail
@@ -63,10 +71,36 @@ async def test_actions(run_action):
     stdout = result["result"]
     logger.info("create-user result: %s", stdout)
     assert "password" in stdout
+
     result = await run_action(
-        "httprequest-lego-provider", "allow-domains", username="test", domains="example.com"
+        "httprequest-lego-provider",
+        "allow-domains",
+        username="test",
+        domains="example.com,sub.example.com",
+        subdomains="example.com",
     )
     assert "result" in result
     stdout = result["result"]
     logger.info("allow-domains result: %s", stdout)
-    assert "example.com" in stdout
+    assert "Successfully granted access to all domains" in stdout
+
+    result = await run_action(
+        "httprequest-lego-provider",
+        "list-domains",
+        username="test",
+    )
+    assert "result" in result
+    stdout = result["result"]
+    logger.info("list-domains result: %s", stdout)
+    assert LIST_DOMAINS_OUTPUT == stdout
+
+    result = await run_action(
+        "httprequest-lego-provider",
+        "revoke-domains",
+        username="test",
+        subdomains="example.com",
+    )
+    assert "result" in result
+    stdout = result["result"]
+    logger.info("revoke-domains result: %s", stdout)
+    assert "Successfully removed access to the domains" in stdout

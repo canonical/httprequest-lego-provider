@@ -43,7 +43,7 @@ class Observer(ops.Object):
         return secrets.token_urlsafe(30)
 
     def _execute_command(self, command: list[str], event: ops.ActionEvent) -> None:
-        """Prepare the scripts for exxecution.
+        """Prepare the scripts for execution.
 
         Args:
             command: the management command to execute.
@@ -84,8 +84,17 @@ class Observer(ops.Object):
             event: The event fired by the action.
         """
         username = event.params["username"]
-        domains = event.params["domains"].split(",")
-        self._execute_command(["allow_domains", username] + domains, event)
+        domains = event.params.get("domains", None)
+        subdomains = event.params.get("subdomains", None)
+        if not domains and not subdomains:
+            event.fail("At least one of 'domains' or 'subdomains' must be provided.")
+            return
+        command = ["allow_domains", username]
+        if domains:
+            command += ["--domains", domains]
+        if subdomains:
+            command += ["--subdomains", subdomains]
+        self._execute_command(command, event)
 
     def _revoke_domains(self, event: ops.ActionEvent) -> None:
         """Handle the allow-domains action.
@@ -94,8 +103,17 @@ class Observer(ops.Object):
             event: The event fired by the action.
         """
         username = event.params["username"]
-        domains = event.params["domains"].split(",")
-        self._execute_command(["revoke_domains", username] + domains, event)
+        domains = event.params.get("domains", None)
+        subdomains = event.params.get("subdomains", None)
+        command = ["revoke_domains", username]
+        if not domains and not subdomains:
+            event.fail("At least one of 'domains' or 'subdomains' must be provided.")
+            return
+        if domains:
+            command += ["--domains", domains]
+        if subdomains:
+            command += ["--subdomains", subdomains]
+        self._execute_command(command, event)
 
     def _list_domains(self, event: ops.ActionEvent) -> None:
         """Handle the allow-domains action.
