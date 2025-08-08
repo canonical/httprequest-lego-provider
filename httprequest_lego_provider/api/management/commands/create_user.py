@@ -43,7 +43,7 @@ class Command(BaseCommand):
 
         try:
             user = User.objects.get(username=username)
-            self.stdout.write(f'User "{username}" already exists. Skipping.')
+            self.stderr.write(f'User "{username}" already exists. Skipping.')
         except User.DoesNotExist:
             user = User(username=username)
             user.set_password(password)

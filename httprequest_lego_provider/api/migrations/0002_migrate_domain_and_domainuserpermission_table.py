@@ -37,15 +37,11 @@ def forwards(apps, schema_editor):
             )
 
 
-def backwards(apps, schema_editor):
-    pass
-
-
 class Migration(migrations.Migration):
     dependencies = [
         ("api", "0001_initial"),
     ]
 
     operations = [
-        migrations.RunPython(forwards, backwards),
+        migrations.RunPython(forwards),
     ]
