@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 import pytest
 from api.forms import FQDN_PREFIX
-from api.models import Domain, DomainUserPermission
+from api.models import AccessLevel, Domain, DomainUserPermission
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import User
 from django.test import Client
@@ -85,7 +85,7 @@ def test_post_present_when_logged_in_and_no_permission(
     value = secrets.token_hex()
     response = client.post(
         "/present",
-        data={"fqdn": domain.fqdn, "value": value},
+        data={"fqdn": f"{FQDN_PREFIX}{domain.fqdn}", "value": value},
         format="json",
         headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
     )
@@ -94,45 +94,76 @@ def test_post_present_when_logged_in_and_no_permission(
 
 
 @pytest.mark.django_db
-def test_post_present_when_logged_in_and_permission(
-    client: Client, user_auth_token: str, domain_user_permission: DomainUserPermission
+def test_post_present_when_logged_in_and_permission_domain_access_level(
+    client: Client, user_auth_token: str, domain_user_permission_domain: DomainUserPermission
 ):
     """
-    arrange: mock the write_dns_recod method, log in a user and give him permissions on a FQDN.
-    act: submit a POST request for the present URL containing the fqdn above.
+    arrange: mock the write_dns_record method, log in a user and give him permissions on a FQDN.
+    act: submit a POST request for the present URL containing an fdqn with domain level access.
     assert: a 204 is returned.
     """
     with patch("api.views.write_dns_record") as mocked_dns_write:
+        fqdn = f"{FQDN_PREFIX}{domain_user_permission_domain.domain.fqdn}"
         value = secrets.token_hex()
         response = client.post(
             "/present",
-            data={"fqdn": domain_user_permission.domain.fqdn, "value": value},
+            data={
+                "fqdn": fqdn,
+                "value": value,
+            },
             format="json",
             headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
         )
-        mocked_dns_write.assert_called_once_with(domain_user_permission.domain.fqdn, value)
+        mocked_dns_write.assert_called_once_with(fqdn, value)
 
         assert response.status_code == 204
 
 
 @pytest.mark.django_db
-def test_post_present_when_logged_in_and_permission_with_trailing_dor(
-    client: Client, user_auth_token: str, domain_user_permission: DomainUserPermission
+def test_post_present_when_logged_in_and_permission_subdomain_access_level(
+    client: Client, user_auth_token: str, domain_user_permission_subdomain: DomainUserPermission
 ):
     """
-    arrange: mock the write_dns_recod method, log in a user and give him permissions on a FQDN.
-    act: submit a POST request for the present URL containing the fqdn above.
+    arrange: mock the write_dns_record method, log in a user and give him permissions on a FQDN.
+    act: ubmit a POST request for the present URL containing an fdqn with subdomain level access.
     assert: a 204 is returned.
     """
     with patch("api.views.write_dns_record") as mocked_dns_write:
         value = secrets.token_hex()
+        subdomain_fqdn = f"{FQDN_PREFIX}test.{domain_user_permission_subdomain.domain.fqdn}"
         response = client.post(
             "/present",
-            data={"fqdn": f"{domain_user_permission.domain.fqdn}.", "value": value},
+            data={"fqdn": subdomain_fqdn, "value": value},
             format="json",
             headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
         )
-        mocked_dns_write.assert_called_once_with(domain_user_permission.domain.fqdn, value)
+        mocked_dns_write.assert_called_once_with(subdomain_fqdn, value)
+
+        assert response.status_code == 204
+
+
+@pytest.mark.django_db
+def test_post_present_when_logged_in_and_permission_with_trailing_dot(
+    client: Client, user_auth_token: str, domain_user_permission_domain: DomainUserPermission
+):
+    """
+    arrange: mock the write_dns_record method, log in a user and give him permissions on a FQDN.
+    act: submit a POST request for the present URL containing the fqdn above.
+    assert: a 204 is returned.
+    """
+    with patch("api.views.write_dns_record") as mocked_dns_write:
+        fqdn = f"{FQDN_PREFIX}{domain_user_permission_domain.domain.fqdn}"
+        value = secrets.token_hex()
+        response = client.post(
+            "/present",
+            data={
+                "fqdn": f"{fqdn}.",
+                "value": value,
+            },
+            format="json",
+            headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
+        )
+        mocked_dns_write.assert_called_once_with(fqdn, value)
 
         assert response.status_code == 204
 
@@ -140,7 +171,7 @@ def test_post_present_when_logged_in_and_permission_with_trailing_dor(
 @pytest.mark.django_db
 def test_post_present_when_logged_in_and_fqdn_invalid(client: Client, user_auth_token: str):
     """
-    arrange: mock the write_dns_recod method and log in a user.
+    arrange: mock the write_dns_record method and log in a user.
     act: submit a POST request for the present URL containing an invalid FQDN.
     assert: a 400 is returned.
     """
@@ -148,7 +179,7 @@ def test_post_present_when_logged_in_and_fqdn_invalid(client: Client, user_auth_
         value = secrets.token_hex()
         response = client.post(
             "/present",
-            data={"fqdn": "example.com", "value": value},
+            data={"fqdn": f"{FQDN_PREFIX}example-.com", "value": value},
             format="json",
             headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
         )
@@ -210,7 +241,7 @@ def test_post_cleanup_when_logged_in_and_no_permission(
     value = secrets.token_hex()
     response = client.post(
         "/cleanup",
-        data={"fqdn": domain.fqdn, "value": value},
+        data={"fqdn": f"{FQDN_PREFIX}{domain.fqdn}", "value": value},
         format="json",
         headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
     )
@@ -219,30 +250,57 @@ def test_post_cleanup_when_logged_in_and_no_permission(
 
 
 @pytest.mark.django_db
-def test_post_cleanup_when_logged_in_and_permission(
-    client: Client, user_auth_token: str, domain_user_permission: DomainUserPermission
+def test_post_cleanup_when_logged_in_and_permission_access_level_domain(
+    client: Client, user_auth_token: str, domain_user_permission_domain: DomainUserPermission
 ):
     """
     arrange: mock the dns module, log in a user and give him permissions on a FQDN.
-    act: submit a POST request for the cleanup URL containing the fqdn above.
+    act: submit a POST request for the cleanup URL containing an fqdn with domain level access.
+    assert: a 200 is returned.
+    """
+    with patch("api.views.remove_dns_record") as mocked_dns_remove:
+        fqdn = f"{FQDN_PREFIX}{domain_user_permission_domain.domain.fqdn}"
+        value = secrets.token_hex()
+        response = client.post(
+            "/cleanup",
+            data={
+                "fqdn": fqdn,
+                "value": value,
+            },
+            format="json",
+            headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
+        )
+        mocked_dns_remove.assert_called_once_with(fqdn)
+
+        assert response.status_code == 204
+
+
+@pytest.mark.django_db
+def test_post_cleanup_when_logged_in_and_permission_access_level_subdomain(
+    client: Client, user_auth_token: str, domain_user_permission_subdomain: DomainUserPermission
+):
+    """
+    arrange: mock the dns module, log in a user and give him permissions on a FQDN.
+    act: submit a POST request for the cleanup URL containing an fqdn with subdomain level access.
     assert: a 200 is returned.
     """
     with patch("api.views.remove_dns_record") as mocked_dns_remove:
         value = secrets.token_hex()
+        subdomain_fqdn = f"{FQDN_PREFIX}test.{domain_user_permission_subdomain.domain.fqdn}"
         response = client.post(
             "/cleanup",
-            data={"fqdn": domain_user_permission.domain.fqdn, "value": value},
+            data={"fqdn": subdomain_fqdn, "value": value},
             format="json",
             headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
         )
-        mocked_dns_remove.assert_called_once_with(domain_user_permission.domain.fqdn)
+        mocked_dns_remove.assert_called_once_with(subdomain_fqdn)
 
         assert response.status_code == 204
 
 
 @pytest.mark.django_db
 def test_post_cleanup_when_logged_in_and_permission_with_trailing_dot(
-    client: Client, user_auth_token: str, domain_user_permission: DomainUserPermission
+    client: Client, user_auth_token: str, domain_user_permission_domain: DomainUserPermission
 ):
     """
     arrange: mock the dns module, log in a user and give him permissions on a FQDN.
@@ -250,14 +308,18 @@ def test_post_cleanup_when_logged_in_and_permission_with_trailing_dot(
     assert: a 200 is returned.
     """
     with patch("api.views.remove_dns_record") as mocked_dns_remove:
+        fqdn = f"{FQDN_PREFIX}{domain_user_permission_domain.domain.fqdn}"
         value = secrets.token_hex()
         response = client.post(
             "/cleanup",
-            data={"fqdn": f"{domain_user_permission.domain.fqdn}.", "value": value},
+            data={
+                "fqdn": f"{fqdn}.",
+                "value": value,
+            },
             format="json",
             headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
         )
-        mocked_dns_remove.assert_called_once_with(domain_user_permission.domain.fqdn)
+        mocked_dns_remove.assert_called_once_with(fqdn)
 
         assert response.status_code == 204
 
@@ -273,7 +335,7 @@ def test_post_cleanup_when_logged_in_and_fqdn_invalid(client: Client, user_auth_
         value = secrets.token_hex()
         response = client.post(
             "/cleanup",
-            data={"fqdn": "example.com", "value": value},
+            data={"fqdn": "example-.com", "value": value},
             format="json",
             headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
         )
@@ -295,10 +357,13 @@ def test_get_cleanup_when_logged_in(client: Client, user_auth_token: str):
 
 @pytest.mark.django_db
 def test_test_jwt_token_login(
-    client: Client, username: str, user_password: str, domain_user_permission: DomainUserPermission
+    client: Client,
+    username: str,
+    user_password: str,
+    domain_user_permission_domain: DomainUserPermission,
 ):
     """
-    arrange: mock the write_dns_recod method, log in a user and give him permissions on a FQDN.
+    arrange: mock the write_dns_record method, log in a user and give him permissions on a FQDN.
     act: submit a POST request for the present URL containing the fqdn above.
     assert: a 204 is returned.
     """
@@ -312,7 +377,10 @@ def test_test_jwt_token_login(
         value = secrets.token_hex()
         response = client.post(
             "/present",
-            data={"fqdn": domain_user_permission.domain.fqdn, "value": value},
+            data={
+                "fqdn": f"{FQDN_PREFIX}{domain_user_permission_domain.domain.fqdn}",
+                "value": value,
+            },
             format="json",
             headers={"AUTHORIZATION": f"Bearer {token}"},
         )
@@ -373,7 +441,7 @@ def test_get_domain_with_fqdn_filter(client: Client, admin_user_auth_token: str,
 
     assert response.status_code == 200
     assert len(json) == 1
-    assert json[0]["fqdn"] == f"{FQDN_PREFIX}example2.com"
+    assert json[0]["fqdn"] == "example2.com"
 
 
 @pytest.mark.django_db
@@ -409,7 +477,7 @@ def test_post_domain_when_logged_in_as_admin_user(client: Client, admin_user_aut
         headers={"AUTHORIZATION": f"Basic {admin_user_auth_token}"},
     )
 
-    assert Domain.objects.get(fqdn=f"{FQDN_PREFIX}example.com") is not None
+    assert Domain.objects.get(fqdn="example.com") is not None
     assert response.status_code == 201
 
 
@@ -499,7 +567,7 @@ def test_get_domain_user_permission_with_filters(
     assert len(json) > 0
 
     for entry in json:
-        assert entry["domain"] == Domain.objects.get(fqdn=f"{FQDN_PREFIX}example2.com").id
+        assert entry["domain"] == Domain.objects.get(fqdn="example2.com").id
         assert entry["user"] == User.objects.get(username=user.username).id
 
 
@@ -514,12 +582,19 @@ def test_post_domain_user_permission_when_logged_in_as_non_admin_user(
     """
     response = client.post(
         "/api/v1/domain-user-permissions/",
-        data={"domain": domain.id, "user": user.id, "text": "whatever"},
+        data={
+            "domain": domain.id,
+            "user": user.id,
+            "text": "whatever",
+            "access_level": AccessLevel.DOMAIN,
+        },
         format="json",
         headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
     )
 
-    assert not DomainUserPermission.objects.filter(user=user, domain=domain)
+    assert not DomainUserPermission.objects.filter(
+        user=user, domain=domain, access_level=AccessLevel.DOMAIN
+    )
     assert response.status_code == 403
 
 
@@ -534,11 +609,18 @@ def test_post_domain_user_permission_with_invalid_domain_when_logged_in_as_admin
     """
     response = client.post(
         "/api/v1/domain-user-permissions/",
-        data={"domain": 1, "user": user.id, "text": "whatever"},
+        data={
+            "domain": 1,
+            "user": user.id,
+            "text": "whatever",
+            "access_level": AccessLevel.DOMAIN,
+        },
         headers={"AUTHORIZATION": f"Basic {admin_user_auth_token}"},
     )
 
-    assert not DomainUserPermission.objects.filter(user=user, domain=1)
+    assert not DomainUserPermission.objects.filter(
+        user=user, domain=1, access_level=AccessLevel.DOMAIN
+    )
     assert response.status_code == 400
 
 
@@ -553,11 +635,18 @@ def test_post_domain_user_permission_with_invalid_user_when_logged_in_as_admin_u
     """
     response = client.post(
         "/api/v1/domain-user-permissions/",
-        data={"domain": domain.id, "user": 99, "text": "whatever"},
+        data={
+            "domain": domain.id,
+            "user": 99,
+            "text": "whatever",
+            "access_level": AccessLevel.DOMAIN,
+        },
         headers={"AUTHORIZATION": f"Basic {admin_user_auth_token}"},
     )
 
-    assert not DomainUserPermission.objects.filter(user=99, domain=domain)
+    assert not DomainUserPermission.objects.filter(
+        user=99, domain=domain, access_level=AccessLevel.DOMAIN
+    )
     assert response.status_code == 400
 
 
@@ -572,11 +661,48 @@ def test_post_domain_user_permission_when_logged_in_as_admin_user(
     """
     response = client.post(
         "/api/v1/domain-user-permissions/",
-        data={"domain": domain.id, "user": user.id, "text": "whatever"},
+        data={
+            "domain": domain.id,
+            "user": user.id,
+            "text": "whatever",
+            "access_level": AccessLevel.DOMAIN,
+        },
         headers={"AUTHORIZATION": f"Basic {admin_user_auth_token}"},
     )
+    assert (
+        DomainUserPermission.objects.filter(
+            user=user.id, domain=domain, access_level=AccessLevel.DOMAIN
+        )
+        is not None
+    )
+    assert response.status_code == 201
 
-    assert DomainUserPermission.objects.filter(user=99, domain=domain) is not None
+
+@pytest.mark.django_db
+def test_post_subdomain_user_permission_when_logged_in_as_admin_user(
+    client: Client, admin_user_auth_token: str, user: User, domain: Domain
+):
+    """
+    arrange: log in an admin user.
+    act: submit a POST request for the domain user permission URL for a existing domain.
+    assert: a 201 is returned and the domain user permission is inserted in the database.
+    """
+    response = client.post(
+        "/api/v1/domain-user-permissions/",
+        data={
+            "domain": domain.id,
+            "user": user.id,
+            "text": "whatever",
+            "access_level": AccessLevel.SUBDOMAIN,
+        },
+        headers={"AUTHORIZATION": f"Basic {admin_user_auth_token}"},
+    )
+    assert (
+        DomainUserPermission.objects.filter(
+            user=user.id, domain=domain, access_level=AccessLevel.SUBDOMAIN
+        )
+        is not None
+    )
     assert response.status_code == 201
 
 

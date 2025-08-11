@@ -5,5 +5,5 @@ CVE-2025-47273
 # statsd-exporter
 CVE-2024-45338 # golang.org/x/net
 CVE-2024-45337 # golang.org/x/crypto
-CVE-2025-22869 # golang.org/x/crypto
-CVE-2025-22874 # pebble: crypto/x509
+CVE-2025-22868 # golang.org/x/oauth2
+CVE-2025-22874 # crypto/x509 in pebble

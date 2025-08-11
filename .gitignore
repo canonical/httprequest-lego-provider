@@ -12,3 +12,4 @@ __pycache__/
 *.egg-info/
 **/*.rock
 */*.sqlite3
+charm/lib/charms/

@@ -9,8 +9,7 @@ import base64
 import secrets
 
 import pytest
-from api.forms import FQDN_PREFIX
-from api.models import Domain, DomainUserPermission
+from api.models import AccessLevel, Domain, DomainUserPermission
 from django.contrib.auth.models import User
 
 
@@ -87,7 +86,7 @@ def fqdn_fixture() -> str:
 @pytest.fixture(scope="function", name="domain")
 def domain_fixture(fqdn: str) -> Domain:
     """Provide a valid domain."""
-    return Domain.objects.create(fqdn=f"{FQDN_PREFIX}{fqdn}")
+    return Domain.objects.create(fqdn=fqdn)
 
 
 @pytest.fixture(scope="function", name="domains")
@@ -95,14 +94,24 @@ def domains_fixture(fqdns: list) -> list:
     """Create all domains and return the list of Domain objects."""
     domains = []
     for fqdn in fqdns:
-        domains.append(Domain.objects.create(fqdn=f"{FQDN_PREFIX}{fqdn}"))
+        domains.append(Domain.objects.create(fqdn=fqdn))
     return domains
 
 
-@pytest.fixture(scope="function", name="domain_user_permission")
-def domain_user_permission_fixture(domain: Domain, user: User) -> DomainUserPermission:
+@pytest.fixture(scope="function", name="domain_user_permission_domain")
+def domain_user_permission_domain_fixture(domain: Domain, user: User) -> DomainUserPermission:
     """Provide a valid domain user permission."""
-    return DomainUserPermission.objects.create(domain=domain, user=user)
+    return DomainUserPermission.objects.create(
+        domain=domain, user=user, access_level=AccessLevel.DOMAIN
+    )
+
+
+@pytest.fixture(scope="function", name="domain_user_permission_subdomain")
+def domain_user_permission_subdomain_fixture(domain: Domain, user: User) -> DomainUserPermission:
+    """Provide a valid domain user permission."""
+    return DomainUserPermission.objects.create(
+        domain=domain, user=user, access_level=AccessLevel.SUBDOMAIN
+    )
 
 
 @pytest.fixture(scope="module", name="fqdns")
@@ -116,10 +125,17 @@ def domain_user_permissions_fixture(fqdns: list[str], user: User) -> list[Domain
     """Provide list of valid domain user permissions."""
     domains = []
     for fqdn in fqdns:
-        domain = Domain.objects.create(fqdn=f"{FQDN_PREFIX}{fqdn}")
+        domain = Domain.objects.create(fqdn=fqdn)
         domains.append(domain)
     dups = []
     for domain in domains:
-        dup = DomainUserPermission.objects.create(domain=domain, user=user)
+        dup = DomainUserPermission.objects.create(
+            domain=domain, user=user, access_level=AccessLevel.DOMAIN
+        )
+        dups.append(dup)
+    for subdomain in domains:
+        dup = DomainUserPermission.objects.create(
+            domain=subdomain, user=user, access_level=AccessLevel.SUBDOMAIN
+        )
         dups.append(dup)
     return dups

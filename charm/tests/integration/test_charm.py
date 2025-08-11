@@ -2,14 +2,23 @@
 # See LICENSE file for licensing details.
 
 """Charm Integration tests."""
-import secrets
 import logging
 import os
+import secrets
+import textwrap
 
 import pytest
 from pytest_operator.plugin import OpsTest
 
 logger = logging.getLogger(__name__)
+
+LIST_DOMAINS_OUTPUT = """
+test:
+    domains:
+        example.com, sub.example.com
+    subdomains:
+        example.com
+"""
 
 
 @pytest.mark.abort_on_fail
@@ -30,6 +39,19 @@ async def test_build_and_deploy(ops_test: OpsTest, pytestconfig: pytest.Config):
         config={
             "django-allowed-hosts": "*",
             "django-secret-key": secrets.token_hex(),
+            "git-repo": "git+ssh://git@github.com/canonical/httprequest-lego-provider.git@main",
+            "git-ssh-key": textwrap.dedent(
+                """\
+                -----BEGIN OPENSSH PRIVATE KEY-----
+                b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+                QyNTUxOQAAACB7cf7PF5PMxeMnIX2nd5rbG5207jwuccejra8BxXMXwgAAAKj9XL3Y/Vy9
+                2AAAAAtzc2gtZWQyNTUxOQAAACB7cf7PF5PMxeMnIX2nd5rbG5207jwuccejra8BxXMXwg
+                AAAEBcyinYBm2LSuxuOKJwMfgGO572NedBYeGK8XQDyh3yFHtx/s8Xk8zF4ychfad3mtsb
+                nbTuPC5xx6OtrwHFcxfCAAAAIHdlaWktd2FuZ0B3ZWlpLW1hY2Jvb2stYWlyLmxvY2FsAQ
+                IDBAU=
+                -----END OPENSSH PRIVATE KEY-----
+                """
+            ),
         },
         resources={"django-app-image": django_image},
     )
@@ -49,10 +71,36 @@ async def test_actions(run_action):
     stdout = result["result"]
     logger.info("create-user result: %s", stdout)
     assert "password" in stdout
+
     result = await run_action(
-        "httprequest-lego-provider", "allow-domains", username="test", domains="example.com"
+        "httprequest-lego-provider",
+        "allow-domains",
+        username="test",
+        domains="example.com,sub.example.com",
+        subdomains="example.com",
     )
     assert "result" in result
     stdout = result["result"]
     logger.info("allow-domains result: %s", stdout)
-    assert "example.com" in stdout
+    assert "Successfully granted access to all domains" in stdout
+
+    result = await run_action(
+        "httprequest-lego-provider",
+        "list-domains",
+        username="test",
+    )
+    assert "result" in result
+    stdout = result["result"]
+    logger.info("list-domains result: %s", stdout)
+    assert LIST_DOMAINS_OUTPUT == stdout
+
+    result = await run_action(
+        "httprequest-lego-provider",
+        "revoke-domains",
+        username="test",
+        subdomains="example.com",
+    )
+    assert "result" in result
+    stdout = result["result"]
+    logger.info("revoke-domains result: %s", stdout)
+    assert "Successfully removed access to the domains" in stdout

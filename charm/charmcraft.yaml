@@ -73,11 +73,15 @@ actions:
           type: string
         domains:
           description: >
-            Comma separated list of domains to access access for.
-            The domains will be prefixed by '_acme-challenge.'
+            Comma separated list of domains to obtain access for.
+          type: string
+        subdomains:
+          description: >
+            Comma-separated list of domains where subdomain access is allowed.  
+            The user will be granted access to all subdomains under each listed domain.
+          type: string
       required:
         - username
-        - domains
   revoke-domains:
       description: Revoke user access to domains.
       properties:
@@ -87,13 +91,16 @@ actions:
         domains:
           description: >
             Comma separated list of domains to revoke access to.
-            The domains will be prefixed by '_acme-challenge.'
+          type: string
+        subdomains:
+          description: >
+            Comma-separated list of domains where subdomain access is revoked.  
+            The user will lose access to all subdomains under each listed domain.
           type: string
       required:
         - username
-        - domains
   list-domains:
-      description: List the domains an user has access to.
+      description: List the domains a user has access to.
       properties:
         username:
           description: User name to query for.
