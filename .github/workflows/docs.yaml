@@ -2,7 +2,7 @@ name: Documentation
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "add-updated-docs-workflow"]
   pull_request:
 
 jobs:
