@@ -2,7 +2,7 @@
 # HTTP request Lego provider
 <!-- vale Canonical.007-Headings-sentence-case = YES -->
 
-  A [Juju](https://juju.is/) [charm](https://juju.is/docs/olm/charmed-operators)
+  A [Juju](https://juju.is/) [charm](https://documentation.ubuntu.com/juju/latest/reference/charm/)
   deploying and managing [HTTP request Lego provider](https://go-acme.github.io/lego/dns/httpreq/)
   on Kubernetes. HTTP request Lego provider is a web application implementing the [DNS HTTP request
   provider as defined by ACME](https://go-acme.github.io/lego/dns/httpreq/) to manage DNS records.
@@ -24,8 +24,8 @@
 
 | | |
 |--|--|
-|  [Tutorials](https://discourse.charmhub.io/t/httprequest-lego-provider-docs-getting-started/15784)</br>  Get started - a hands-on introduction to using the HTTP request Lego provider for new users </br> |  [How-to guides](https://charmhub.io/httprequest-lego-provider/docs/authentication) </br> Step-by-step guides covering key operations and common tasks |
-| [Reference](https://charmhub.io/httprequest-lego-provider/actions) </br> Technical information - specifications, APIs, architecture | [Explanation](https://charmhub.io/httprequest-lego-provider/docs/architecture) </br> Concepts - discussion and clarification of key topics  |
+|  [Tutorials](https://discourse.charmhub.io/t/httprequest-lego-provider-docs-getting-started/15784)</br>  Get started - a hands-on introduction to using the HTTP request Lego provider for new users </br> |  [How-to guides](https://charmhub.io/httprequest-lego-provider/docs/manage-users) </br> Step-by-step guides covering key operations and common tasks |
+| [Reference](https://charmhub.io/httprequest-lego-provider/actions) </br> Technical information - specifications, APIs, architecture | |
 
 ## Contributing to this documentation
 

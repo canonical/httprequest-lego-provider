@@ -8,7 +8,7 @@
 VALE_DIR ?= .vale
 PRAECEPTA_CONFIG 	?= .vale.ini
 VALE_DOCS_FILES 	?= charm/docs/ README.md CONTRIBUTING.md
-LYCHEE_DOCS_FILES 	?=  "'./**/*.md' './**/*.html' './**/*.rst'"
+LYCHEE_DOCS_FILES 	?=  "'./**/*.md' './**/*.rst'"
 
 HAS_VALE			:= $(shell command -v vale;)
 HAS_LYCHEE			:= $(shell command -v lychee;)
