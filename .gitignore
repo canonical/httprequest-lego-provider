@@ -13,3 +13,14 @@ __pycache__/
 **/*.rock
 */*.sqlite3
 charm/lib/charms/
+
+# Ignore Vale config and StylesPath *except* for our local directories.
+.vale/styles/*
+!.vale/styles/local
+!.vale/styles/config/
+
+.vale/styles/config/*
+!.vale/styles/config/vocabularies/
+
+.vale/styles/config/vocabularies/*
+!.vale/styles/config/vocabularies/local
