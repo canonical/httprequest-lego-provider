@@ -8,7 +8,8 @@
 VALE_DIR ?= .vale
 PRAECEPTA_CONFIG 	?= .vale.ini
 VALE_DOCS_FILES 	?= charm/docs/ README.md CONTRIBUTING.md
-LYCHEE_DOCS_FILES 	?=  "'./**/*.md' './**/*.rst'"
+LYCHEE_DOCS_FILES 	?= "'./**/*.md' './**/*.rst'"
+LYCHEE_IGNORE		?= '.tox'
 
 HAS_VALE			:= $(shell command -v vale;)
 HAS_LYCHEE			:= $(shell command -v lychee;)
@@ -63,7 +64,7 @@ vale: .check-vale vale-sync ## Run Vale checks on docs
 .PHONY: lychee
 lychee: .check-lychee ## Run Lychee checks on docs
 	$(call msg,--- Running lychee checks on "$(LYCHEE_DOCS_FILES)"... ---)
-	@lychee "$(LYCHEE_DOCS_FILES)"
+	@lychee "$(LYCHEE_DOCS_FILES)" --exclude-path $(LYCHEE_IGNORE)
 
 # ==============================================================================
 # Helper Targets
