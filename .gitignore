@@ -13,3 +13,16 @@ __pycache__/
 **/*.rock
 */*.sqlite3
 charm/lib/charms/
+
+
+# BEGIN VALE WORKFLOW IGNORE
+.vale/styles/*
+!.vale/styles/local
+!.vale/styles/config/
+
+.vale/styles/config/*
+!.vale/styles/config/vocabularies/
+
+.vale/styles/config/vocabularies/*
+!.vale/styles/config/vocabularies/local
+# END VALE WORKFLOW IGNORE

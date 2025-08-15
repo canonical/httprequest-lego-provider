@@ -37,4 +37,5 @@ header:
     - 'app/**'
     - 'charm/lib/**'
     - '**/migrations/**'
+    - '.lycheeignore'
   comment: on-failure
