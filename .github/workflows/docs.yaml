@@ -2,12 +2,12 @@ name: Documentation
 
 on:
   push:
-    branches: [ "main", "add-updated-docs-workflow"]
+    branches: [ "main" ]
   pull_request:
 
 jobs:
   docs-checks:
-    uses: canonical/operator-workflows/.github/workflows/docs.yaml@add-documentation-workflow
+    uses: canonical/operator-workflows/.github/workflows/docs.yaml@main
     secrets: inherit
     with:
       vale-files: '["README.md","CONTRIBUTING.md","charm/docs/"]'
