@@ -12,10 +12,6 @@ The following items include descriptions of the risks, their corresponding best 
 - The Git repository might become destroyed, corrupted, or may be destroyed.
 
 #### Best practices
-
-- Configure database backups:
-
-  Follow the [charm documentation](https://charmhub.io/httprequest-lego-provider/docs/how-to-backup-and-restore) for guidance on creating regular backups and restoring them when required.
   
 - Configure repository backups:
 

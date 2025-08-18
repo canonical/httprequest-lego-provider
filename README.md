@@ -50,5 +50,5 @@ You can find the full list of integrations [here](https://charmhub.io/httpreques
 * [Troubleshooting](https://matrix.to/#/#charmhub-charmdev:ubuntu.com) <!--(Optional) Link to a page or section about troubleshooting/FAQ-->
 ## Project and community
 * [Issues](https://github.com/canonical/httprequest-lego-provider/issues) <!--Link to GitHub issues (if applicable)-->
-* [Contributing](https://charmhub.io/httprequest-lego-provider/docs/how-to-contribute) <!--Link to any contribution guides-->
+* [Contributing](https://github.com/canonical/httprequest-lego-provider/blob/main/CONTRIBUTING.md) <!--Link to any contribution guides-->
 * [Matrix](https://matrix.to/#/#charmhub-charmdev:ubuntu.com) <!--Link to contact info (if applicable), e.g. Matrix channel-->
