@@ -27,7 +27,7 @@ class Domain(models.Model):
     )
 
 
-class AccessLevel(models.TextChoices):
+class AccessLevel(models.TextChoices):  # pylint:disable=too-many-ancestors
     """Access levels for the user.
 
     Attributes:
