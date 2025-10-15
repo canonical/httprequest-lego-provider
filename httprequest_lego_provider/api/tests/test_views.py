@@ -11,6 +11,7 @@ import secrets
 from unittest.mock import patch
 
 import pytest
+from api.dns import DnsSourceUpdateError
 from api.forms import FQDN_PREFIX
 from api.models import AccessLevel, Domain, DomainUserPermission
 from django.contrib.auth.hashers import check_password
@@ -824,3 +825,57 @@ def test_post_user_when_logged_in_as_admin_user_and_user_invalid(
     )
 
     assert response.status_code == 400
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "endpoint,mock_target,needs_value",
+    [
+        pytest.param("/present", "api.views.write_dns_record", True, id="Test '/present'"),
+        pytest.param("/cleanup", "api.views.remove_dns_record", False, id="Test '/cleanup'"),
+    ],
+)
+def test_post_when_write_dns_fails(
+    client: Client,
+    user_auth_token: str,
+    domain_user_permission_domain: DomainUserPermission,
+    endpoint,
+    mock_target,
+    needs_value,
+):
+    """
+    assert: mock target to raise DnsSourceUpdateError method, log in a user and give him
+    permissions on a FQDN.
+    act: submit a POST request for the required endpoint containing the fqdn above.
+    assert: a 500 is returned with the expected response content.
+
+    """
+    exception_msg = (
+        "test.domain file not found in git repository. Is this site configured for DNS?"
+    )
+
+    with patch(mock_target) as mocked_dns_func:
+        mocked_dns_func.side_effect = DnsSourceUpdateError(exception_msg)
+
+        fqdn = f"{FQDN_PREFIX}{domain_user_permission_domain.domain.fqdn}"
+        value = secrets.token_hex()
+        response = client.post(
+            endpoint,
+            data={
+                "fqdn": f"{fqdn}.",
+                "value": value,
+            },
+            format="json",
+            headers={"AUTHORIZATION": f"Basic {user_auth_token}"},
+        )
+
+        if needs_value:
+            mocked_dns_func.assert_called_once_with(fqdn, value)
+        else:
+            mocked_dns_func.assert_called_once_with(fqdn)
+
+        assert response.status_code == 500
+        assert (
+            response.content.decode("utf-8")
+            == f"{exception_msg} Check httprequest-lego-provider for more details."
+        )

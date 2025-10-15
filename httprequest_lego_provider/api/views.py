@@ -15,7 +15,7 @@ from rest_framework import viewsets
 from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAdminUser
 
-from .dns import remove_dns_record, write_dns_record
+from .dns import DnsSourceUpdateError, remove_dns_record, write_dns_record
 from .forms import CleanupForm, PresentForm
 from .models import AccessLevel, Domain, DomainUserPermission
 from .serializers import DomainSerializer, DomainUserPermissionSerializer, UserSerializer
@@ -42,16 +42,21 @@ def handle_present(request: HttpRequest) -> Optional[HttpResponse]:
     value = form.cleaned_data["value"]
 
     dups = DomainUserPermission.objects.filter(user=user)
-    for dup in dups:
-        domain_fqdn = dup.domain.fqdn
-        if dup.access_level == AccessLevel.DOMAIN and fqdn_without_prefix == domain_fqdn:
-            write_dns_record(fqdn, value)
-            return HttpResponse(status=204)
-        if dup.access_level == AccessLevel.SUBDOMAIN and fqdn_without_prefix.endswith(
-            f".{domain_fqdn}"
-        ):
-            write_dns_record(fqdn, value)
-            return HttpResponse(status=204)
+    try:
+        for dup in dups:
+            domain_fqdn = dup.domain.fqdn
+            if dup.access_level == AccessLevel.DOMAIN and fqdn_without_prefix == domain_fqdn:
+                write_dns_record(fqdn, value)
+                return HttpResponse(status=204)
+            if dup.access_level == AccessLevel.SUBDOMAIN and fqdn_without_prefix.endswith(
+                f".{domain_fqdn}"
+            ):
+                write_dns_record(fqdn, value)
+                return HttpResponse(status=204)
+    except DnsSourceUpdateError as exc:
+        return HttpResponse(
+            status=500, content=f"{str(exc)} Check httprequest-lego-provider for more details."
+        )
 
     return HttpResponse(
         status=403,
@@ -76,16 +81,21 @@ def handle_cleanup(request: HttpRequest) -> Optional[HttpResponse]:
     fqdn: str = form.cleaned_data["fqdn"]
     fqdn_without_prefix = fqdn.removeprefix(FQDN_PREFIX)
     dups = DomainUserPermission.objects.filter(user=user)
-    for dup in dups:
-        domain_fqdn = dup.domain.fqdn
-        if dup.access_level == AccessLevel.DOMAIN and fqdn_without_prefix == domain_fqdn:
-            remove_dns_record(fqdn)
-            return HttpResponse(status=204)
-        if dup.access_level == AccessLevel.SUBDOMAIN and fqdn_without_prefix.endswith(
-            "." + domain_fqdn
-        ):
-            remove_dns_record(fqdn)
-            return HttpResponse(status=204)
+    try:
+        for dup in dups:
+            domain_fqdn = dup.domain.fqdn
+            if dup.access_level == AccessLevel.DOMAIN and fqdn_without_prefix == domain_fqdn:
+                remove_dns_record(fqdn)
+                return HttpResponse(status=204)
+            if dup.access_level == AccessLevel.SUBDOMAIN and fqdn_without_prefix.endswith(
+                "." + domain_fqdn
+            ):
+                remove_dns_record(fqdn)
+                return HttpResponse(status=204)
+    except DnsSourceUpdateError as exc:
+        return HttpResponse(
+            status=500, content=f"{str(exc)} Check httprequest-lego-provider for more details."
+        )
 
     return HttpResponse(
         status=403,
