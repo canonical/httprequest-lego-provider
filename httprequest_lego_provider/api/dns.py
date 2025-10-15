@@ -89,7 +89,7 @@ def _remove_subdomain_entries_from_file_content(
     return new_content
 
 
-def write_dns_record(fqdn: str, value: str) -> None:
+def write_dns_record(fqdn: str, value: str) -> None:  # pylint: disable=too-many-locals
     """Write a DNS record.
 
     Args:
@@ -118,8 +118,12 @@ def write_dns_record(fqdn: str, value: str) -> None:
             repo.index.add([filename])
             repo.git.commit("-m", f"Add {fqdn} record")
             repo.remote(name="origin").push()
+        except FileNotFoundError as exc:
+            raise DnsSourceUpdateError(
+                f"{filename} file not found in git repository. Is this site configured for DNS?"
+            ) from exc
         except (GitCommandError, ValueError) as ex:
-            raise DnsSourceUpdateError from ex
+            raise DnsSourceUpdateError(str(ex)) from ex
 
 
 def remove_dns_record(fqdn: str) -> None:
@@ -149,5 +153,9 @@ def remove_dns_record(fqdn: str) -> None:
             repo.index.add([filename])
             repo.git.commit("-m", f"Remove {fqdn} record")
             repo.remote(name="origin").push()
+        except FileNotFoundError as exc:
+            raise DnsSourceUpdateError(
+                f"{filename} file not found in git repository. Is this site configured for DNS?"
+            ) from exc
         except (GitCommandError, ValueError) as ex:
-            raise DnsSourceUpdateError from ex
+            raise DnsSourceUpdateError(str(ex)) from ex
