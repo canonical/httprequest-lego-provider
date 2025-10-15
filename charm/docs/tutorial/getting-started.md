@@ -56,7 +56,7 @@ NAME                             READY   STATUS    RESTARTS   AGE
 httprequest-lego-provider-0      2/2     Running   0          9m36s
 ```
 
-Run [`juju status`](https://juju.is/docs/olm/juju-status) to see the current status of the deployment. In the Unit list, you can see that the charm is waiting:
+Run [`juju status`](https://documentation.ubuntu.com/juju/3.6/reference/juju-cli/list-of-juju-cli-commands/status/#juju-status) to see the current status of the deployment. In the Unit list, you can see that the charm is waiting:
 
 ```
 httprequest-lego-provider/0*  waiting   idle   10.1.180.77         Config git-repo is required
