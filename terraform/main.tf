@@ -1,7 +1,7 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-resource "juju_application" "lego" {
+resource "juju_application" "httprequest_lego" {
   name  = var.app_name
   model = var.model
 
