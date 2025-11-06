@@ -1,0 +1,29 @@
+[32mINFO    [0m test_charm:test_charm.py:72 create-user result: Created or updated "test" with password "VjGtBxCCXE73fiDvoVCa_HzeRaTGsrFBLzBMkOmc"
+
+[32mINFO    [0m test_charm:test_charm.py:84 allow-domains result: Successfully granted access to all domains.
+
+[32mINFO    [0m test_charm:test_charm.py:94 list-domains result: 
+test:
+    domains:
+        example.com, sub.example.com
+    subdomains:
+        example.com
+
+[32mINFO    [0m test_charm:test_charm.py:105 revoke-domains result: Successfully removed access to the domains.
+[32mINFO    [0m pytest_operator.plugin:plugin.py:951 Model status:
+
+Model    Controller                Cloud/Region        Version  SLA          Timestamp
+testing  github-pr-6318a-microk8s  microk8s/localhost  3.6.11   unsupported  00:17:51Z
+
+App                        Version  Status  Scale  Charm                      Channel    Rev  Address         Exposed  Message
+httprequest-lego-provider           active      1  httprequest-lego-provider               0  10.152.183.113  no       
+postgresql-k8s             14.15    active      1  postgresql-k8s             14/stable  495  10.152.183.215  no       
+
+Unit                          Workload  Agent  Address       Ports  Message
+httprequest-lego-provider/0*  active    idle   10.1.181.137         
+postgresql-k8s/0*             active    idle   10.1.181.139         Primary
+
+[32mINFO    [0m pytest_operator.plugin:plugin.py:957 Juju error logs:
+
+
+[32mINFO    [0m pytest_operator.plugin:plugin.py:1039 Forgetting model main...
