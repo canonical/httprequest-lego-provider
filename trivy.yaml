@@ -1,3 +1,7 @@
 timeout: 20m
 scan:
   offline-scan: true
+image:
+  skip-files:
+    - "/usr/bin/pebble"
+    - "/usr/bin/statsd_exporter"
