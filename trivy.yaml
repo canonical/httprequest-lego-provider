@@ -3,5 +3,5 @@ scan:
   offline-scan: true
 image:
   skip-files:
-    - "/usr/bin/pebble"
-    - "/usr/bin/statsd_exporter"
+    - "**/usr/bin/pebble"
+    - "**/usr/bin/statsd_exporter"
