@@ -3,16 +3,7 @@ CVE-2024-6345
 CVE-2025-22869
 CVE-2025-47273
 # statsd-exporter
-CVE-2024-45338 # golang.org/x/net
 CVE-2024-45337 # golang.org/x/crypto
 CVE-2025-22868 # golang.org/x/oauth2
-CVE-2025-22874 # crypto/x509 in pebble
-CVE-2025-47907 # stdlib in pebble and statsd_exporter
 # stdlib
-CVE-2025-58183
-CVE-2025-58186
-CVE-2025-58187
-CVE-2025-58188
-# DJANGO
-CVE-2025-64459
-CVE-2025-64458
+CVE-2025-61729
