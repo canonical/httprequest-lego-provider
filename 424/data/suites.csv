@@ -1,0 +1,11 @@
+"DESCRIPTION","DURATION IN MS","NAME","PARENT SUITE","START TIME","STATUS","STOP TIME","SUB SUITE","SUITE","TEST CLASS","TEST METHOD"
+"
+    arrange: deploy the httprequest-lego-provider charm and related it to the postgresql-k8s charm.
+    act: run charm actions on the httprequest-lego-provider charm.
+    assert: httprequest-lego-provider should response to the action correctly.
+    ","8102","test_actions","charm.tests.integration","2026-01-03","passed","2026-01-03","","test_charm","",""
+"
+    arrange: set up the juju model.
+    act: deploy the httprequest-lego-provider charm with the postgresql-k8s charm.
+    assert: ensure the application transitions to 'active' status after deployment.
+    ","219507","test_build_and_deploy","charm.tests.integration","2026-01-03","passed","2026-01-03","","test_charm","",""
