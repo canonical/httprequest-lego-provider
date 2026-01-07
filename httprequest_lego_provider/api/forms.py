@@ -56,7 +56,8 @@ class FQDNField(CharField):
             ValidationError: if the value is invalid.
         """
         # Use the parent's handling of required fields, etc.
-        super().validate(value)
+        #  Pylint falsely detects no super class method.
+        super().validate(value)  # pylint: disable=no-member
         if not is_fqdn_compliant(value):
             raise ValidationError(
                 message="Please provide a valid FQDN", code="invalid", params={"value": value}
