@@ -796,7 +796,7 @@ def test_post_user_when_logged_in_as_admin_user(client: Client, admin_user_auth_
     """
     response = client.post(
         "/api/v1/users/",
-        data={"username": "new-user", "password": "test!pw"},
+        data={"username": "new-user", "password": "test!pw"},  # nosec B105
         format="json",
         headers={"AUTHORIZATION": f"Basic {admin_user_auth_token}"},
     )
