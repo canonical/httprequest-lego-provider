@@ -794,9 +794,10 @@ def test_post_user_when_logged_in_as_admin_user(client: Client, admin_user_auth_
     act: submit a POST request for the user URL.
     assert: a 201 is returned and the user is inserted in the database.
     """
+    password = secrets.token_hex()
     response = client.post(
         "/api/v1/users/",
-        data={"username": "new-user", "password": "test!pw"},  # nosec B105
+        data={"username": "new-user", "password": password},
         format="json",
         headers={"AUTHORIZATION": f"Basic {admin_user_auth_token}"},
     )
@@ -804,7 +805,7 @@ def test_post_user_when_logged_in_as_admin_user(client: Client, admin_user_auth_
     assert response.status_code == 201
     newu = User.objects.get(username="new-user")
     assert newu is not None
-    assert check_password("test!pw", newu.password) is True
+    assert check_password(password, newu.password) is True
 
 
 @pytest.mark.django_db
