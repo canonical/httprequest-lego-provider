@@ -3,7 +3,7 @@
 
 resource "juju_application" "httprequest_lego" {
   name  = var.app_name
-  model = var.model_uuid
+  model_uuid = var.model_uuid
 
   charm {
     name     = "httprequest-lego-provider"
