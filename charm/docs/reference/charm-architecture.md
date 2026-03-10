@@ -1,6 +1,6 @@
 # Charm architecture
 
-The HTTP request lego provider is, at its core, a Juju charm deploying and managing [HTTP request Lego provider as defined by ACME](https://go-acme.github.io/lego/dns/httpreq/) to manage DNS records.
+The HTTP request `lego` provider is, at its core, a Juju charm deploying and managing [HTTP request Lego provider as defined by ACME](https://go-acme.github.io/lego/dns/httpreq/) to manage DNS records.
 
 It leverages the [12-factor](https://canonical-12-factor-app-support.readthedocs-hosted.com/en/latest/) support to pack a [Django](https://www.djangoproject.com/) application providing the functionality as defined by the standard.
 
