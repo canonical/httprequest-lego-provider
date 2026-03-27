@@ -18,7 +18,7 @@ jobs:
       canonical/operator-workflows/.github/workflows/integration_test.yaml@main
     secrets: inherit
     with:
-      channel: 1.28-strict/stable
+      channel: 1.35-strict/stable
       juju-channel: 3.6/stable
   allure-report:
     if: ${{ !cancelled() && github.event_name == 'schedule' }}
