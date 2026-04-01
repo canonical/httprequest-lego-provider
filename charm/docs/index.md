@@ -29,13 +29,14 @@
 
 ## Contributing to this documentation
 
-Documentation is an important part of this project, and we take the same open-source approach to the documentation as the code. As such, we welcome community contributions, suggestions and constructive feedback on our documentation. Our documentation is hosted on the [Charmhub forum](https://discourse.charmhub.io/) to enable easy collaboration. Please use the "Help us improve this documentation" links on each documentation page to either directly change something you see that's wrong, or ask a question, or make a suggestion about a potential change via the comments section.
+Documentation is an important part of this project, and we take the same open-source approach to the documentation as the code. As such, we welcome community contributions, suggestions and constructive feedback on our documentation. Our documentation is hosted on the [Charmhub forum](https://discourse.charmhub.io/) to enable easy collaboration. Please use the "Help us improve this documentation" links on each documentation page to either directly change something you see that's wrong, or ask a question, or make a suggestion about a potential change through the comments section.
 
 If there's a particular area of documentation that you'd like to see that's missing, please [file a bug](https://github.com/canonical/httprequest-lego-provider/issues).
 
 ## Project and community
 
 HTTP request Lego Provider is an open-source project that welcomes community contributions, suggestions, fixes and constructive feedback.
+
 - [Read our Code of Conduct](https://ubuntu.com/community/code-of-conduct)
 - [Get support](https://discourse.charmhub.io/tag/lego)
 - [Join our online chat](https://matrix.to/#/#charmhub-charmdev:ubuntu.com)
@@ -48,14 +49,14 @@ HTTP request Lego Provider is an open-source project that welcomes community con
 | Level | Path | Navlink |
 | -- | -- | -- |
 | 1 | tutorial | [Tutorial]() |
-| 2 | tutorial-deploy-the-deploy-the-httprequest-lego-provider-charm-for-the-first-time | [ Deploy the HTTP request Lego provider charm for the first time](/t/httprequest-lego-provider-docs-getting-started/15784) |
+| 2 | tutorial-deploy-the-deploy-the-httprequest-lego-provider-charm-for-the-first-time | [Deploy the HTTP request Lego provider charm for the first time](https://discourse.charmhub.io/t/httprequest-lego-provider-docs-getting-started/15784) |
 | 1 | how-to| [How to]() |
-| 2 | manage-domains | [Manage Domains](/t/httprequest-lego-provider-docs-how-to-manage-domains/15786) |
-| 2 | manage-users | [Manage Users](/t/httprequest-lego-provider-docs-how-to-manage-users/15787) |
-| 2 | troubleshoot-api-timeouts | [Troubleshoot API timeouts](/t/httprequest-lego-provider-docs-how-to-troubleshoot-api-timeouts/18052) |
+| 2 | manage-domains | [Manage Domains](https://discourse.charmhub.io/t/httprequest-lego-provider-docs-how-to-manage-domains/15786) |
+| 2 | manage-users | [Manage Users](https://discourse.charmhub.io/t/httprequest-lego-provider-docs-how-to-manage-users/15787) |
+| 2 | troubleshoot-api-timeouts | [Troubleshoot API timeouts](https://discourse.charmhub.io/t/httprequest-lego-provider-docs-how-to-troubleshoot-api-timeouts/18052) |
 | 1 | reference| [Reference]() |
-| 2 | reference-actions | [Actions](/t/httprequest-lego-provider-docs-actions/15788) |
-| 2 | reference-configurations | [Configurations](/t/httprequest-lego-provider-docs-configurations/15789) |
-| 2 | reference-integrations | [Integrations](/t/httprequest-lego-provider-docs-integrations/15790) |
+| 2 | reference-actions | [Actions](https://discourse.charmhub.io/t/httprequest-lego-provider-docs-actions/15788) |
+| 2 | reference-configurations | [Configurations](https://discourse.charmhub.io/t/httprequest-lego-provider-docs-configurations/15789) |
+| 2 | reference-integrations | [Integrations](https://discourse.charmhub.io/t/httprequest-lego-provider-docs-integrations/15790) |
 
 [/details]
