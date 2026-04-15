@@ -18,7 +18,8 @@ POSTGRESQL_APP_NAME = "postgresql-k8s"
 # renovate: depName="postgresql-k8s"
 POSTGRESQL_REVISION = 869
 
-LIST_DOMAINS_OUTPUT = """test:
+LIST_DOMAINS_OUTPUT = """
+test:
     domains:
         example.com, sub.example.com
     subdomains:
