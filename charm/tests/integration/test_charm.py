@@ -15,8 +15,6 @@ logger = logging.getLogger(__name__)
 
 APP_NAME = "httprequest-lego-provider"
 POSTGRESQL_APP_NAME = "postgresql-k8s"
-# renovate: depName="postgresql-k8s"
-POSTGRESQL_REVISION = 869
 
 LIST_DOMAINS_OUTPUT = """
 test:
@@ -37,11 +35,6 @@ def test_build_and_deploy(
     arrange: set up the juju model.
     act: deploy the httprequest-lego-provider charm with the postgresql-k8s charm.
     assert: ensure the application transitions to 'active' status after deployment.
-
-    Args:
-        juju: the Juju object.
-        charm: path to the charm file.
-        httprequest_lego_provider_image: OCI image for the Django app.
     """
     juju.deploy(
         os.path.abspath(charm),
@@ -70,13 +63,12 @@ def test_build_and_deploy(
     juju.deploy(
         POSTGRESQL_APP_NAME,
         channel="14/edge",
-        revision=POSTGRESQL_REVISION,
         trust=True,
     )
     juju.integrate(APP_NAME, POSTGRESQL_APP_NAME)
     juju.wait(
         lambda status: jubilant.all_active(status, APP_NAME, POSTGRESQL_APP_NAME),
-        timeout=1200,
+        timeout=60 * 20,
     )
     status = juju.status()
     assert status.apps[APP_NAME].is_active
@@ -87,9 +79,6 @@ def test_actions(juju: jubilant.Juju):
     arrange: deploy the httprequest-lego-provider charm and relate it to the postgresql-k8s charm.
     act: run charm actions on the httprequest-lego-provider charm.
     assert: httprequest-lego-provider should respond to the actions correctly.
-
-    Args:
-        juju: the Juju object.
     """
     unit_name = f"{APP_NAME}/0"
 
