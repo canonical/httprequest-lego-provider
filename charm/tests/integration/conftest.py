@@ -48,7 +48,5 @@ def httprequest_lego_provider_image_fixture(pytestconfig: pytest.Config) -> str:
     """
     image = pytestconfig.getoption("--httprequest-lego-provider-image")
     if not image:
-        raise ValueError(
-            "the following arguments are required: --httprequest-lego-provider-image"
-        )
+        raise ValueError("the following arguments are required: --httprequest-lego-provider-image")
     return image

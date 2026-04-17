@@ -42,11 +42,8 @@ def test_build_and_deploy(
         config={
             "django-allowed-hosts": "*",
             "django-secret-key": secrets.token_hex(),
-            "git-repo": (
-                "git+ssh://git@github.com/canonical/httprequest-lego-provider.git@main"
-            ),
-            "git-ssh-key": textwrap.dedent(
-                """\
+            "git-repo": ("git+ssh://git@github.com/canonical/httprequest-lego-provider.git@main"),
+            "git-ssh-key": textwrap.dedent("""\
                 -----BEGIN OPENSSH PRIVATE KEY-----
                 b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
                 QyNTUxOQAAACB7cf7PF5PMxeMnIX2nd5rbG5207jwuccejra8BxXMXwgAAAKj9XL3Y/Vy9
@@ -55,8 +52,7 @@ def test_build_and_deploy(
                 nbTuPC5xx6OtrwHFcxfCAAAAIHdlaWktd2FuZ0B3ZWlpLW1hY2Jvb2stYWlyLmxvY2FsAQ
                 IDBAU=
                 -----END OPENSSH PRIVATE KEY-----
-                """
-            ),
+                """),
         },
         resources={"django-app-image": httprequest_lego_provider_image},
     )
