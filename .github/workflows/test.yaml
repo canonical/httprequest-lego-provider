@@ -12,6 +12,7 @@ jobs:
     with:
       self-hosted-runner: false
       runs-on-base: ubuntu-24.04
+      python-version: "3.12"
       vale-style-check: true
   integration-tests:
     uses: 
