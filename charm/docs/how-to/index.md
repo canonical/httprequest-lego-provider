@@ -24,7 +24,7 @@ basic operations you can complete with the charm.
 Maintenance
 -----------
 
-These guides provide instructions on maintenance-related operations such as upgrade and back up.
+These guides provide instructions on maintenance-related operations such as upgrades and backups.
 
 - [Upgrade](https://charmhub.io/httprequest-lego-provider/docs/upgrade)
 - [Back up and restore](https://charmhub.io/httprequest-lego-provider/docs/back-up-restore)
