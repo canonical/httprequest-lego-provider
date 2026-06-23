@@ -13,7 +13,6 @@ jobs:
       pull-requests: write
     secrets: inherit
     with:
-      python-version: "3.12"
       vale-style-check: true
   integration-tests:
     uses: 
