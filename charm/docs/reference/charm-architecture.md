@@ -19,8 +19,8 @@ They are published to [Charmhub](https://charmhub.io/), the official repository 
 
 For this charm, in addition to the event handling provided by the framework, the following Juju events are observed:
 
-1. [`pebble_ready`](https://canonical-juju.readthedocs-hosted.com/en/latest/user/reference/hook/#container-pebble-ready): fired on Kubernetes charms when the requested container is ready. Action: copy the necessary configuration files and trigger the default handler as defined by the framework.
-2. [`config_changed`](https://canonical-juju.readthedocs-hosted.com/en/latest/user/reference/hook/#config-changed):  usually fired in response to a configuration change using the CLI. Action: copy the necessary configuration files and trigger the default handler as defined by the framework.
+1. [`pebble_ready`](https://canonical.com/juju/docs/juju-cli/3.6/reference/hook/#container-pebble-ready): fired on Kubernetes charms when the requested container is ready. Action: copy the necessary configuration files and trigger the default handler as defined by the framework.
+2. [`config_changed`](https://canonical.com/juju/docs/juju-cli/3.6/reference/hook/#config-changed):  usually fired in response to a configuration change using the CLI. Action: copy the necessary configuration files and trigger the default handler as defined by the framework.
 
 > See more in the Juju docs: [Hook](https://documentation.ubuntu.com/juju/3.6/reference/hook/)
 
@@ -29,7 +29,7 @@ For this charm, in addition to the event handling provided by the framework, the
 The `src/charm.py` is the default entry point for a charm and has the DjangoCharm Python class which inherits from paas_app_charmer.django.Charm, the base class 
 from which all Django 12-factor charms are formed, defined by [the Django framework extension for Charmcraft](https://documentation.ubuntu.com/rockcraft/stable/reference/extensions/django-framework/).
 
-> See more in the Charmcraft docs: [Django framework extension](https://canonical-charmcraft.readthedocs-hosted.com/en/stable/reference/extensions/django-framework-extension/)
+> See more in the Charmcraft docs: [Django framework extension](https://documentation.ubuntu.com/charmcraft/stable/reference/extensions/django-framework-extension/)
 
 The `__init__` method guarantees that the charm observes all events relevant to its operation and handles them.
 
