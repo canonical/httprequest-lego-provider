@@ -64,7 +64,9 @@ def test_write_dns_record(
     )
     write_dns_record(fqdn, token)
 
-    repo_patch.assert_called_once_with("git+ssh://user@git.server/repo_name", ANY, branch="lego")
+    repo_patch.assert_called_once_with(
+        "git+ssh://user@git.server/repo_name", ANY, branch="lego", depth=1
+    )
     repo_mock.config_writer().set_value.assert_called_once_with("user", "name", "user")
     write_patch.assert_called_once_with(
         (
@@ -125,7 +127,9 @@ def test_remove_dns_record(
 
     remove_dns_record(fqdn)
 
-    repo_patch.assert_called_once_with("git+ssh://user@git.server/repo_name", ANY, branch=None)
+    repo_patch.assert_called_once_with(
+        "git+ssh://user@git.server/repo_name", ANY, branch=None, depth=1
+    )
     repo_mock.config_writer().set_value.assert_called_once_with("user", "name", "user")
     write_patch.assert_called_once_with(
         "site1 600 IN TXT \042sometoken\042\nsite3 600 IN TXT \042sometoken\042\n",
