@@ -46,13 +46,30 @@ FQDN_PREFIX = "_acme-challenge."
 RECORD_LINE = '{sub} 600 IN TXT "{value}"\n'
 
 
+def _git_env() -> dict:
+    """Return an environment that isolates git from ambient configuration.
+
+    System and global git configuration are disabled and an explicit identity is
+    supplied, so git behaves identically regardless of the host's configuration
+    (e.g. CI runners that enable commit signing, auto-gc, or hooks).
+
+    Returns:
+        The environment mapping to pass to git subprocesses.
+    """
+    return {
+        **os.environ,
+        "GIT_CONFIG_GLOBAL": os.devnull,
+        "GIT_CONFIG_SYSTEM": os.devnull,
+        "GIT_TERMINAL_PROMPT": "0",
+        "GIT_AUTHOR_NAME": "benchmark",
+        "GIT_AUTHOR_EMAIL": "benchmark@example.com",
+        "GIT_COMMITTER_NAME": "benchmark",
+        "GIT_COMMITTER_EMAIL": "benchmark@example.com",
+    }
+
+
 def _git(cwd: Path, *args: str) -> None:
     """Run a git command in ``cwd``, isolated from ambient git configuration.
-
-    The command is run with system and global git configuration disabled and with an
-    explicit identity and safe defaults, so the synthetic history builds identically
-    regardless of the host's git configuration (e.g. CI runners that enable commit
-    signing, auto-gc, or hooks).
 
     Args:
         cwd: working directory for the git command.
@@ -61,34 +78,12 @@ def _git(cwd: Path, *args: str) -> None:
     Raises:
         RuntimeError: if the git command exits non-zero.
     """
-    hardening = [
-        "-c",
-        "user.name=benchmark",
-        "-c",
-        "user.email=benchmark@example.com",
-        "-c",
-        "commit.gpgsign=false",
-        "-c",
-        "gc.auto=0",
-        "-c",
-        "core.autocrlf=false",
-        "-c",
-        "core.hooksPath=/dev/null",
-        "-c",
-        "init.defaultBranch=main",
-    ]
-    env = {
-        **os.environ,
-        "GIT_CONFIG_GLOBAL": os.devnull,
-        "GIT_CONFIG_SYSTEM": os.devnull,
-        "GIT_TERMINAL_PROMPT": "0",
-    }
     result = subprocess.run(  # nosec B603 B607
-        ["git", *hardening, *args],
+        ["git", *args],
         cwd=str(cwd),
         capture_output=True,
         text=True,
-        env=env,
+        env=_git_env(),
         check=False,
     )
     if result.returncode != 0:
@@ -98,15 +93,90 @@ def _git(cwd: Path, *args: str) -> None:
         )
 
 
+def _zone_content(domain: str, record: str | None = None) -> bytes:
+    """Render the content of a zone file, optionally with a single TXT record.
+
+    Args:
+        domain: the domain the zone file belongs to.
+        record: the ACME challenge subdomain to add a record for, if any.
+
+    Returns:
+        The encoded zone file content.
+    """
+    content = (
+        f"; zone file for {domain}\n"
+        "@ 600 IN SOA ns.example.com. admin.example.com. 1 7200 3600 1209600 3600\n"
+    )
+    if record is not None:
+        content += RECORD_LINE.format(sub=record, value=secrets.token_hex(8))
+    return content.encode("utf-8")
+
+
+def _fast_import_stream(domains: list[str], num_commits: int) -> bytes:
+    """Build a ``git fast-import`` stream for a long, realistic DNS-records history.
+
+    The stream seeds one zone file per domain, then applies ``num_commits`` incremental
+    record changes spread across the domains -- the same one-record-per-commit churn the
+    provider produces over time. Building the whole history in a single stream is fast and
+    avoids the object-store races that thousands of individual ``git commit`` invocations
+    can trigger (background auto-gc/maintenance) on some hosts.
+
+    Args:
+        domains: the domain FQDNs to create zone files for.
+        num_commits: the number of incremental record-change commits to add.
+
+    Returns:
+        The encoded fast-import stream.
+    """
+    chunks: list[bytes] = []
+    counter = 0
+    timestamp = 1700000000
+
+    def add_blob(content: bytes) -> int:
+        nonlocal counter
+        counter += 1
+        mark = counter
+        chunks.append(f"blob\nmark :{mark}\ndata {len(content)}\n".encode("utf-8"))
+        chunks.append(content)
+        chunks.append(b"\n")
+        return mark
+
+    def add_commit(message: str, changes: list[tuple[int, str]]) -> None:
+        nonlocal counter, timestamp
+        counter += 1
+        timestamp += 1
+        msg = message.encode("utf-8")
+        ident = f"benchmark <benchmark@example.com> {timestamp} +0000"
+        chunks.append(f"commit refs/heads/main\nmark :{counter}\n".encode("utf-8"))
+        chunks.append(f"author {ident}\ncommitter {ident}\n".encode("utf-8"))
+        chunks.append(f"data {len(msg)}\n".encode("utf-8"))
+        chunks.append(msg)
+        chunks.append(b"\n")
+        for blob_mark, path in changes:
+            chunks.append(f"M 100644 :{blob_mark} {path}\n".encode("utf-8"))
+        chunks.append(b"\n")
+
+    seed_changes = [(add_blob(_zone_content(domain)), f"{domain}.domain") for domain in domains]
+    add_commit("Seed zone files", seed_changes)
+
+    for i in range(num_commits):
+        domain = domains[i % len(domains)]
+        blob_mark = add_blob(_zone_content(domain, record=f"_rec{i}"))
+        add_commit(f"Add record {i} to {domain}", [(blob_mark, f"{domain}.domain")])
+
+    chunks.append(b"done\n")
+    return b"".join(chunks)
+
+
 def build_git_repo(base_dir: Path, num_domains: int, num_commits: int) -> tuple[str, list[str]]:
     """Build a synthetic DNS-records repository with a realistic long history.
 
-    Creates a bare "remote" repository and seeds it with ``num_domains`` zone files and
-    ``num_commits`` incremental record changes, mimicking how the provider accumulates
-    history one record at a time.
+    Creates a bare "remote" repository and populates it, via a single ``git fast-import``
+    stream, with ``num_domains`` zone files and ``num_commits`` incremental record changes,
+    mimicking how the provider accumulates history one record at a time.
 
     Args:
-        base_dir: directory in which to create the repositories.
+        base_dir: directory in which to create the repository.
         num_domains: number of ``*.domain`` zone files to create.
         num_commits: number of incremental record-change commits to add.
 
@@ -114,32 +184,24 @@ def build_git_repo(base_dir: Path, num_domains: int, num_commits: int) -> tuple[
         A tuple of the ``file://`` URL of the bare remote and the list of domain FQDNs.
     """
     remote = base_dir / "remote.git"
-    work = base_dir / "work"
     _git(base_dir, "init", "--bare", "-b", "main", str(remote))
-    _git(base_dir, "init", "-b", "main", str(work))
 
     domains = [f"example{i}.com" for i in range(num_domains)]
-    for domain in domains:
-        zone_file = work / f"{domain}.domain"
-        zone_file.write_text(
-            f"; zone file for {domain}\n"
-            "@ 600 IN SOA ns.example.com. admin.example.com. 1 7200 3600 1209600 3600\n",
-            encoding="utf-8",
-        )
-    _git(work, "add", ".")
-    _git(work, "commit", "-m", "Seed zone files")
-
     logger.info("Building %d commits of history across %d zone files", num_commits, num_domains)
-    for i in range(num_commits):
-        domain = domains[i % num_domains]
-        zone_file = work / f"{domain}.domain"
-        with zone_file.open("a", encoding="utf-8") as handle:
-            handle.write(RECORD_LINE.format(sub=f"_rec{i}", value=secrets.token_hex(8)))
-        _git(work, "add", f"{domain}.domain")
-        _git(work, "commit", "-m", f"Add record {i} to {domain}")
-
-    _git(work, "remote", "add", "origin", str(remote))
-    _git(work, "push", "origin", "main")
+    stream = _fast_import_stream(domains, num_commits)
+    result = subprocess.run(  # nosec B603 B607
+        ["git", "fast-import", "--quiet", "--done"],
+        cwd=str(remote),
+        input=stream,
+        capture_output=True,
+        env=_git_env(),
+        check=False,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"git fast-import failed (exit {result.returncode}):\n"
+            f"stderr: {result.stderr.decode('utf-8', 'replace')}"
+        )
     return f"file://{remote}", domains
 
 
