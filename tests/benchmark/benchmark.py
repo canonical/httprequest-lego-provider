@@ -47,18 +47,55 @@ RECORD_LINE = '{sub} 600 IN TXT "{value}"\n'
 
 
 def _git(cwd: Path, *args: str) -> None:
-    """Run a git command in ``cwd``, raising on failure.
+    """Run a git command in ``cwd``, isolated from ambient git configuration.
+
+    The command is run with system and global git configuration disabled and with an
+    explicit identity and safe defaults, so the synthetic history builds identically
+    regardless of the host's git configuration (e.g. CI runners that enable commit
+    signing, auto-gc, or hooks).
 
     Args:
         cwd: working directory for the git command.
         args: git command arguments.
+
+    Raises:
+        RuntimeError: if the git command exits non-zero.
     """
-    subprocess.run(  # nosec B603 B607
-        ["git", *args],
+    hardening = [
+        "-c",
+        "user.name=benchmark",
+        "-c",
+        "user.email=benchmark@example.com",
+        "-c",
+        "commit.gpgsign=false",
+        "-c",
+        "gc.auto=0",
+        "-c",
+        "core.autocrlf=false",
+        "-c",
+        "core.hooksPath=/dev/null",
+        "-c",
+        "init.defaultBranch=main",
+    ]
+    env = {
+        **os.environ,
+        "GIT_CONFIG_GLOBAL": os.devnull,
+        "GIT_CONFIG_SYSTEM": os.devnull,
+        "GIT_TERMINAL_PROMPT": "0",
+    }
+    result = subprocess.run(  # nosec B603 B607
+        ["git", *hardening, *args],
         cwd=str(cwd),
-        check=True,
         capture_output=True,
+        text=True,
+        env=env,
+        check=False,
     )
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"git {' '.join(args)} failed (exit {result.returncode}):\n"
+            f"stdout: {result.stdout}\nstderr: {result.stderr}"
+        )
 
 
 def build_git_repo(base_dir: Path, num_domains: int, num_commits: int) -> tuple[str, list[str]]:
@@ -80,8 +117,6 @@ def build_git_repo(base_dir: Path, num_domains: int, num_commits: int) -> tuple[
     work = base_dir / "work"
     _git(base_dir, "init", "--bare", "-b", "main", str(remote))
     _git(base_dir, "init", "-b", "main", str(work))
-    _git(work, "config", "user.email", "benchmark@example.com")
-    _git(work, "config", "user.name", "benchmark")
 
     domains = [f"example{i}.com" for i in range(num_domains)]
     for domain in domains:
@@ -176,6 +211,16 @@ def run_benchmark(repo_url: str, domains: list[str], iterations: int) -> None:
     """
     os.environ["DJANGO_GIT_REPO"] = repo_url
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "api.tests.settings")
+    # Isolate every git invocation (including the provider's GitPython clone/commit path)
+    # from the host's system/global git configuration, so runner settings such as commit
+    # signing or auto-gc cannot break the benchmark. Identity is supplied via environment
+    # variables, which take precedence over repository config and work without any config.
+    os.environ["GIT_CONFIG_GLOBAL"] = os.devnull
+    os.environ["GIT_CONFIG_SYSTEM"] = os.devnull
+    os.environ.setdefault("GIT_AUTHOR_NAME", "benchmark")
+    os.environ.setdefault("GIT_AUTHOR_EMAIL", "benchmark@example.com")
+    os.environ.setdefault("GIT_COMMITTER_NAME", "benchmark")
+    os.environ.setdefault("GIT_COMMITTER_EMAIL", "benchmark@example.com")
 
     import django
 
