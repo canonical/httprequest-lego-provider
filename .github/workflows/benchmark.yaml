@@ -1,0 +1,52 @@
+# Copyright 2026 Canonical Ltd.
+# See LICENSE file for licensing details.
+
+name: Benchmark
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  benchmark:
+    name: DNS request-path benchmark
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Install tox
+        run: uv tool install tox --with tox-uv
+
+      - name: Run benchmark
+        run: |
+          tox -e benchmark -- \
+            --commits 2000 \
+            --domains 5 \
+            --iterations 10 \
+            --traces-output "${GITHUB_WORKSPACE}/traces.json"
+
+      - name: Generate flame graph
+        if: always()
+        run: |
+          if [ -f traces.json ]; then
+            python3 tests/benchmark/gen_flamegraph.py traces.json flamegraph.html
+          fi
+
+      - name: Upload traces and flame graph
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: httprequest-lego-provider-traces
+          path: |
+            traces.json
+            flamegraph.html
+          if-no-files-found: warn
