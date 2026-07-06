@@ -33,14 +33,20 @@ import base64
 import logging
 import os
 import secrets
+import shutil
 import subprocess  # nosec B404
 import sys
 import time
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+import django
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
+
+# Resolve git's absolute path once so subprocess calls don't rely on a partial path.
+GIT = shutil.which("git") or "git"
 
 FQDN_PREFIX = "_acme-challenge."
 RECORD_LINE = '{sub} 600 IN TXT "{value}"\n'
@@ -78,8 +84,8 @@ def _git(cwd: Path, *args: str) -> None:
     Raises:
         RuntimeError: if the git command exits non-zero.
     """
-    result = subprocess.run(  # nosec B603 B607
-        ["git", *args],
+    result = subprocess.run(  # nosec B603
+        [GIT, *args],
         cwd=str(cwd),
         capture_output=True,
         text=True,
@@ -112,6 +118,77 @@ def _zone_content(domain: str, record: str | None = None) -> bytes:
     return content.encode("utf-8")
 
 
+class _FastImportStream:
+    """Builder for a ``git fast-import`` stream describing a DNS-records history.
+
+    Accumulates blobs and commits as an internal byte buffer, tracking the next
+    fast-import mark and a monotonically increasing commit timestamp. Callers add
+    blobs and commits, then retrieve the finished stream via ``getvalue``.
+    """
+
+    def __init__(self) -> None:
+        """Initialise an empty stream."""
+        self._chunks: list[bytes] = []
+        self._mark = 0
+        self._timestamp = 1700000000
+
+    def _next_mark(self) -> int:
+        """Return the next unused fast-import mark.
+
+        Returns:
+            The next mark number.
+        """
+        self._mark += 1
+        return self._mark
+
+    def add_blob(self, content: bytes) -> int:
+        """Append a blob and return its mark.
+
+        Args:
+            content: the blob content.
+
+        Returns:
+            The mark identifying the blob, for referencing in a later commit.
+        """
+        mark = self._next_mark()
+        self._chunks.append(f"blob\nmark :{mark}\ndata {len(content)}\n".encode("utf-8"))
+        self._chunks.append(content)
+        self._chunks.append(b"\n")
+        return mark
+
+    def add_commit(self, message: str, changes: list[tuple[int, str]]) -> int:
+        """Append a commit on ``refs/heads/main`` and return its mark.
+
+        Args:
+            message: the commit message.
+            changes: ``(blob_mark, path)`` pairs to add or modify in the commit.
+
+        Returns:
+            The mark identifying the commit.
+        """
+        mark = self._next_mark()
+        self._timestamp += 1
+        msg = message.encode("utf-8")
+        ident = f"benchmark <benchmark@example.com> {self._timestamp} +0000"
+        self._chunks.append(f"commit refs/heads/main\nmark :{mark}\n".encode("utf-8"))
+        self._chunks.append(f"author {ident}\ncommitter {ident}\n".encode("utf-8"))
+        self._chunks.append(f"data {len(msg)}\n".encode("utf-8"))
+        self._chunks.append(msg)
+        self._chunks.append(b"\n")
+        for blob_mark, path in changes:
+            self._chunks.append(f"M 100644 :{blob_mark} {path}\n".encode("utf-8"))
+        self._chunks.append(b"\n")
+        return mark
+
+    def getvalue(self) -> bytes:
+        """Return the complete fast-import stream, terminated with ``done``.
+
+        Returns:
+            The encoded fast-import stream.
+        """
+        return b"".join(self._chunks) + b"done\n"
+
+
 def _fast_import_stream(domains: list[str], num_commits: int) -> bytes:
     """Build a ``git fast-import`` stream for a long, realistic DNS-records history.
 
@@ -128,44 +205,19 @@ def _fast_import_stream(domains: list[str], num_commits: int) -> bytes:
     Returns:
         The encoded fast-import stream.
     """
-    chunks: list[bytes] = []
-    counter = 0
-    timestamp = 1700000000
+    stream = _FastImportStream()
 
-    def add_blob(content: bytes) -> int:
-        nonlocal counter
-        counter += 1
-        mark = counter
-        chunks.append(f"blob\nmark :{mark}\ndata {len(content)}\n".encode("utf-8"))
-        chunks.append(content)
-        chunks.append(b"\n")
-        return mark
-
-    def add_commit(message: str, changes: list[tuple[int, str]]) -> None:
-        nonlocal counter, timestamp
-        counter += 1
-        timestamp += 1
-        msg = message.encode("utf-8")
-        ident = f"benchmark <benchmark@example.com> {timestamp} +0000"
-        chunks.append(f"commit refs/heads/main\nmark :{counter}\n".encode("utf-8"))
-        chunks.append(f"author {ident}\ncommitter {ident}\n".encode("utf-8"))
-        chunks.append(f"data {len(msg)}\n".encode("utf-8"))
-        chunks.append(msg)
-        chunks.append(b"\n")
-        for blob_mark, path in changes:
-            chunks.append(f"M 100644 :{blob_mark} {path}\n".encode("utf-8"))
-        chunks.append(b"\n")
-
-    seed_changes = [(add_blob(_zone_content(domain)), f"{domain}.domain") for domain in domains]
-    add_commit("Seed zone files", seed_changes)
+    seed_changes = [
+        (stream.add_blob(_zone_content(domain)), f"{domain}.domain") for domain in domains
+    ]
+    stream.add_commit("Seed zone files", seed_changes)
 
     for i in range(num_commits):
         domain = domains[i % len(domains)]
-        blob_mark = add_blob(_zone_content(domain, record=f"_rec{i}"))
-        add_commit(f"Add record {i} to {domain}", [(blob_mark, f"{domain}.domain")])
+        blob_mark = stream.add_blob(_zone_content(domain, record=f"_rec{i}"))
+        stream.add_commit(f"Add record {i} to {domain}", [(blob_mark, f"{domain}.domain")])
 
-    chunks.append(b"done\n")
-    return b"".join(chunks)
+    return stream.getvalue()
 
 
 def build_git_repo(base_dir: Path, num_domains: int, num_commits: int) -> tuple[str, list[str]]:
@@ -182,6 +234,9 @@ def build_git_repo(base_dir: Path, num_domains: int, num_commits: int) -> tuple[
 
     Returns:
         A tuple of the ``file://`` URL of the bare remote and the list of domain FQDNs.
+
+    Raises:
+        RuntimeError: if ``git fast-import`` exits non-zero.
     """
     remote = base_dir / "remote.git"
     _git(base_dir, "init", "--bare", "-b", "main", str(remote))
@@ -189,8 +244,8 @@ def build_git_repo(base_dir: Path, num_domains: int, num_commits: int) -> tuple[
     domains = [f"example{i}.com" for i in range(num_domains)]
     logger.info("Building %d commits of history across %d zone files", num_commits, num_domains)
     stream = _fast_import_stream(domains, num_commits)
-    result = subprocess.run(  # nosec B603 B607
-        ["git", "fast-import", "--quiet", "--done"],
+    result = subprocess.run(  # nosec B603
+        [GIT, "fast-import", "--quiet", "--done"],
         cwd=str(remote),
         input=stream,
         capture_output=True,
@@ -283,8 +338,6 @@ def run_benchmark(repo_url: str, domains: list[str], iterations: int) -> None:
     os.environ.setdefault("GIT_AUTHOR_EMAIL", "benchmark@example.com")
     os.environ.setdefault("GIT_COMMITTER_NAME", "benchmark")
     os.environ.setdefault("GIT_COMMITTER_EMAIL", "benchmark@example.com")
-
-    import django
 
     django.setup()
 
