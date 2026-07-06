@@ -10,10 +10,12 @@ from tempfile import TemporaryDirectory
 from typing import List, Tuple
 
 from git import GitCommandError, Repo
+from opentelemetry import trace
 
 from .settings import GIT_REPO_URL
 
 logger = logging.getLogger(__name__)
+tracer = trace.get_tracer(__name__)
 
 FILENAME_TEMPLATE = "{domain}.domain"
 RECORD_CONTENT = "{record} 600 IN TXT \042{value}\042\n"
@@ -23,6 +25,7 @@ class DnsSourceUpdateError(Exception):
     """Exception for DNS update errors."""
 
 
+@tracer.start_as_current_span("parse_repository_url")
 def parse_repository_url(repository_url: str) -> Tuple[str, str, str | None]:
     """Get the parsed connection details from the repository connection string.
 
@@ -39,6 +42,7 @@ def parse_repository_url(repository_url: str) -> Tuple[str, str, str | None]:
     return user, base_url, branch
 
 
+@tracer.start_as_current_span("_get_domain_and_subdomain_from_fqdn")
 def _get_domain_and_subdomain_from_fqdn(fqdn: str) -> Tuple[str, str]:
     """Get the domain and subdomain for the FQDN record provided.
 
@@ -68,6 +72,7 @@ def _line_matches_subdomain(line: str, subdomain: str) -> bool:
     return not line.strip().startswith(";") and bool(line.split()) and line.split()[0] == subdomain
 
 
+@tracer.start_as_current_span("_remove_subdomain_entries_from_file_content")
 def _remove_subdomain_entries_from_file_content(
     content: Iterable[str], subdomain: str
 ) -> List[str]:
@@ -89,6 +94,7 @@ def _remove_subdomain_entries_from_file_content(
     return new_content
 
 
+@tracer.start_as_current_span("write_dns_record")
 def write_dns_record(fqdn: str, value: str) -> None:  # pylint: disable=too-many-locals
     """Write a DNS record.
 
@@ -102,22 +108,27 @@ def write_dns_record(fqdn: str, value: str) -> None:  # pylint: disable=too-many
     user, base_url, branch = parse_repository_url(GIT_REPO_URL)
     with TemporaryDirectory() as tmp_dir:
         try:
-            repo = Repo.clone_from(base_url, tmp_dir, branch=branch)
+            with tracer.start_as_current_span("git.clone"):
+                repo = Repo.clone_from(base_url, tmp_dir, branch=branch)
             config_writer = repo.config_writer()
             config_writer.set_value("user", "name", user)
             config_writer.release()
             domain, subdomain = _get_domain_and_subdomain_from_fqdn(fqdn)
             filename = FILENAME_TEMPLATE.format(domain=domain)
             dns_record_file = Path(f"{repo.working_tree_dir}/{filename}")
-            content = dns_record_file.read_text("utf-8")
-            new_content = _remove_subdomain_entries_from_file_content(
-                io.StringIO(content), subdomain
-            )
-            new_content.append(RECORD_CONTENT.format(record=subdomain, value=value))
-            dns_record_file.write_text("".join(new_content), encoding="utf-8")
-            repo.index.add([filename])
-            repo.git.commit("-m", f"Add {fqdn} record")
-            repo.remote(name="origin").push()
+            with tracer.start_as_current_span("git.read_file"):
+                content = dns_record_file.read_text("utf-8")
+            with tracer.start_as_current_span("git.modify"):
+                new_content = _remove_subdomain_entries_from_file_content(
+                    io.StringIO(content), subdomain
+                )
+                new_content.append(RECORD_CONTENT.format(record=subdomain, value=value))
+                dns_record_file.write_text("".join(new_content), encoding="utf-8")
+            with tracer.start_as_current_span("git.commit"):
+                repo.index.add([filename])
+                repo.git.commit("-m", f"Add {fqdn} record")
+            with tracer.start_as_current_span("git.push"):
+                repo.remote(name="origin").push()
         except FileNotFoundError as exc:
             raise DnsSourceUpdateError(
                 f"{filename} file not found in git repository. Is this site configured for DNS?"
@@ -126,6 +137,7 @@ def write_dns_record(fqdn: str, value: str) -> None:  # pylint: disable=too-many
             raise DnsSourceUpdateError(str(ex)) from ex
 
 
+@tracer.start_as_current_span("remove_dns_record")
 def remove_dns_record(fqdn: str) -> None:
     """Delete a DNS record if it exists.
 
@@ -138,21 +150,26 @@ def remove_dns_record(fqdn: str) -> None:
     user, base_url, branch = parse_repository_url(GIT_REPO_URL)
     with TemporaryDirectory() as tmp_dir:
         try:
-            repo = Repo.clone_from(base_url, tmp_dir, branch=branch)
+            with tracer.start_as_current_span("git.clone"):
+                repo = Repo.clone_from(base_url, tmp_dir, branch=branch)
             config_writer = repo.config_writer()
             config_writer.set_value("user", "name", user)
             config_writer.release()
             domain, subdomain = _get_domain_and_subdomain_from_fqdn(fqdn)
             filename = FILENAME_TEMPLATE.format(domain=domain)
             dns_record_file = Path(f"{repo.working_tree_dir}/{filename}")
-            content = dns_record_file.read_text("utf-8")
-            new_content = _remove_subdomain_entries_from_file_content(
-                io.StringIO(content), subdomain
-            )
-            dns_record_file.write_text("".join(new_content), encoding="utf-8")
-            repo.index.add([filename])
-            repo.git.commit("-m", f"Remove {fqdn} record")
-            repo.remote(name="origin").push()
+            with tracer.start_as_current_span("git.read_file"):
+                content = dns_record_file.read_text("utf-8")
+            with tracer.start_as_current_span("git.modify"):
+                new_content = _remove_subdomain_entries_from_file_content(
+                    io.StringIO(content), subdomain
+                )
+                dns_record_file.write_text("".join(new_content), encoding="utf-8")
+            with tracer.start_as_current_span("git.commit"):
+                repo.index.add([filename])
+                repo.git.commit("-m", f"Remove {fqdn} record")
+            with tracer.start_as_current_span("git.push"):
+                repo.remote(name="origin").push()
         except FileNotFoundError as exc:
             raise DnsSourceUpdateError(
                 f"{filename} file not found in git repository. Is this site configured for DNS?"
