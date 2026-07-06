@@ -140,6 +140,30 @@ def test_remove_dns_record(
     repo_mock.remote(name="origin").push.assert_called_once()
 
 
+@pytest.mark.parametrize(
+    "action",
+    [write_dns_record, remove_dns_record],
+)
+@patch.object(Path, "read_text", side_effect=FileNotFoundError)
+@patch.object(Repo, "clone_from")
+@patch("api.dns.GIT_REPO_URL", "git+ssh://user@git.server/repo_name")
+def test_dns_record_missing_domain_file_raises(repo_patch: Mock, _, action):
+    """
+    arrange: mock the repo and make reading the domain file raise FileNotFoundError.
+    act: attempt to write or remove a DNS record for an unconfigured site.
+    assert: a DnsSourceUpdateError exception is raised.
+    """
+    repo_patch.return_value = MagicMock(spec=Repo)
+
+    fqdn = "site.example.com"
+
+    with pytest.raises(DnsSourceUpdateError, match="configured for DNS"):
+        if action is write_dns_record:
+            action(fqdn, secrets.token_hex())
+        else:
+            action(fqdn)
+
+
 def test_parse_repository_url():
     """
     arrange: do nothing.
