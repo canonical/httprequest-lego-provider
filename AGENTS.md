@@ -51,12 +51,12 @@ The `_acme-challenge.` prefix (per ACME spec) is stripped before permission chec
 
 ### Django App Layout
 
-- `api/models.py` — `Domain`, `DomainUserPermission` (with `AccessLevel.DOMAIN`/`SUBDOMAIN`), uses Django's built-in `User`
-- `api/views.py` — `handle_present`, `handle_cleanup` (function-based); `DomainViewSet`, `UserViewSet`, `DomainUserPermissionViewSet` (admin-only ModelViewSets)
-- `api/dns.py` — git clone → modify bind9 file → commit → push; raises `DnsSourceUpdateError` on any failure
-- `api/urls.py` — ACME endpoints at `/present`, `/cleanup`; admin REST API at `/api/v1/`
-- `api/management/commands/` — Django management commands: `create_user`, `allow_domains`, `revoke_domains`, `list_domains`
-- `httprequest_lego_provider/settings.py` — production settings; `api/tests/settings.py` — test settings (SQLite)
+- `httprequest_lego_provider/api/models.py` — `Domain`, `DomainUserPermission` (with `AccessLevel.DOMAIN`/`SUBDOMAIN`), uses Django's built-in `User`
+- `httprequest_lego_provider/api/views.py` — `handle_present`, `handle_cleanup` (function-based); `DomainViewSet`, `UserViewSet`, `DomainUserPermissionViewSet` (admin-only ModelViewSets)
+- `httprequest_lego_provider/api/dns.py` — git clone → modify bind9 file → commit → push; raises `DnsSourceUpdateError` on any failure
+- `httprequest_lego_provider/api/urls.py` — ACME endpoints at `/present`, `/cleanup`; admin REST API at `/api/v1/`
+- `httprequest_lego_provider/api/management/commands/` — Django management commands: `create_user`, `allow_domains`, `revoke_domains`, `list_domains`
+- `httprequest_lego_provider/httprequest_lego_provider/settings.py` — production settings; `httprequest_lego_provider/api/tests/settings.py` — test settings (SQLite)
 
 ### Charm Layout
 
@@ -68,7 +68,7 @@ The `_acme-challenge.` prefix (per ACME spec) is stripped before permission chec
 
 ### Copyright Header
 
-Every Python source file begins with:
+Python source files include this header near the top (after a shebang when present):
 
 ```python
 # Copyright <year> Canonical Ltd.
@@ -94,7 +94,7 @@ def test_something():
 
 ### OpenTelemetry Tracing
 
-All non-trivial functions are decorated with `@tracer.start_as_current_span("span_name")`. Each module creates its own tracer:
+Most request-path functions (e.g. view handlers and DNS update routines) are decorated with `@tracer.start_as_current_span("span_name")`. Each traced module typically creates its own tracer:
 
 ```python
 from opentelemetry import trace
