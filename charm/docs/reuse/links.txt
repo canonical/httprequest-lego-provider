@@ -1,0 +1,1 @@
+.. Common link definitions shared across the documentation.
