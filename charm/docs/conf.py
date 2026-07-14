@@ -25,7 +25,7 @@ import yaml
 #
 # TODO: Update with the official name of your project or product
 
-project = "GitHub runner operators"
+project = "HTTPRequest Lego provider"
 author = "Canonical Ltd."
 
 # Version
@@ -74,7 +74,7 @@ copyright = "2026 Canonical Ltd."
 # NOTE: The Open Graph Protocol (OGP) enhances page display in a social graph
 #       and is used by social media platforms; see https://ogp.me/
 
-ogp_site_url = f"https://canonical.com/juju/docs/github-runner-charms/{version}/"
+ogp_site_url = f"https://canonical.com/juju/docs/httprequest-lego-provider/{version}/"
 
 
 # Preview name of the documentation website
@@ -110,7 +110,7 @@ html_context = {
     # TODO: If there's no such website,
     #       remove the {{ product_page }} link from the page header template
     #       (usually .sphinx/_templates/header.html; also, see README.rst).
-    "product_page": "github.com/canonical/github-runner-operators",
+    "product_page": "github.com/canonical/httprequest-lego-provider",
     # Product tag image; the orange part of your logo, shown in the page header
     #
     # TODO: To add a tag image, uncomment and update as needed.
@@ -136,7 +136,7 @@ html_context = {
     #
     # NOTE: If set, links for viewing the documentation source files
     #       and creating GitHub issues are added at the bottom of each page.
-    "github_url": "https://github.com/canonical/github-runner-operators",
+    "github_url": "https://github.com/canonical/httprequest-lego-provider",
     # Docs branch in the repo; used in links for viewing the source files
     #
     # TODO: To customise the branch, uncomment and update as needed.
@@ -169,7 +169,7 @@ if os.getenv("OPENAPI", ""):
 # - https://git.launchpad.net/example
 #
 html_theme_options = {
-    "source_edit_link": "https://github.com/canonical/github-runner-operators",
+    "source_edit_link": "https://github.com/canonical/httprequest-lego-provider",
 }
 
 # Project slug; see https://meta.discourse.org/t/what-is-category-slug/87897
@@ -177,7 +177,7 @@ html_theme_options = {
 # TODO: If your documentation is hosted on https://docs.ubuntu.com/,
 #       uncomment and update as needed.
 
-slug = 'juju/docs/github-runner-charms'
+slug = 'juju/docs/httprequest-lego-provider'
 
 #######################
 # Sitemap configuration: https://sphinx-sitemap.readthedocs.io/
@@ -185,7 +185,7 @@ slug = 'juju/docs/github-runner-charms'
 
 # Use RTD canonical URL to ensure duplicate pages have a specific canonical URL
 
-html_baseurl = f"https://canonical.com/juju/docs/github-runner-charms/{version}/"
+html_baseurl = f"https://canonical.com/juju/docs/httprequest-lego-provider/{version}/"
 
 # sphinx-sitemap uses html_baseurl to generate the full URL for each page:
 
