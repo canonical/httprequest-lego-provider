@@ -1,3 +1,6 @@
+.. Copyright 2026 Canonical Ltd.
+.. See LICENSE file for licensing details.
+
 .. meta::
    :description: Discover the HTTP request Lego provider charm, a Juju operator that deploys and manages HTTP request Lego provider.
 

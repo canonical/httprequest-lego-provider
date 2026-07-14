@@ -1,3 +1,6 @@
+# Copyright 2026 Canonical Ltd.
+# See LICENSE file for licensing details.
+
 # Minimal makefile for Sphinx documentation
 #
 # Add your customisation to `Makefile` instead.
