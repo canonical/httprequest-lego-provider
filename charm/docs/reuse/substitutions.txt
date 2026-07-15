@@ -1,1 +1,0 @@
-.. Common substitutions shared across the documentation.
