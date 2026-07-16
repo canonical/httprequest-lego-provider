@@ -38,25 +38,25 @@ In this documentation
     :header-rows: 0
 
     * - Get started
-      - :doc:`Deploy and access HTTP request Lego provider <tutorial/getting-started>`
+      - :ref:`Deploy and access HTTP request Lego provider <getting_started>`
+    * - Deployment
+      - :ref:`Manage domains <manage_domains>` | :ref:`Manage users <manage_users>`
     * - Operations
-      - :doc:`Back up and restore <how-to/backup-and-restore>` | :doc:`Troubleshoot API timeouts <how-to/troubleshoot-api-timeouts>` | :doc:`Upgrade <how-to/upgrade>`
-    * - Product-specific feature
-      - :doc:`Manage domains <how-to/manage-domains>` | :doc:`Manage users <how-to/manage-users>`
+      - :ref:`Back up and restore <backup_and_restore>` | :ref:`Troubleshoot API timeouts <troubleshoot_api_timeouts>` | :ref:`Upgrade <upgrade>`
     * - Design
-      - :doc:`Charm architecture <reference/charm-architecture>`
+      - :ref:`Charm architecture <charm_architecture>` | :ref:`Integrations <integrations>`
     * - Security
-      - :doc:`Overview <explanation/security>`
+      - :ref:`Overview <security>`
 
 How this documentation is organized
 ------------------------------------
 
 This documentation uses the `Diátaxis documentation structure <https://diataxis.fr/>`_.
 
-- The :doc:`Tutorial <tutorial/index>` takes you step-by-step through a basic deployment of the HTTP request Lego provider charm.
-- The :doc:`How-to guides <how-to/index>` assume you have basic familiarity with the charm. Learn more about setting up, using, maintaining, and contributing to this charm.
-- The :doc:`Reference <reference/index>` provides a guide to actions, configurations, relations, and other technical details.
-- The :doc:`Explanation <explanation/index>` includes topic overviews, background and context and detailed discussion.
+- The :ref:`Tutorial <tutorial_index>` takes you step-by-step through a basic deployment of the HTTP request Lego provider charm.
+- The :ref:`How-to guides <how_to_index>` assume you have basic familiarity with the charm. Learn more about setting up, using, maintaining, and contributing to this charm.
+- The :ref:`Reference <reference_index>` provides a guide to actions, configurations, relations, and other technical details.
+- The :ref:`Explanation <explanation_index>` includes topic overviews, background and context and detailed discussion.
 
 Contributing to this documentation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

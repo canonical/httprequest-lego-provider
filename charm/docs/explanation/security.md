@@ -1,3 +1,5 @@
+(security)=
+
 # Security
 
 This document outlines common risks and possible best practices for the HTTP request Lego provider charm. It focuses on configurations and protections available through the charm itself.
