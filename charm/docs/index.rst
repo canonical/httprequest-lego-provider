@@ -21,7 +21,7 @@ Like any Juju charm, this charm supports one-line deployment, configuration, int
 scaling, and more. 
 For HTTP request Lego provider, this includes:
 
-* [ACME DNS-01 challenge](https://letsencrypt.org/docs/challenge-types/#dns-01-challenge) support for TLS certificate issuance and renewal.
+* `ACME DNS-01 challenge <https://letsencrypt.org/docs/challenge-types/#dns-01-challenge>`_ support for TLS certificate issuance and renewal.
 * A simple web interface for managing DNS records.
 * Admin and user roles for managing access to DNS records.
 

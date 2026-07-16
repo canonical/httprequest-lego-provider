@@ -5,6 +5,7 @@ myst:
 ---
 
 (reference_index)=
+
 # Reference
 
 Technical reference material for the `httprequest-lego-provider` charm.

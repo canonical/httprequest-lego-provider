@@ -5,6 +5,7 @@ myst:
 ---
 
 (tutorial_index)=
+
 # Tutorial
 
 This section contains a hands-on tutorial to help you get started with the
