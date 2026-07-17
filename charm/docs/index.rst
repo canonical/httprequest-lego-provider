@@ -13,7 +13,7 @@ HTTP request Lego provider operator
 
 .. vale Canonical.007-Headings-sentence-case = YES
 
-A `Juju <https://juju.is/>`_ `charm <https://documentation.ubuntu.com/juju/3.6/reference/charm/>`_
+A `Juju <https://juju.is/>`_ `charm <https://canonical.com/juju/docs/juju-cli/3.6/reference/charm/>`_
 deploying and managing HTTP request Lego provider on Kubernetes. 
 The HTTP request Lego provider is a web application implementing the DNS HTTP request provider as defined by ACME to manage DNS records.
 
@@ -26,7 +26,7 @@ For HTTP request Lego provider, this includes:
 * Admin and user roles for managing access to DNS records.
 
 The HTTP request Lego provider charm allows for deployment on many different Kubernetes platforms,
-from `MicroK8s <https://microk8s.io/>`_ to 
+from `MicroK8s <https://canonical.com/microk8s>`_ to 
 `Charmed Kubernetes <https://ubuntu.com/kubernetes>`_ to public cloud Kubernetes offerings.
 
 This charm will make managing and renewing TLS certificates for your applications straightforward.
