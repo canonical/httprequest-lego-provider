@@ -1,3 +1,5 @@
+(manage_domains)=
+
 # How to manage domains
 
 To manage the list of domains a user is allowed to view or request changes to, the following actions are available:

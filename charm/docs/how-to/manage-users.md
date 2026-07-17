@@ -1,3 +1,5 @@
+(manage_users)=
+
 # How to manage users
 
 Users will be leveraged to determine if a request is authorised to manage a specific domain. To add a new user simply run 
