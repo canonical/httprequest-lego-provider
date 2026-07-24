@@ -1,3 +1,5 @@
+That's a test
+
 [![CharmHub Badge](https://charmhub.io/httprequest-lego-provider/badge.svg)](https://charmhub.io/httprequest-lego-provider)
 [![Publish to edge](https://github.com/canonical/httprequest-lego-provider/actions/workflows/publish_charm.yaml/badge.svg)](https://github.com/canonical/httprequest-lego-provider/actions/workflows/publish_charm.yaml)
 [![Promote charm](https://github.com/canonical/httprequest-lego-provider/actions/workflows/promote_charm.yaml/badge.svg)](https://github.com/canonical/httprequest-lego-provider/actions/workflows/promote_charm.yaml)
