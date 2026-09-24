@@ -1,10 +1,12 @@
+(charm_architecture)=
+
 # Charm architecture
 
 The HTTP request `lego` provider is, at its core, a Juju charm deploying and managing [HTTP request Lego provider as defined by ACME](https://go-acme.github.io/lego/dns/httpreq/) to manage DNS records.
 
-It leverages the [12-factor](https://canonical-12-factor-app-support.readthedocs-hosted.com/en/latest/) support to pack a [Django](https://www.djangoproject.com/) application providing the functionality as defined by the standard.
+It leverages the [12-factor](https://documentation.ubuntu.com/12-factor/latest/) support to pack a [Django](https://www.djangoproject.com/) application providing the functionality as defined by the standard.
 
-For a complete view on the architecture of a 12-factor charm, refer to the [12-factor architecture documentation](https://canonical-12-factor-app-support.readthedocs-hosted.com/en/latest/explanation/charm-architecture/). The rest of this document details the HTTP request Lego provider specifics.
+For a complete view on the architecture of a 12-factor charm, refer to the [12-factor architecture documentation](https://documentation.ubuntu.com/12-factor/latest/reference/charm-architecture/). The rest of this document details the HTTP request Lego provider specifics.
 
 ## OCI images
 
@@ -12,24 +14,24 @@ We use [Rockcraft's Django framework extension](https://documentation.ubuntu.com
 The images are defined in [HTTP request Lego provider rock](https://github.com/canonical/httprequest-lego-provider/blob/main/rockcraft.yaml).
 They are published to [Charmhub](https://charmhub.io/), the official repository of charms.
 
-> See more: [How to publish your charm on Charmhub](https://juju.is/docs/sdk/publishing)
+> See more: [How to publish your charm on Charmhub](https://documentation.ubuntu.com/charmcraft/latest/howto/manage-charms/#publish-a-charm)
 
  
 ## Juju events
 
 For this charm, in addition to the event handling provided by the framework, the following Juju events are observed:
 
-1. [`pebble_ready`](https://canonical-juju.readthedocs-hosted.com/en/latest/user/reference/hook/#container-pebble-ready): fired on Kubernetes charms when the requested container is ready. Action: copy the necessary configuration files and trigger the default handler as defined by the framework.
-2. [`config_changed`](https://canonical-juju.readthedocs-hosted.com/en/latest/user/reference/hook/#config-changed):  usually fired in response to a configuration change using the CLI. Action: copy the necessary configuration files and trigger the default handler as defined by the framework.
+1. [`pebble_ready`](https://canonical.com/juju/docs/juju-cli/3.6/reference/hook/#container-pebble-ready): fired on Kubernetes charms when the requested container is ready. Action: copy the necessary configuration files and trigger the default handler as defined by the framework.
+2. [`config_changed`](https://canonical.com/juju/docs/juju-cli/3.6/reference/hook/#config-changed):  usually fired in response to a configuration change using the CLI. Action: copy the necessary configuration files and trigger the default handler as defined by the framework.
 
-> See more in the Juju docs: [Hook](https://juju.is/docs/sdk/event)
+> See more in the Juju docs: [Hook](https://documentation.ubuntu.com/juju/3.6/reference/hook/)
 
 ## Charm code overview
 
 The `src/charm.py` is the default entry point for a charm and has the DjangoCharm Python class which inherits from paas_app_charmer.django.Charm, the base class 
 from which all Django 12-factor charms are formed, defined by [the Django framework extension for Charmcraft](https://documentation.ubuntu.com/rockcraft/stable/reference/extensions/django-framework/).
 
-> See more in the Charmcraft docs: [Django framework extension](https://canonical-charmcraft.readthedocs-hosted.com/en/stable/reference/extensions/django-framework-extension/)
+> See more in the Charmcraft docs: [Django framework extension](https://documentation.ubuntu.com/charmcraft/stable/reference/extensions/django-framework-extension/)
 
 The `__init__` method guarantees that the charm observes all events relevant to its operation and handles them.
 

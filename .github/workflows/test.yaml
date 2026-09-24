@@ -8,15 +8,18 @@ on:
 jobs:
   unit-tests:
     uses: canonical/operator-workflows/.github/workflows/test.yaml@main
+    permissions:
+      contents: read
+      pull-requests: write
     secrets: inherit
     with:
-      self-hosted-runner: false
-      runs-on-base: ubuntu-24.04
-      python-version: "3.12"
       vale-style-check: true
   integration-tests:
     uses: 
       canonical/operator-workflows/.github/workflows/integration_test.yaml@main
+    permissions:
+      contents: read
+      packages: write
     secrets: inherit
     with:
       channel: 1.35-strict/stable
@@ -26,3 +29,5 @@ jobs:
     needs:
     - integration-tests
     uses: canonical/operator-workflows/.github/workflows/allure_report.yaml@main
+    permissions:
+      contents: write

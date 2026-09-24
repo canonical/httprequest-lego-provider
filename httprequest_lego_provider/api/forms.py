@@ -6,10 +6,13 @@ import re
 
 from django.core.exceptions import ValidationError
 from django.forms import CharField, Form
+from opentelemetry import trace
 
 FQDN_PREFIX = "_acme-challenge."
+tracer = trace.get_tracer(__name__)
 
 
+@tracer.start_as_current_span("_is_fqdn")
 def _is_fqdn(fqdn: str) -> bool:
     """Check if the argument is a valid FQDN.
 
@@ -31,6 +34,7 @@ def _is_fqdn(fqdn: str) -> bool:
     )
 
 
+@tracer.start_as_current_span("is_fqdn_compliant")
 def is_fqdn_compliant(fqdn: str) -> bool:
     """Check if value consists only of a valid FQDNs prefixed by '_acme-challenge.'.
 
@@ -46,6 +50,7 @@ def is_fqdn_compliant(fqdn: str) -> bool:
 class FQDNField(CharField):
     """FQDN field class."""
 
+    @tracer.start_as_current_span("FQDNField.validate")
     def validate(self, value) -> None:
         """Check if value consists only of a valid FQDNs prefixed by '_acme-challenge.'.
 

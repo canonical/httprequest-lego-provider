@@ -11,6 +11,7 @@ from typing import Optional
 # pylint:disable=imported-auth-user
 from django.contrib.auth.models import User
 from django.http import HttpRequest, HttpResponse
+from opentelemetry import trace
 from rest_framework import viewsets
 from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAdminUser
@@ -21,9 +22,11 @@ from .models import AccessLevel, Domain, DomainUserPermission
 from .serializers import DomainSerializer, DomainUserPermissionSerializer, UserSerializer
 
 FQDN_PREFIX = "_acme-challenge."
+tracer = trace.get_tracer(__name__)
 
 
 @api_view(["POST"])
+@tracer.start_as_current_span("handle_present")
 def handle_present(request: HttpRequest) -> Optional[HttpResponse]:
     """Handle the submissing of the present form.
 
@@ -65,6 +68,7 @@ def handle_present(request: HttpRequest) -> Optional[HttpResponse]:
 
 
 @api_view(["POST"])
+@tracer.start_as_current_span("handle_cleanup")
 def handle_cleanup(request: HttpRequest) -> Optional[HttpResponse]:
     """Handle the submissing of the cleanup form.
 
@@ -116,6 +120,7 @@ class DomainViewSet(viewsets.ModelViewSet):
     serializer_class = DomainSerializer
     permission_classes = [IsAdminUser]
 
+    @tracer.start_as_current_span("DomainViewSet.get_queryset")
     def get_queryset(self):
         """Optionally restricts the returned object list to a given domain.
 
@@ -142,6 +147,7 @@ class DomainUserPermissionViewSet(viewsets.ModelViewSet):
     serializer_class = DomainUserPermissionSerializer
     permission_classes = [IsAdminUser]
 
+    @tracer.start_as_current_span("DomainUserPermissionViewSet.get_queryset")
     def get_queryset(self):
         """Optionally restricts the returned object list to a given user/domain.
 
@@ -171,6 +177,7 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [IsAdminUser]
 
+    @tracer.start_as_current_span("UserViewSet.get_queryset")
     def get_queryset(self):
         """Optionally restricts the returned object list to a given user.
 

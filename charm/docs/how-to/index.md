@@ -4,8 +4,9 @@ myst:
     "description lang=en": "How-to guides for operating the HTTPRequest Lego provider charm, including basic operations, upgrades, and development. "
 ---
 
-How-to guides
-=============
+(how_to_index)=
+
+# How-to guides
 
 The following guides cover key processes and common tasks for managing and
 using the `httprequest-lego-provider` charm.
@@ -28,3 +29,14 @@ These guides provide instructions on maintenance-related operations such as upgr
 
 - [Upgrade](https://charmhub.io/httprequest-lego-provider/docs/upgrade)
 - [Back up and restore](https://charmhub.io/httprequest-lego-provider/docs/back-up-restore)
+
+```{toctree}
+:hidden:
+:maxdepth: 1
+
+manage-users
+manage-domains
+troubleshoot-api-timeouts
+upgrade
+backup-and-restore
+```

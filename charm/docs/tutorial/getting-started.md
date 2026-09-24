@@ -1,4 +1,6 @@
 <!-- vale Canonical.007-Headings-sentence-case = NO -->
+(getting_started)=
+
 # Deploy the HTTP request Lego provider charm for the first time
 <!-- vale Canonical.007-Headings-sentence-case = YES -->
 
