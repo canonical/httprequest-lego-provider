@@ -1,0 +1,84 @@
+# Copyright 2026 Canonical Ltd.
+# See LICENSE file for licensing details.
+
+"""Fixtures for integration tests."""
+
+import logging
+import secrets
+import textwrap
+from collections.abc import Generator
+from pathlib import Path
+import logging
+
+import jubilant
+import pytest
+
+JUJU_WAIT_TIMEOUT = 5 * 60
+
+HTTPREQUEST_LEGO_PROVIDER_APP_NAME = "httprequest-lego-provider"
+
+logger = logging.getLogger(__name__)
+
+
+@pytest.fixture(scope="session", name="charm")
+def charm_fixture(pytestconfig: pytest.Config) -> Path:
+    """Get the built httprequest-lego-provider charm path.
+
+    Returns:
+        Path to the built charm.
+    """
+    charm = pytestconfig.getoption("--charm-file")
+    assert charm, "--charm-file must be set"
+    charm_file = Path(charm)
+    assert charm_file.is_file(), "--charm-file must be a valid path to a charm file."
+    return charm_file
+
+
+@pytest.fixture(scope="session", name="image")
+def image_fixture(pytestconfig: pytest.Config) -> str:
+    """Get the application OCI image."""
+    django_image = pytestconfig.getoption("--httprequest-lego-provider-image")
+    assert django_image, "--httprequest-lego-provider-image must be provided."
+    return django_image
+
+
+@pytest.fixture(scope="module", name="juju")
+def juju_model_fixture(request: pytest.FixtureRequest) -> Generator[jubilant.Juju, None, None]:
+    """Create a temporary Juju model for testing."""
+    keep_models = bool(request.config.getoption("--keep-models"))
+    with jubilant.temp_model(keep=keep_models) as juju_model:
+        juju_model.wait_timeout = JUJU_WAIT_TIMEOUT
+        yield juju_model
+
+        if request.session.testsfailed:
+            log = juju_model.debug_log(limit=1000)
+            logger.debug(log)
+
+
+@pytest.fixture(scope="module", name="httprequest_lego_provider")
+def httprequest_lego_provider_fixture(juju: jubilant.Juju, charm: Path, image: str) -> str:
+    """Deploy httprequest-lego-provider."""
+    juju.deploy(
+        charm,
+        app=HTTPREQUEST_LEGO_PROVIDER_APP_NAME,
+        config={
+            "django-allowed-hosts": "*",
+            "django-secret-key": secrets.token_hex(),
+            "git-repo": "git+ssh://git@github.com/canonical/httprequest-lego-provider.git@main",
+            "git-ssh-key": textwrap.dedent(
+                """\
+                -----BEGIN OPENSSH PRIVATE KEY-----
+                b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+                QyNTUxOQAAACB7cf7PF5PMxeMnIX2nd5rbG5207jwuccejra8BxXMXwgAAAKj9XL3Y/Vy9
+                2AAAAAtzc2gtZWQyNTUxOQAAACB7cf7PF5PMxeMnIX2nd5rbG5207jwuccejra8BxXMXwg
+                AAAEBcyinYBm2LSuxuOKJwMfgGO572NedBYeGK8XQDyh3yFHtx/s8Xk8zF4ychfad3mtsb
+                nbTuPC5xx6OtrwHFcxfCAAAAIHdlaWktd2FuZ0B3ZWlpLW1hY2Jvb2stYWlyLmxvY2FsAQ
+                IDBAU=
+                -----END OPENSSH PRIVATE KEY-----
+                """
+            ),
+        },
+        resources={"django-app-image": image},
+    )
+    return HTTPREQUEST_LEGO_PROVIDER_APP_NAME
+
