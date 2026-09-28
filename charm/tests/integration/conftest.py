@@ -8,7 +8,6 @@ import secrets
 import textwrap
 from collections.abc import Generator
 from pathlib import Path
-import logging
 
 import jubilant
 import pytest
@@ -45,6 +44,10 @@ def image_fixture(pytestconfig: pytest.Config) -> str:
 @pytest.fixture(scope="module", name="juju")
 def juju_model_fixture(request: pytest.FixtureRequest) -> Generator[jubilant.Juju, None, None]:
     """Create a temporary Juju model for testing."""
+    if model := request.config.getoption("--model"):
+        yield jubilant.Juju(model=model)
+        return
+
     keep_models = bool(request.config.getoption("--keep-models"))
     with jubilant.temp_model(keep=keep_models) as juju_model:
         juju_model.wait_timeout = JUJU_WAIT_TIMEOUT
