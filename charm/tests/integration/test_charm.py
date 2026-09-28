@@ -5,7 +5,6 @@
 import logging
 
 import jubilant
-import pytest
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +19,6 @@ test:
 """
 
 
-@pytest.mark.abort_on_fail
 def test_actions(juju: jubilant.Juju, httprequest_lego_provider: str):
     """Run the HTTP request Lego provider actions.
 
