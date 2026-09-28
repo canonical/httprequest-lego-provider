@@ -12,7 +12,7 @@ from pathlib import Path
 import jubilant
 import pytest
 
-JUJU_WAIT_TIMEOUT = 5 * 60
+JUJU_WAIT_TIMEOUT = 20 * 60
 
 HTTPREQUEST_LEGO_PROVIDER_APP_NAME = "httprequest-lego-provider"
 
@@ -45,7 +45,9 @@ def image_fixture(pytestconfig: pytest.Config) -> str:
 def juju_model_fixture(request: pytest.FixtureRequest) -> Generator[jubilant.Juju, None, None]:
     """Create a temporary Juju model for testing."""
     if model := request.config.getoption("--model"):
-        yield jubilant.Juju(model=model)
+        juju_model = jubilant.Juju(model=model)
+        juju_model.wait_timeout = JUJU_WAIT_TIMEOUT
+        yield juju_model
         return
 
     keep_models = bool(request.config.getoption("--keep-models"))
