@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     import pytest
 
 
-def pytest_addoption(parser: pytest.Parser):
+def pytest_addoption(parser: "pytest.Parser"):
     """Parse additional pytest options.
 
     Args:
