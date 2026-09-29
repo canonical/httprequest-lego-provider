@@ -3,11 +3,13 @@
 
 """Fixtures for charm tests."""
 
-import pytest_asyncio
-from pytest_operator.plugin import OpsTest
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import pytest
 
 
-def pytest_addoption(parser):
+def pytest_addoption(parser: "pytest.Parser"):
     """Parse additional pytest options.
 
     Args:
@@ -15,16 +17,5 @@ def pytest_addoption(parser):
     """
     parser.addoption("--charm-file", action="store")
     parser.addoption("--httprequest-lego-provider-image", action="store")
-
-
-@pytest_asyncio.fixture
-def run_action(ops_test: OpsTest):
-    """Run a charm action."""
-    async def _run_action(application_name, action_name, **params):
-        """Run a charm action."""
-        app = ops_test.model.applications[application_name]
-        action = await app.units[0].run_action(action_name, **params)
-        await action.wait()
-        return action.results
-
-    return _run_action
+    parser.addoption("--keep-models", action="store_true", default=False)
+    parser.addoption("--model", action="store")
