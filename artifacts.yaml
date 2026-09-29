@@ -1,0 +1,13 @@
+version: 1
+rocks:
+- name: httprequest-lego-provider
+  rockcraft-yaml: rockcraft.yaml
+  platforms:
+  - arch: amd64
+charms:
+- name: httprequest-lego-provider
+  charmcraft-yaml: charm/charmcraft.yaml
+  resources: {}
+  platforms:
+  - arch: amd64
+snaps: []
