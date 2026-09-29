@@ -8,37 +8,37 @@ import secrets
 import textwrap
 from collections.abc import Generator
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import jubilant
 import pytest
 
+if TYPE_CHECKING:
+    from opcli.pytest_plugin import CharmPathList
+
 JUJU_WAIT_TIMEOUT = 20 * 60
 
 HTTPREQUEST_LEGO_PROVIDER_APP_NAME = "httprequest-lego-provider"
+HTTPREQUEST_LEGO_PROVIDER_IMAGE_NAME = "httprequest-lego-provider"
+
 
 logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="session", name="charm")
-def charm_fixture(pytestconfig: pytest.Config) -> Path:
+def charm_fixture(charm_paths: dict[str, CharmPathList]) -> Path:
     """Get the built httprequest-lego-provider charm path.
 
     Returns:
         Path to the built charm.
     """
-    charm = pytestconfig.getoption("--charm-file")
-    assert charm, "--charm-file must be set"
-    charm_file = Path(charm)
-    assert charm_file.is_file(), "--charm-file must be a valid path to a charm file."
-    return charm_file
+    return Path(charm_paths[HTTPREQUEST_LEGO_PROVIDER_APP_NAME].path)
 
 
 @pytest.fixture(scope="session", name="image")
-def image_fixture(pytestconfig: pytest.Config) -> str:
+def image_fixture(resource_images: dict[str, str]) -> str:
     """Get the application OCI image."""
-    django_image = pytestconfig.getoption("--httprequest-lego-provider-image")
-    assert django_image, "--httprequest-lego-provider-image must be provided."
-    return django_image
+    return resource_images[HTTPREQUEST_LEGO_PROVIDER_IMAGE_NAME]
 
 
 @pytest.fixture(scope="module", name="juju")
@@ -86,4 +86,3 @@ def httprequest_lego_provider_fixture(juju: jubilant.Juju, charm: Path, image: s
         resources={"django-app-image": image},
     )
     return HTTPREQUEST_LEGO_PROVIDER_APP_NAME
-
