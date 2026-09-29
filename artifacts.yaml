@@ -11,7 +11,9 @@ charms:
 - name: httprequest-lego-provider
   charmcraft-yaml: charm/charmcraft.yaml
   resources: 
-    django-app-image: httprequest-lego-provider
+    django-app-image: 
+        type: oci-image
+        rock: httprequest-lego-provider
   platforms:
   - arch: amd64
 snaps: []
