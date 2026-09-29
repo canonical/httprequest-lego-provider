@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="session", name="charm")
-def charm_fixture(charm_paths: dict[str, CharmPathList]) -> Path:
+def charm_fixture(charm_paths: dict[str, "CharmPathList"]) -> Path:
     """Get the built httprequest-lego-provider charm path.
 
     Returns:
