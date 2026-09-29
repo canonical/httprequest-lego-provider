@@ -19,8 +19,17 @@ exclude:
 - .venv
 - .*_cache
 integration-suites:
-  charm/tests/integration/:
-    summary: integration tests
+  tests/integration-juju4/:
+    summary: integration tests (Juju 4)
     working-dir: ./
+    discover-path: tests/integration/
     backends:
     - integration-test
+  tests/integration-juju3/:
+    summary: integration tests (Juju 3)
+    working-dir: ./
+    discover-path: tests/integration/
+    backends:
+    - integration-test
+    environment:
+      CONCIERGE: concierge-juju3.yaml
