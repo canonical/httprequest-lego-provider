@@ -35,12 +35,6 @@ def charm_fixture(charm_paths: dict[str, CharmPathList]) -> Path:
     return Path(charm_paths[HTTPREQUEST_LEGO_PROVIDER_APP_NAME].path)
 
 
-@pytest.fixture(scope="session", name="image")
-def image_fixture(resource_images: dict[str, str]) -> str:
-    """Get the application OCI image."""
-    return resource_images[HTTPREQUEST_LEGO_PROVIDER_IMAGE_NAME]
-
-
 @pytest.fixture(scope="module", name="juju")
 def juju_model_fixture(request: pytest.FixtureRequest) -> Generator[jubilant.Juju, None, None]:
     """Create a temporary Juju model for testing."""
@@ -61,7 +55,11 @@ def juju_model_fixture(request: pytest.FixtureRequest) -> Generator[jubilant.Juj
 
 
 @pytest.fixture(scope="module", name="httprequest_lego_provider")
-def httprequest_lego_provider_fixture(juju: jubilant.Juju, charm: Path, image: str) -> str:
+def httprequest_lego_provider_fixture(
+    juju: jubilant.Juju,
+    charm: Path,
+    resource_images: dict[str, str],
+) -> str:
     """Deploy httprequest-lego-provider."""
     juju.deploy(
         charm,
@@ -83,6 +81,6 @@ def httprequest_lego_provider_fixture(juju: jubilant.Juju, charm: Path, image: s
                 """
             ),
         },
-        resources={"django-app-image": image},
+        resources=resource_images,
     )
     return HTTPREQUEST_LEGO_PROVIDER_APP_NAME
