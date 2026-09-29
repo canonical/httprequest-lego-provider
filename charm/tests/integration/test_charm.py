@@ -26,7 +26,7 @@ def test_actions(juju: jubilant.Juju, httprequest_lego_provider: str):
     act: run charm actions on the httprequest-lego-provider charm.
     assert: httprequest-lego-provider should respond to the actions correctly.
     """
-    juju.deploy(POSTGRESQL_APP_NAME, channel="14/stable", trust=True)
+    juju.deploy(POSTGRESQL_APP_NAME, channel="14/stable", trust=True, force=True)
     juju.integrate(httprequest_lego_provider, POSTGRESQL_APP_NAME)
     juju.wait(
         lambda status: jubilant.all_active(

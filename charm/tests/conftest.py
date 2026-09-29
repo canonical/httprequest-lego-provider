@@ -15,7 +15,5 @@ def pytest_addoption(parser: "pytest.Parser"):
     Args:
         parser: Pytest parser.
     """
-    parser.addoption("--charm-file", action="store")
-    parser.addoption("--httprequest-lego-provider-image", action="store")
     parser.addoption("--keep-models", action="store_true", default=False)
     parser.addoption("--model", action="store")

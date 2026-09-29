@@ -1,0 +1,35 @@
+# Copyright 2026 Canonical Ltd.
+# See LICENSE file for licensing details.
+
+project: httprequest-lego-provider
+path: /home/ubuntu/proj
+kill-timeout: 60m
+warn-timeout: 1m
+backends:
+  integration-test:
+    type: integration-test
+    systems:
+    - ubuntu-24.04
+environment:
+  CONCIERGE: '$(HOST: echo "${CONCIERGE:-concierge-juju4.yaml}")'
+  OPCLI_GIT_REF: '$(HOST: echo "${OPCLI_GIT_REF:-main}")'
+exclude:
+- .git
+- .tox
+- .venv
+- .*_cache
+integration-suites:
+  charm/tests/integration-juju4/:
+    summary: integration tests (Juju 4)
+    working-dir: ./
+    discover-path: charm/tests/integration/
+    backends:
+    - integration-test
+  charm/tests/integration-juju3/:
+    summary: integration tests (Juju 3)
+    working-dir: ./
+    discover-path: charm/tests/integration/
+    backends:
+    - integration-test
+    environment:
+      CONCIERGE: concierge-juju3.yaml

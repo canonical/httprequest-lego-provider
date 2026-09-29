@@ -14,20 +14,3 @@ jobs:
     secrets: inherit
     with:
       vale-style-check: true
-  integration-tests:
-    uses: 
-      canonical/operator-workflows/.github/workflows/integration_test.yaml@main
-    permissions:
-      contents: read
-      packages: write
-    secrets: inherit
-    with:
-      channel: 1.35-strict/stable
-      juju-channel: 3.6/stable
-  allure-report:
-    if: ${{ !cancelled() && github.event_name == 'schedule' }}
-    needs:
-    - integration-tests
-    uses: canonical/operator-workflows/.github/workflows/allure_report.yaml@main
-    permissions:
-      contents: write
