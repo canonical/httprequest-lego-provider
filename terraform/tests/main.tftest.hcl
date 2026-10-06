@@ -16,7 +16,7 @@ run "basic_deploy" {
   }
 
   assert {
-    condition     = output.app_name == "httprequest-lego-provider"
-    error_message = "httprequest-lego-provider app_name did not match expected"
+    condition     = output.application.name == "httprequest-lego-provider"
+    error_message = "httprequest-lego-provider application name did not match expected"
   }
 }

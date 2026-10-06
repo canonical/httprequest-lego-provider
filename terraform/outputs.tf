@@ -1,28 +1,39 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-output "app_name" {
-  description = "Name of the deployed application."
-  value       = juju_application.httprequest_lego.name
-}
-
-output "requires" {
-  value = {
-    logging = "logging"
-  }
+output "application" {
+  description = "The deployed Juju application object."
+  value       = juju_application.httprequest_lego
 }
 
 output "provides" {
+  description = "Map of the provided integration endpoints."
   value = {
-    certificates = "certificates"
-    send-ca-cert = "send-ca-cert"
+    certificates = {
+      kind     = "endpoint"
+      name     = juju_application.httprequest_lego.name
+      endpoint = "certificates"
+    }
+    send-ca-cert = {
+      kind     = "endpoint"
+      name     = juju_application.httprequest_lego.name
+      endpoint = "send-ca-cert"
+    }
   }
 }
 
-output "endpoints" {
+output "requires" {
+  description = "Map of the required integration endpoints."
   value = {
-    certificates = "certificates"
-    logging      = "logging"
-    send-ca-cert = "send-ca-cert"
+    logging = {
+      kind     = "endpoint"
+      name     = juju_application.httprequest_lego.name
+      endpoint = "logging"
+    }
+    postgresql = {
+      kind     = "endpoint"
+      name     = juju_application.httprequest_lego.name
+      endpoint = "postgresql"
+    }
   }
 }
