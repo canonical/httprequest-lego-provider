@@ -41,4 +41,5 @@ header:
     - 'charm/lib/**'
     - '**/migrations/**'
     - '.lycheeignore'
+    - '**/MAJOR_VERSION'
   comment: on-failure

@@ -1,0 +1,26 @@
+# Copyright 2025 Canonical Ltd.
+# See LICENSE file for licensing details.
+
+name: Update Terraform documentation
+
+# Keep the `paths` filters below and the `terraform-directory` input in sync with
+# the directories where the Terraform modules live.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**/terraform/**'
+      - '.github/workflows/generate_terraform_docs.yaml'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  terraform-docs:
+    name: Update Terraform documentation
+    uses: canonical/operator-workflows/.github/workflows/generate_terraform_docs.yaml@efdd72c768efaca41f992322fa51a830e90f4990 # main
+    secrets: inherit
+    with:
+      terraform-directory: terraform
