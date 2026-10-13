@@ -16,4 +16,4 @@ jobs:
     secrets: inherit
     with:
       k8s-controller: true
-      terraform-directories: '["terraform"]'
+      terraform-directories: '["terraform/charm"]'

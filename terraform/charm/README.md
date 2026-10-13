@@ -27,7 +27,7 @@ data "juju_model" "my_model" {
 }
 
 module "httprequest-lego-provider" {
-  source = "git::https://github.com/canonical/httprequest-lego-provider//terraform?ref=tf-1.0.0"
+  source = "git::https://github.com/canonical/httprequest-lego-provider//terraform/charm?ref=tf-1.0.0"
 
   model_uuid = data.juju_model.my_model.uuid
   # (Customize configuration variables here if needed)
