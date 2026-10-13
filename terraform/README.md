@@ -19,8 +19,7 @@ deployment onto any Kubernetes environment managed by [Juju][Juju].
 ## Using httprequest-lego-provider base module in higher level modules
 
 If you want to use the `httprequest-lego-provider` base module as part of your Terraform module,
-import it like shown below. Always pin the `?ref=` to a released tag or a commit hash: CC008 does
-not allow floating references such as branches.
+import it like shown below. Always pin the `?ref=` to a released tag or a commit hash: floating references such as branches are not allowed.
 
 ```text
 data "juju_model" "my_model" {
