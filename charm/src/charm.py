@@ -5,11 +5,13 @@
 """Flask Charm entrypoint."""
 
 import logging
+import os
 import typing
 
 import actions
 import ops
 import paas_app_charmer.django
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -58,8 +60,26 @@ class DjangoCharm(paas_app_charmer.django.Charm):
         if not self.config.get("git-repo") or not self.config.get("git-ssh-key"):
             return
         hostname = self.config.get("git-repo").split("@")[1].split("/")[0]
-        process = self._container.exec(["ssh-keyscan", "-t", "rsa", hostname])
-        output, _ = process.wait_output()
+        if hostname == "github.com":
+            url = "https://api.github.com/meta"
+            proxies = {
+                scheme: os.environ.get(f"JUJU_CHARM_{scheme.upper()}_PROXY", "")
+                for scheme in ("http", "https")
+            }
+            proxies["all"] = ""
+            if requests.utils.should_bypass_proxies(
+                url, no_proxy=os.environ.get("JUJU_CHARM_NO_PROXY")
+            ):
+                proxies = dict.fromkeys(proxies, "")
+            response = requests.get(url, proxies=proxies, timeout=30)
+            response.raise_for_status()
+            keys = response.json()["ssh_keys"]
+            if not keys:
+                raise ValueError("GitHub metadata contains no SSH host keys")
+            output = "".join(f"{hostname} {key}\n" for key in keys)
+        else:
+            process = self._container.exec(["ssh-keyscan", "-t", "rsa", hostname])
+            output, _ = process.wait_output()
         self._container.push(
             KNOWN_HOSTS_PATH,
             output,
