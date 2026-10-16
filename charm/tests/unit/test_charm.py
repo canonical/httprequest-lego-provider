@@ -159,11 +159,11 @@ def test_invalid_proxy_does_not_write_files(charm_module, charm, monkeypatch):
 @pytest.mark.parametrize("proxy", ["", "http://[2001:db8::1]:3128"])
 def test_generated_ssh_config(charm_module, charm, monkeypatch, tmp_path, proxy):
     """
-    arrange: configure a custom SSH port and an optional IPv6 proxy.
+    arrange: configure the standard SSH port and an optional IPv6 proxy.
     act: generate the system SSH include and read it with OpenSSH.
     assert: Git SSH sees strict verification, the correct files, and the selected route.
     """
-    charm.config["git-repo"] = "git+ssh://git@git.example.com:2222/zones.git@main"
+    charm.config["git-repo"] = "git+ssh://git@git.example.com/zones.git@main"
     monkeypatch.setenv("JUJU_CHARM_HTTPS_PROXY", proxy)
     charm_module.DjangoCharm._copy_files(charm)
     config_call = next(
@@ -177,7 +177,7 @@ def test_generated_ssh_config(charm_module, charm, monkeypatch, tmp_path, proxy)
     config.write_text(f"Include {included}\nHost *\n")
 
     result = subprocess.run(
-        ["ssh", "-G", "-F", str(config), "-p", "2222", "git.example.com"],
+        ["ssh", "-G", "-F", str(config), "git.example.com"],
         capture_output=True,
         text=True,
         check=True,
@@ -187,7 +187,7 @@ def test_generated_ssh_config(charm_module, charm, monkeypatch, tmp_path, proxy)
     assert f"identityfile {charm_module.RSA_PATH}\n" in result.stdout
     assert f"userknownhostsfile {charm_module.KNOWN_HOSTS_PATH}\n" in result.stdout
     assert "stricthostkeychecking true\n" in result.stdout
-    assert "port 2222\n" in result.stdout
+    assert "port 22\n" in result.stdout
     if proxy:
         assert (
             "proxycommand /usr/bin/ncat --proxy-type http --proxy [2001:db8::1]:3128 "
@@ -195,7 +195,7 @@ def test_generated_ssh_config(charm_module, charm, monkeypatch, tmp_path, proxy)
         ) in result.stdout
     else:
         assert "proxycommand" not in result.stdout
-    assert charm._container.exec.call_args.args[0][2:4] == ["git.example.com", "2222"]
+    assert charm._container.exec.call_args.args[0][2:4] == ["git.example.com", "22"]
 
 
 @pytest.mark.parametrize("missing", ["container", "git-repo", "git-ssh-key"])

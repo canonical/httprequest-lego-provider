@@ -62,7 +62,8 @@ class DjangoCharm(paas_app_charmer.django.Charm):
             return
         if not self.config.get("git-repo") or not self.config.get("git-ssh-key"):
             return
-        hostname, port = ssh_proxy.repository_address(str(self.config["git-repo"]))
+        hostname = self.config.get("git-repo").split("@")[1].split("/")[0]
+        port = 22
         proxy = ssh_proxy.select_proxy(hostname, port, os.environ)
         self._container.push(
             SCAN_SCRIPT_PATH,

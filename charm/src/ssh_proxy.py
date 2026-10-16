@@ -44,28 +44,6 @@ def _validate_hostname(hostname: str) -> None:
             raise ValueError("Git and proxy hosts must be DNS names or IP addresses") from None
 
 
-def repository_address(repository_url: str) -> tuple[str, int]:
-    """Read the SSH destination from the configured repository URL.
-
-    Args:
-        repository_url: The git+ssh URL, optionally including a branch.
-
-    Returns:
-        The hostname and SSH port.
-
-    Raises:
-        ValueError: If the SSH destination is invalid.
-    """
-    url = urlsplit(repository_url)
-    if url.scheme not in ("git+ssh", "ssh") or not url.hostname:
-        raise ValueError("git-repo must contain an SSH URL with a hostname")
-    _validate_hostname(url.hostname)
-    port = url.port if url.port is not None else 22
-    if not port:
-        raise ValueError("The Git SSH port must be between 1 and 65535")
-    return url.hostname, port
-
-
 def _bypass_proxy(hostname: str, port: int, no_proxy: str) -> bool:
     """Match Juju exclusions, including literal IP networks.
 
@@ -115,8 +93,9 @@ def select_proxy(hostname: str, port: int, environment: Mapping[str, str]) -> st
         The proxy host:port, or an empty string for a direct connection.
 
     Raises:
-        ValueError: If the applicable proxy URL is unsupported.
+        ValueError: If the Git hostname is invalid or the applicable proxy URL is unsupported.
     """
+    _validate_hostname(hostname)
     if _bypass_proxy(hostname, port, environment.get("JUJU_CHARM_NO_PROXY", "")):
         return ""
     proxy = environment.get("JUJU_CHARM_HTTPS_PROXY") or environment.get("JUJU_CHARM_HTTP_PROXY")

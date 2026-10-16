@@ -15,8 +15,10 @@ paths are unsupported and cause an explicit configuration error.
 
 The selected proxy applies to both SSH host-key discovery and Git clone and push
 operations, for all Git hosts. `Ncat` opens an HTTP CONNECT tunnel to the repository
-host and SSH port. The proxy must allow that destination; the charm does not switch
-GitHub connections to port 443.
+host on SSH port 22. The repository URL retains the original
+`git+ssh://username@host/path@branch` format without a custom port.
+The proxy must allow that destination; the charm does not switch GitHub connections
+to port 443.
 
 `JUJU_CHARM_NO_PROXY` excludes destinations from both operations. It accepts
 comma-separated host names, domain suffixes, optional ports, literal IP addresses,

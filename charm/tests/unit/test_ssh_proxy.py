@@ -23,42 +23,24 @@ def ssh_proxy_fixture():
 
 
 @pytest.mark.parametrize(
-    "url,address",
+    "hostname",
     [
-        ("git+ssh://git@github.com/example/zones.git@main", ("github.com", 22)),
-        ("git+ssh://git@git.example.com:2222/zones.git@branch", ("git.example.com", 2222)),
-        ("ssh://git@[2001:db8::1]:2222/zones.git", ("2001:db8::1", 2222)),
+        "bad;host",
+        "%h",
+        "-oProxyCommand=bad",
+        "host:2222",
+        "fe80::1%eth0",
+        "host\nHost *",
     ],
 )
-def test_repository_address(ssh_proxy, url, address):
-    """
-    arrange: a repository has an SSH URL and an optional branch.
-    act: parse the destination.
-    assert: the actual host and port, excluding the branch, are returned.
-    """
-    assert ssh_proxy.repository_address(url) == address
-
-
-@pytest.mark.parametrize(
-    "url",
-    [
-        "https://github.com/example/zones.git",
-        "git+ssh://git@bad;host/zones.git",
-        "git+ssh://git@%h/zones.git",
-        "git+ssh://git@-oProxyCommand=bad/zones.git",
-        "git+ssh://git@host:0/zones.git",
-        "git+ssh://git@host:65536/zones.git",
-        "git+ssh://git@[fe80::1%eth0]/zones.git",
-    ],
-)
-def test_invalid_repository(ssh_proxy, url):
+def test_invalid_hostname(ssh_proxy, hostname):
     """
     arrange: an SSH destination is invalid or unsafe in SSH configuration.
-    act: parse the destination.
+    act: select the proxy route.
     assert: it is rejected rather than interpolated into a command.
     """
     with pytest.raises(ValueError):
-        ssh_proxy.repository_address(url)
+        ssh_proxy.select_proxy(hostname, 22, {})
 
 
 @pytest.mark.parametrize(
