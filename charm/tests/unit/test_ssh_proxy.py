@@ -74,10 +74,12 @@ def test_proxy_selection(ssh_proxy, environment, expected):
     "hostname,port,no_proxy,bypass",
     [
         ("github.com", 22, "*", True),
+        ("github.com", 22, "localhost, *", True),
         ("github.com", 22, "localhost, github.com", True),
         ("github.com", 22, ".github.com", True),
         ("github.com", 22, "GitHub.COM", True),
         ("git.example.com", 22, "example.com", True),
+        ("git.example.com.", 22, "example.com", True),
         ("git.example.com", 22, ".example.com:22", True),
         ("notexample.com", 22, "example.com", False),
         ("git.example.com", 22, "git.example.com:22", True),
@@ -86,7 +88,9 @@ def test_proxy_selection(ssh_proxy, environment, expected):
         ("192.0.3.1", 22, "192.0.2.0/24", False),
         ("2001:db8::1", 22, "2001:db8::/32", True),
         ("2001:db8::1", 22, "2001:db8::1", True),
+        ("2001:db8::1", 22, "2001:DB8::1", True),
         ("2001:db8::1", 22, "[2001:db8::1]:22", True),
+        ("2001:db8::1", 2222, "[2001:db8::1]:22", False),
     ],
 )
 def test_proxy_exclusions(ssh_proxy, hostname, port, no_proxy, bypass):
@@ -102,6 +106,21 @@ def test_proxy_exclusions(ssh_proxy, hostname, port, no_proxy, bypass):
     assert ssh_proxy.select_proxy(hostname, port, environment) == (
         "" if bypass else "proxy.example:3128"
     )
+
+
+def test_proxy_exclusions_use_explicit_settings(ssh_proxy, monkeypatch):
+    """
+    arrange: standard-library proxy matching is available alongside ambient exclusions.
+    act: check a destination using Juju exclusions.
+    assert: matching delegates to the standard library with explicit host, port, and settings.
+    """
+    monkeypatch.setenv("NO_PROXY", "*")
+    bypass = MagicMock(return_value=True)
+    monkeypatch.setattr(ssh_proxy, "proxy_bypass_environment", bypass)
+
+    assert ssh_proxy._bypass_proxy("git.example.com.", 22, ".example.com")
+
+    bypass.assert_called_once_with("git.example.com:22", {"no": ".example.com"})
 
 
 @pytest.mark.parametrize(

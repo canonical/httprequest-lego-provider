@@ -17,6 +17,7 @@ from collections.abc import Mapping
 from tempfile import TemporaryFile
 from typing import TextIO
 from urllib.parse import urlsplit
+from urllib.request import proxy_bypass_environment  # type: ignore[attr-defined]
 
 SCAN_TIMEOUT = 30
 CONNECTION_TIMEOUT = 10
@@ -58,21 +59,15 @@ def _bypass_proxy(hostname: str, port: int, no_proxy: str) -> bool:
     """
     hostname = hostname.lower().rstrip(".")
     address = f"[{hostname}]" if ":" in hostname else hostname
-    destination = f"{address}:{port}"
+    exclusions = [item.strip() for item in no_proxy.split(",")]
+    if proxy_bypass_environment(f"{address}:{port}", {"no": no_proxy}) or "*" in exclusions:
+        return True
     try:
         host_ip = ipaddress.ip_address(hostname)
     except ValueError:
-        host_ip = None
-    for exclusion in no_proxy.split(","):
-        exclusion = exclusion.strip().lower().lstrip(".")
-        if exclusion == "*" or exclusion in (hostname, address, destination):
-            return True
-        if host_ip is None:
-            if exclusion and (
-                hostname.endswith(f".{exclusion}") or destination.endswith(f".{exclusion}")
-            ):
-                return True
-            continue
+        return False
+    # The standard library does not match IP networks or unbracketed IPv6 exclusions.
+    for exclusion in exclusions:
         try:
             network = ipaddress.ip_network(exclusion, strict=False)
         except ValueError:
