@@ -1,27 +1,15 @@
 # Copyright 2026 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-"""Select an SSH proxy and scan host keys through a short-lived Ncat relay."""
+"""Select an HTTP CONNECT proxy for Git SSH connections."""
 
-# Children are reaped explicitly: Popen context managers can wait indefinitely on exit.
-# pylint: disable=consider-using-with
-# Subprocesses use fixed executables and validated argument lists, without a shell.
-
-import argparse
 import ipaddress
 import re
-import socket
-import subprocess  # nosec B404
-import time
 from collections.abc import Mapping
-from tempfile import TemporaryFile
-from typing import TextIO
 from urllib.parse import urlsplit
 from urllib.request import proxy_bypass_environment  # type: ignore[attr-defined]
 
-SCAN_TIMEOUT = 30
 CONNECTION_TIMEOUT = 10
-RELAY_POLL_INTERVAL = 0.1
 
 
 def _validate_hostname(hostname: str) -> None:
@@ -132,7 +120,7 @@ def _proxy_address(proxy: str) -> str:
 
 
 def ncat_command(proxy: str, hostname: str, port: str) -> list[str]:
-    """Build the same Ncat command for scanning and Git SSH.
+    """Build the Ncat HTTP CONNECT command for Git SSH.
 
     Args:
         proxy: The validated HTTP proxy address.
@@ -153,190 +141,3 @@ def ncat_command(proxy: str, hostname: str, port: str) -> list[str]:
         hostname,
         port,
     ]
-
-
-def _stop_process(process: subprocess.Popen) -> None:
-    """Reap a child, terminating it if it is still running.
-
-    Args:
-        process: The scan or relay child.
-    """
-    if process.poll() is None:
-        process.terminate()
-    try:
-        process.wait(timeout=1)
-    except subprocess.TimeoutExpired:
-        process.kill()
-        process.wait()
-
-
-def _serve_scan(
-    listener: socket.socket,
-    scan: subprocess.Popen,
-    command: list[str],
-    errors: TextIO,
-) -> None:
-    """Forward scan connections through Ncat and always reap all children.
-
-    Args:
-        listener: The bound loopback listener.
-        scan: The running ssh-keyscan process.
-        command: The Ncat CONNECT command.
-        errors: The file receiving relay diagnostics.
-
-    Raises:
-        TimeoutError: If the overall scan deadline expires.
-    """
-    relays = []
-    deadline = time.monotonic() + SCAN_TIMEOUT
-    listener.settimeout(RELAY_POLL_INTERVAL)
-    try:
-        while scan.poll() is None:
-            if time.monotonic() >= deadline:
-                raise TimeoutError("SSH host-key scan through the HTTP proxy timed out")
-            try:
-                connection, _ = listener.accept()
-            except TimeoutError:
-                continue
-            with connection:
-                # Ncat receives validated arguments as a list; no shell interprets them.
-                relay = subprocess.Popen(  # nosec B603
-                    command,
-                    stdin=connection.fileno(),
-                    stdout=connection.fileno(),
-                    stderr=errors,
-                )
-                relays.append(relay)
-    finally:
-        _stop_process(scan)
-        for relay in relays:
-            _stop_process(relay)
-
-
-def _scan_via_proxy(hostname: str, port: int, proxy: str) -> str:
-    """Run ssh-keyscan against a private loopback relay.
-
-    Args:
-        hostname: The Git host.
-        port: The SSH port.
-        proxy: The validated HTTP CONNECT proxy address.
-
-    Returns:
-        Host keys with the original destination name, not the loopback address.
-
-    Raises:
-        RuntimeError: If the scan fails or returns unexpected host keys.
-    """
-    with (
-        socket.socket() as listener,
-        TemporaryFile(mode="w+") as output,
-        TemporaryFile(mode="w+") as errors,
-    ):
-        listener.bind(("127.0.0.1", 0))
-        listener.listen()
-        local_port = listener.getsockname()[1]
-        command = [
-            "/usr/bin/ssh-keyscan",
-            "-T",
-            "10",
-            "-t",
-            "rsa",
-            "-p",
-            str(local_port),
-            "127.0.0.1",
-        ]
-        # The executable and arguments are fixed, apart from the allocated local port.
-        scan = subprocess.Popen(command, stdout=output, stderr=errors)  # nosec B603
-        _serve_scan(listener, scan, ncat_command(proxy, hostname, str(port)), errors)
-        output.seek(0)
-        errors.seek(0)
-        if scan.returncode:
-            raise RuntimeError(f"SSH host-key scan through the HTTP proxy failed: {errors.read()}")
-        destination = hostname if port == 22 else f"[{hostname}]:{port}"
-        keys = []
-        for line in output:
-            if not line.strip() or line.startswith("#"):
-                continue
-            fields = line.split()
-            if len(fields) != 3 or fields[0] != f"[127.0.0.1]:{local_port}":
-                raise RuntimeError("SSH host-key scan returned an unexpected host key")
-            keys.append(f"{destination} {fields[1]} {fields[2]}\n")
-        return "".join(keys)
-
-
-def validate_inputs(destination: str, proxy: str) -> tuple[str, int, str]:
-    """Parse and validate the workload helper's inputs before scanning.
-
-    Args:
-        destination: The SSH URL containing the Git hostname and optional port.
-        proxy: The HTTP CONNECT proxy address, or an empty string for direct access.
-
-    Returns:
-        The validated hostname, SSH port, and proxy address.
-
-    Raises:
-        ValueError: If the destination or proxy is invalid.
-    """
-    url = urlsplit(destination)
-    if url.scheme != "ssh" or not url.hostname:
-        raise ValueError("The scan destination must be an ssh:// URL with a hostname")
-    if url.username is not None or url.password is not None:
-        raise ValueError("The scan destination must not contain credentials")
-    if url.path not in ("", "/") or url.query or url.fragment:
-        raise ValueError("The scan destination must not contain a path, query, or fragment")
-    _validate_hostname(url.hostname)
-    port = url.port if url.port is not None else 22
-    if not 1 <= port <= 65535:
-        raise ValueError("The Git SSH port must be between 1 and 65535")
-    validated_proxy = _proxy_address(f"http://{proxy}") if proxy else ""
-    return url.hostname, port, validated_proxy
-
-
-def scan_host_keys(hostname: str, port: int, proxy: str) -> str:
-    """Discover SSH host keys, without a direct fallback when a proxy is set.
-
-    Args:
-        hostname: The validated Git host.
-        port: The validated SSH port.
-        proxy: The validated HTTP CONNECT proxy address, or an empty string for direct access.
-
-    Returns:
-        Nonempty known_hosts file content.
-
-    Raises:
-        RuntimeError: If no host keys are discovered or the scan fails.
-    """
-    if proxy:
-        output = _scan_via_proxy(hostname, port, proxy)
-    else:
-        # The destination was validated before scanning and is never passed through a shell.
-        result = subprocess.run(  # nosec B603
-            ["/usr/bin/ssh-keyscan", "-T", "10", "-t", "rsa", "-p", str(port), hostname],
-            capture_output=True,
-            text=True,
-            timeout=SCAN_TIMEOUT,
-            check=False,
-        )
-        if result.returncode:
-            raise RuntimeError(f"Direct SSH host-key scan failed: {result.stderr}")
-        output = result.stdout
-    if not output.strip():
-        raise RuntimeError("SSH host-key scan returned no host keys")
-    return output
-
-
-def main() -> None:
-    """Run the workload-side host-key scan."""
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "destination", help="SSH destination URL, for example ssh://git.example:22"
-    )
-    parser.add_argument("proxy", nargs="?", default="")
-    args = parser.parse_args()
-    hostname, port, proxy = validate_inputs(args.destination, args.proxy)
-    output = scan_host_keys(hostname, port, proxy)
-    print(output, end="")
-
-
-if __name__ == "__main__":
-    main()

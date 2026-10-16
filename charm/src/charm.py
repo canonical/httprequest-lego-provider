@@ -21,7 +21,6 @@ DJANGO_USER = "_daemon_"
 DJANGO_GROUP = "_daemon_"
 KNOWN_HOSTS_PATH = "/var/lib/pebble/default/.ssh/known_hosts"
 RSA_PATH = "/var/lib/pebble/default/.ssh/id_rsa"
-SCAN_SCRIPT_PATH = "/var/lib/pebble/default/.ssh/scan_host_keys.py"
 SSH_CONFIG_PATH = "/etc/ssh/ssh_config.d/httprequest-lego-provider.conf"
 
 
@@ -65,33 +64,21 @@ class DjangoCharm(paas_app_charmer.django.Charm):
         hostname = self.config.get("git-repo").split("@")[1].split("/")[0]
         port = 22
         proxy = ssh_proxy.select_proxy(hostname, port, os.environ)
-        self._container.push(
-            SCAN_SCRIPT_PATH,
-            Path(__file__).with_name("ssh_proxy.py").read_text(encoding="utf-8"),
-            encoding="utf-8",
-            make_dirs=True,
-            user=DJANGO_USER,
-            group=DJANGO_GROUP,
-            permissions=0o600,
-        )
-        process = self._container.exec(
-            ["python3", SCAN_SCRIPT_PATH, f"ssh://{hostname}:{port}", proxy],
-            user=DJANGO_USER,
-            group=DJANGO_GROUP,
-            timeout=45,
-        )
-        output, _ = process.wait_output()
-        if not output.strip():
-            raise RuntimeError("SSH host-key scan returned no host keys")
-        self._container.push(
-            KNOWN_HOSTS_PATH,
-            output,
-            encoding="utf-8",
-            make_dirs=True,
-            user=DJANGO_USER,
-            group=DJANGO_GROUP,
-            permissions=0o600,
-        )
+        ssh_directory = str(Path(KNOWN_HOSTS_PATH).parent)
+        # Repair ownership on upgrades without replacing any previously trusted keys.
+        self._container.exec(
+            [
+                "sh",
+                "-c",
+                f"install -d -m 700 -o {DJANGO_USER} -g {DJANGO_GROUP} {ssh_directory}"
+                f" && touch {KNOWN_HOSTS_PATH}"
+                f" && chown {DJANGO_USER}:{DJANGO_GROUP} {KNOWN_HOSTS_PATH}"
+                f" && chmod 600 {KNOWN_HOSTS_PATH}",
+            ],
+            user="root",
+            group="root",
+            timeout=10,
+        ).wait()
         proxy_command = " ".join(ssh_proxy.ncat_command(proxy, "%h", "%p")) if proxy else "none"
         self._container.push(
             SSH_CONFIG_PATH,
@@ -99,7 +86,7 @@ class DjangoCharm(paas_app_charmer.django.Charm):
             f"    ProxyCommand {proxy_command}\n"
             f"    IdentityFile {RSA_PATH}\n"
             f"    UserKnownHostsFile {KNOWN_HOSTS_PATH}\n"
-            "    StrictHostKeyChecking yes\n"
+            "    StrictHostKeyChecking accept-new\n"
             "    ConnectTimeout 10\n",
             encoding="utf-8",
             make_dirs=True,
