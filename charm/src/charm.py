@@ -75,7 +75,7 @@ class DjangoCharm(paas_app_charmer.django.Charm):
             permissions=0o600,
         )
         process = self._container.exec(
-            ["python3", SCAN_SCRIPT_PATH, hostname, str(port), proxy],
+            ["python3", SCAN_SCRIPT_PATH, f"ssh://{hostname}:{port}", proxy],
             user=DJANGO_USER,
             group=DJANGO_GROUP,
             timeout=45,

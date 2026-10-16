@@ -65,7 +65,7 @@ def test_scan_and_git_use_same_proxy(charm_module, charm, monkeypatch, hostname,
 
     proxy = "" if bypass else "https-proxy.example:3129"
     charm._container.exec.assert_called_once_with(
-        ["python3", charm_module.SCAN_SCRIPT_PATH, hostname, "22", proxy],
+        ["python3", charm_module.SCAN_SCRIPT_PATH, f"ssh://{hostname}:22", proxy],
         user=charm_module.DJANGO_USER,
         group=charm_module.DJANGO_GROUP,
         timeout=45,
@@ -195,7 +195,7 @@ def test_generated_ssh_config(charm_module, charm, monkeypatch, tmp_path, proxy)
         ) in result.stdout
     else:
         assert "proxycommand" not in result.stdout
-    assert charm._container.exec.call_args.args[0][2:4] == ["git.example.com", "22"]
+    assert charm._container.exec.call_args.args[0][2] == "ssh://git.example.com:22"
 
 
 @pytest.mark.parametrize("missing", ["container", "git-repo", "git-ssh-key"])

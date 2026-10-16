@@ -5,6 +5,7 @@
 
 import importlib.util
 import subprocess
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock
@@ -313,7 +314,7 @@ def test_relay_waits_for_scan_connection(ssh_proxy):
 
     ssh_proxy._serve_scan(listener, scan, [], MagicMock())
 
-    listener.settimeout.assert_called_once_with(0.1)
+    listener.settimeout.assert_called_once_with(ssh_proxy.RELAY_POLL_INTERVAL)
     scan.wait.assert_called_once_with(timeout=1)
     scan.terminate.assert_not_called()
 
@@ -356,3 +357,94 @@ def test_stubborn_child_is_killed(ssh_proxy):
     process.terminate.assert_called_once()
     process.kill.assert_called_once()
     assert process.wait.call_count == 2
+
+
+@pytest.mark.parametrize(
+    "destination,proxy,expected",
+    [
+        ("ssh://git.example.com", "", ("git.example.com", 22, "")),
+        (
+            "ssh://git.example.com:2222",
+            "proxy.example:3128",
+            ("git.example.com", 2222, "proxy.example:3128"),
+        ),
+        (
+            "ssh://[2001:db8::1]:2222",
+            "[2001:db8::2]:3128",
+            ("2001:db8::1", 2222, "[2001:db8::2]:3128"),
+        ),
+    ],
+)
+def test_validate_inputs(ssh_proxy, destination, proxy, expected):
+    """
+    arrange: the helper receives a combined SSH destination and optional proxy.
+    act: parse and validate the inputs separately from scanning.
+    assert: the validated hostname, port, and proxy are returned.
+    """
+    assert ssh_proxy.validate_inputs(destination, proxy) == expected
+
+
+@pytest.mark.parametrize(
+    "destination,proxy",
+    [
+        ("https://git.example.com:22", ""),
+        ("ssh://", ""),
+        ("ssh://user@git.example.com", ""),
+        ("ssh://git.example.com/path", ""),
+        ("ssh://git.example.com?query", ""),
+        ("ssh://git.example.com#fragment", ""),
+        ("ssh://git.example.com:0", ""),
+        ("ssh://git.example.com:65536", ""),
+        ("ssh://git.example.com:invalid", ""),
+        ("ssh://[invalid]:22", ""),
+        ("ssh://bad;host:22", ""),
+        ("ssh://%h:22", ""),
+        ("ssh://git.example.com:22", "bad;proxy:3128"),
+        ("ssh://git.example.com:22", "proxy.example:65536"),
+        ("ssh://git.example.com:22", "proxy.example/path"),
+        ("ssh://git.example.com:22", "user@proxy.example:3128"),
+    ],
+)
+def test_validate_inputs_rejects_invalid_values(ssh_proxy, destination, proxy):
+    """
+    arrange: an invalid destination or proxy is supplied to the helper.
+    act: validate the inputs.
+    assert: no scan starts and invalid input raises an explicit error.
+    """
+    with pytest.raises(ValueError):
+        ssh_proxy.validate_inputs(destination, proxy)
+
+
+def test_main_validates_scans_and_prints(ssh_proxy, monkeypatch, capsys):
+    """
+    arrange: the helper receives a valid destination and proxy from the command line.
+    act: run the entry point.
+    assert: validation completes before scanning and the returned keys are printed unchanged.
+    """
+    monkeypatch.setattr(
+        sys, "argv", ["scan_host_keys.py", "ssh://git.example.com:22", "proxy.example:3128"]
+    )
+    scan = MagicMock(return_value="git.example.com ssh-rsa AAAA\n")
+    monkeypatch.setattr(ssh_proxy, "scan_host_keys", scan)
+
+    ssh_proxy.main()
+
+    scan.assert_called_once_with("git.example.com", 22, "proxy.example:3128")
+    assert capsys.readouterr().out == "git.example.com ssh-rsa AAAA\n"
+
+
+def test_main_does_not_scan_invalid_inputs(ssh_proxy, monkeypatch, capsys):
+    """
+    arrange: the helper receives an invalid destination port.
+    act: run the entry point.
+    assert: validation fails before scanning or printing output.
+    """
+    monkeypatch.setattr(sys, "argv", ["scan_host_keys.py", "ssh://git.example.com:0"])
+    scan = MagicMock()
+    monkeypatch.setattr(ssh_proxy, "scan_host_keys", scan)
+
+    with pytest.raises(ValueError, match="port"):
+        ssh_proxy.main()
+
+    scan.assert_not_called()
+    assert capsys.readouterr().out == ""
