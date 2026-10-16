@@ -5,11 +5,14 @@
 """Flask Charm entrypoint."""
 
 import logging
+import os
 import typing
+from pathlib import Path
 
 import actions
 import ops
 import paas_app_charmer.django
+import ssh_proxy
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +21,8 @@ DJANGO_USER = "_daemon_"
 DJANGO_GROUP = "_daemon_"
 KNOWN_HOSTS_PATH = "/var/lib/pebble/default/.ssh/known_hosts"
 RSA_PATH = "/var/lib/pebble/default/.ssh/id_rsa"
+SCAN_SCRIPT_PATH = "/var/lib/pebble/default/.ssh/scan_host_keys.py"
+SSH_CONFIG_PATH = "/etc/ssh/ssh_config.d/httprequest-lego-provider.conf"
 
 
 class DjangoCharm(paas_app_charmer.django.Charm):
@@ -58,8 +63,26 @@ class DjangoCharm(paas_app_charmer.django.Charm):
         if not self.config.get("git-repo") or not self.config.get("git-ssh-key"):
             return
         hostname = self.config.get("git-repo").split("@")[1].split("/")[0]
-        process = self._container.exec(["ssh-keyscan", "-t", "rsa", hostname])
+        port = 22
+        proxy = ssh_proxy.select_proxy(hostname, port, os.environ)
+        self._container.push(
+            SCAN_SCRIPT_PATH,
+            Path(__file__).with_name("ssh_proxy.py").read_text(encoding="utf-8"),
+            encoding="utf-8",
+            make_dirs=True,
+            user=DJANGO_USER,
+            group=DJANGO_GROUP,
+            permissions=0o600,
+        )
+        process = self._container.exec(
+            ["python3", SCAN_SCRIPT_PATH, f"ssh://{hostname}:{port}", proxy],
+            user=DJANGO_USER,
+            group=DJANGO_GROUP,
+            timeout=45,
+        )
         output, _ = process.wait_output()
+        if not output.strip():
+            raise RuntimeError("SSH host-key scan returned no host keys")
         self._container.push(
             KNOWN_HOSTS_PATH,
             output,
@@ -68,6 +91,19 @@ class DjangoCharm(paas_app_charmer.django.Charm):
             user=DJANGO_USER,
             group=DJANGO_GROUP,
             permissions=0o600,
+        )
+        proxy_command = " ".join(ssh_proxy.ncat_command(proxy, "%h", "%p")) if proxy else "none"
+        self._container.push(
+            SSH_CONFIG_PATH,
+            f"Host {hostname}\n"
+            f"    ProxyCommand {proxy_command}\n"
+            f"    IdentityFile {RSA_PATH}\n"
+            f"    UserKnownHostsFile {KNOWN_HOSTS_PATH}\n"
+            "    StrictHostKeyChecking yes\n"
+            "    ConnectTimeout 10\n",
+            encoding="utf-8",
+            make_dirs=True,
+            permissions=0o644,
         )
         self._container.push(
             RSA_PATH,
