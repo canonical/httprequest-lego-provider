@@ -22,6 +22,31 @@ tox run -e integration
 tox
 ```
 
+### PostgreSQL migration tests
+
+The sequence-repair regression requires PostgreSQL: SQLite automatically accounts for explicit
+IDs and cannot reproduce the failure. CI runs these tests against PostgreSQL 14.
+
+To run them locally, start a disposable PostgreSQL 14 server:
+
+```shell
+docker run --detach --rm --name lego-sequence-test \
+  --publish 127.0.0.1:55471:5432 \
+  --env POSTGRES_USER=lego --env POSTGRES_PASSWORD=local-test-only \
+  --env POSTGRES_DB=lego postgres:14
+
+until docker exec lego-sequence-test pg_isready -U lego -d lego; do sleep 1; done
+
+POSTGRESQL_DB_CONNECT_STRING='postgresql://lego:local-test-only@127.0.0.1:55471/lego' \
+  tox run -e postgres
+
+docker stop lego-sequence-test
+```
+
+Use only a disposable server. Pytest creates and drops a test database, and the database user
+must have permission to create databases. The default `unit` environment continues to use SQLite
+and skips the PostgreSQL-specific regression.
+
 ## Build the charm
 
 Build the charm in this git repository using:

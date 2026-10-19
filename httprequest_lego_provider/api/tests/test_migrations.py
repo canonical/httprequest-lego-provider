@@ -16,6 +16,9 @@ def test_reset_domain_sequences(existing_ids):
     act: apply the sequence repair migration.
     assert: existing records survive and new records receive unused IDs.
     """
+    if connection.vendor != "postgresql":
+        pytest.skip("Stale ID sequences require PostgreSQL; run tox -e postgres.")
+
     previous = [("api", "0003_add_access_level_and_more")]
     target = [("api", "0004_reset_domain_sequences")]
     executor = MigrationExecutor(connection)
