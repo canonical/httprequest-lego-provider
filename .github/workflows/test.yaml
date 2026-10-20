@@ -6,35 +6,6 @@ on:
   - cron: "0 15 * * SAT"
 
 jobs:
-  postgres-migrations:
-    name: PostgreSQL 14 migration regression
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    services:
-      postgres:
-        image: postgres:14
-        env:
-          POSTGRES_USER: lego
-          POSTGRES_PASSWORD: local-test-only
-          POSTGRES_DB: lego
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U lego -d lego"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    env:
-      POSTGRESQL_DB_CONNECT_STRING: postgresql://lego:local-test-only@localhost:5432/lego
-    steps:
-      - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10.0.1
-      - name: Install tox
-        run: uv tool install --python 3.12 tox --with tox-uv
-      - name: Run PostgreSQL migration tests
-        run: tox run -e postgres
-
   unit-tests:
     uses: canonical/operator-workflows/.github/workflows/test.yaml@main
     permissions:
@@ -43,3 +14,4 @@ jobs:
     secrets: inherit
     with:
       vale-style-check: true
+      pre-run-script: .github/scripts/setup-unit-postgres.sh
