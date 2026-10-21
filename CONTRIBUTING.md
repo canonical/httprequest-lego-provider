@@ -22,6 +22,32 @@ tox run -e integration
 tox
 ```
 
+### PostgreSQL unit tests
+
+The sequence-repair regression requires PostgreSQL: SQLite automatically accounts for explicit
+IDs and cannot reproduce the failure. CI runs the complete unit suite, including the migration
+regression, against PostgreSQL 14 within the existing lint and unit-test action.
+
+To run them locally, start a disposable PostgreSQL 14 server:
+
+```shell
+docker run --detach --rm --name lego-sequence-test \
+  --publish 127.0.0.1:55471:5432 \
+  --env POSTGRES_USER=lego --env POSTGRES_PASSWORD=local-test-only \
+  --env POSTGRES_DB=lego postgres:14
+
+until docker exec lego-sequence-test pg_isready -h 127.0.0.1 -U lego -d lego; do sleep 1; done
+
+POSTGRESQL_DB_CONNECT_STRING='postgresql://lego:local-test-only@127.0.0.1:55471/lego' \
+  tox run -e unit
+
+docker stop lego-sequence-test
+```
+
+Use only a disposable server. The test runner creates and drops a test database, and the database
+user must have permission to create databases. Without `POSTGRESQL_DB_CONNECT_STRING`, the `unit`
+environment uses SQLite and skips the PostgreSQL-specific regression.
+
 ## Build the charm
 
 Build the charm in this git repository using:
