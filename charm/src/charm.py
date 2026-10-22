@@ -82,7 +82,7 @@ def _bypass_proxy(hostname: str, port: int, no_proxy: str) -> bool:
 
 
 def _select_proxy(hostname: str, port: int, environment: Mapping[str, str]) -> str:
-    """Select an unauthenticated HTTP or HTTPS CONNECT proxy from Juju hook settings.
+    """Select an unauthenticated HTTP CONNECT proxy from Juju hook settings.
 
     Args:
         hostname: The Git host.
@@ -90,7 +90,7 @@ def _select_proxy(hostname: str, port: int, environment: Mapping[str, str]) -> s
         environment: The charm hook environment.
 
     Returns:
-        The normalized proxy URL, or an empty string for a direct connection.
+        The proxy host:port, or an empty string for a direct connection.
 
     Raises:
         ValueError: If the Git hostname is invalid or the applicable proxy URL is unsupported.
@@ -105,21 +105,21 @@ def _select_proxy(hostname: str, port: int, environment: Mapping[str, str]) -> s
 
 
 def _proxy_address(proxy: str) -> str:
-    """Validate and normalize an HTTP or HTTPS proxy URL.
+    """Validate an HTTP proxy URL and extract its address.
 
     Args:
-        proxy: The HTTP or HTTPS proxy URL.
+        proxy: The HTTP proxy URL.
 
     Returns:
-        The proxy URL with an explicit, scheme-appropriate port.
+        The proxy hostname and port suitable for Ncat.
 
     Raises:
         ValueError: If the proxy URL is unsupported or invalid.
     """
     url = urlsplit(proxy)
-    if url.scheme not in ("http", "https") or not url.hostname:
+    if url.scheme != "http" or not url.hostname:
         raise ValueError(
-            "SSH requires an http:// or https:// CONNECT proxy; other schemes are unsupported"
+            "SSH requires an http:// CONNECT proxy; other proxy schemes are unsupported"
         )
     if url.username is not None or url.password is not None:
         raise ValueError(
@@ -128,11 +128,11 @@ def _proxy_address(proxy: str) -> str:
     if url.path not in ("", "/") or url.query or url.fragment:
         raise ValueError("The SSH proxy URL must not contain a path, query, or fragment")
     _validate_hostname(url.hostname)
-    proxy_port = url.port if url.port is not None else (443 if url.scheme == "https" else 80)
+    proxy_port = url.port if url.port is not None else 80
     if not proxy_port:
         raise ValueError("The SSH proxy port must be between 1 and 65535")
     address = f"[{url.hostname}]" if ":" in url.hostname else url.hostname
-    return f"{url.scheme}://{address}:{proxy_port}"
+    return f"{address}:{proxy_port}"
 
 
 class DjangoCharm(paas_app_charmer.django.Charm):
@@ -190,17 +190,9 @@ class DjangoCharm(paas_app_charmer.django.Charm):
             group="root",
             timeout=10,
         ).wait()
-        proxy_command = "none"
-        if proxy:
-            scheme, address = proxy.split("://", 1)
-            if scheme == "https":
-                proxy_command = (
-                    f"/usr/bin/proxytunnel --encrypt-proxy --proxy {address} --dest %h:%p"
-                )
-            else:
-                proxy_command = (
-                    f"/usr/bin/ncat --proxy-type http --proxy {address} --wait 10 %h %p"
-                )
+        proxy_command = (
+            f"/usr/bin/ncat --proxy-type http --proxy {proxy} --wait 10 %h %p" if proxy else "none"
+        )
         self._container.push(
             SSH_CONFIG_PATH,
             f"Host {hostname}\n"
