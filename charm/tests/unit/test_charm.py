@@ -3,9 +3,16 @@
 
 """Unit tests for Git SSH configuration."""
 
+import grp
 import importlib.util
+import os
+import pwd
+import shutil
+import socketserver
+import stat
 import subprocess
 import sys
+import threading
 from pathlib import Path
 from types import ModuleType
 from unittest.mock import MagicMock
@@ -34,27 +41,23 @@ def charm_module_fixture(monkeypatch):
 
 
 @pytest.fixture(name="charm")
-def charm_fixture(charm_module):
+def charm_fixture():
     """Create a mock charm with a connected workload."""
     charm = MagicMock()
     charm.config = {
         "git-repo": "git+ssh://git@github.com/example/zones.git@main",
         "git-ssh-key": "test-key",
     }
-    charm._container.exec.return_value.wait_output.return_value = (
-        "github.com ssh-rsa AAAA\n",
-        "",
-    )
     return charm
 
 
 @pytest.mark.parametrize("hostname", ["github.com", "git.example.com"])
 @pytest.mark.parametrize("bypass", [False, True])
-def test_scan_and_git_use_same_proxy(charm_module, charm, monkeypatch, hostname, bypass):
+def test_git_proxy_configuration(charm_module, charm, monkeypatch, hostname, bypass):
     """
     arrange: configure Juju proxies and an optional destination exclusion.
     act: copy Git SSH files.
-    assert: scanning and subsequent Git SSH use the same route for any host.
+    assert: Git uses the selected route and accepts only previously unknown host keys.
     """
     charm.config["git-repo"] = f"git+ssh://git@{hostname}/example/zones.git@main"
     monkeypatch.setenv("JUJU_CHARM_HTTP_PROXY", "http://http-proxy.example:3128")
@@ -63,19 +66,27 @@ def test_scan_and_git_use_same_proxy(charm_module, charm, monkeypatch, hostname,
 
     charm_module.DjangoCharm._copy_files(charm)
 
-    proxy = "" if bypass else "https-proxy.example:3129"
     charm._container.exec.assert_called_once_with(
-        ["python3", charm_module.SCAN_SCRIPT_PATH, f"ssh://{hostname}:22", proxy],
-        user=charm_module.DJANGO_USER,
-        group=charm_module.DJANGO_GROUP,
-        timeout=45,
+        [
+            "sh",
+            "-c",
+            "install -d -m 700 -o _daemon_ -g _daemon_ /var/lib/pebble/default/.ssh"
+            " && touch /var/lib/pebble/default/.ssh/known_hosts"
+            " && chown _daemon_:_daemon_ /var/lib/pebble/default/.ssh/known_hosts"
+            " && chmod 600 /var/lib/pebble/default/.ssh/known_hosts",
+        ],
+        user="root",
+        group="root",
+        timeout=10,
     )
+    charm._container.exec.return_value.wait.assert_called_once_with()
     pushes = {call.args[0]: call for call in charm._container.push.call_args_list}
+    assert set(pushes) == {charm_module.SSH_CONFIG_PATH, charm_module.RSA_PATH}
     config = pushes[charm_module.SSH_CONFIG_PATH].args[1]
     assert f"Host {hostname}\n" in config
     assert f"IdentityFile {charm_module.RSA_PATH}\n" in config
     assert f"UserKnownHostsFile {charm_module.KNOWN_HOSTS_PATH}\n" in config
-    assert "StrictHostKeyChecking yes\n" in config
+    assert "StrictHostKeyChecking accept-new\n" in config
     assert "ConnectTimeout 10\n" in config
     if bypass:
         assert "ProxyCommand none\n" in config
@@ -85,14 +96,13 @@ def test_scan_and_git_use_same_proxy(charm_module, charm, monkeypatch, hostname,
             "https-proxy.example:3129 --wait 10 %h %p\n"
         ) in config
     assert pushes[charm_module.SSH_CONFIG_PATH].kwargs["permissions"] == 0o644
-    for path in (charm_module.KNOWN_HOSTS_PATH, charm_module.RSA_PATH):
-        assert pushes[path].kwargs == {
-            "encoding": "utf-8",
-            "make_dirs": True,
-            "user": charm_module.DJANGO_USER,
-            "group": charm_module.DJANGO_GROUP,
-            "permissions": 0o600,
-        }
+    assert pushes[charm_module.RSA_PATH].kwargs == {
+        "encoding": "utf-8",
+        "make_dirs": True,
+        "user": charm_module.DJANGO_USER,
+        "group": charm_module.DJANGO_GROUP,
+        "permissions": 0o600,
+    }
     assert pushes[charm_module.RSA_PATH].args[1] == "test-key"
 
 
@@ -109,7 +119,6 @@ def test_proxy_removal_restores_direct_ssh(charm_module, charm, monkeypatch):
 
     charm_module.DjangoCharm._copy_files(charm)
 
-    assert charm._container.exec.call_args.args[0][-1] == ""
     config_call = next(
         call
         for call in charm._container.push.call_args_list
@@ -119,33 +128,80 @@ def test_proxy_removal_restores_direct_ssh(charm_module, charm, monkeypatch):
     assert "ncat" not in config_call.args[1]
 
 
-@pytest.mark.parametrize("failure", ["scan-error", "empty-keys"])
-def test_scan_failure_preserves_ssh_files(charm_module, charm, monkeypatch, failure):
+def test_known_hosts_setup_failure_is_explicit(charm_module, charm):
     """
-    arrange: a proxied scan fails or returns no keys.
+    arrange: preparing writable host-key storage fails.
     act: copy Git SSH files.
-    assert: only the scan helper is written, with no API or direct fallback.
+    assert: the failure propagates before changing the SSH configuration or identity.
     """
-    monkeypatch.setenv("JUJU_CHARM_HTTPS_PROXY", "http://proxy.example:3128")
-    if failure == "scan-error":
-        charm._container.exec.return_value.wait_output.side_effect = RuntimeError("CONNECT denied")
-    else:
-        charm._container.exec.return_value.wait_output.return_value = ("", "")
+    charm._container.exec.return_value.wait.side_effect = RuntimeError("Permission denied")
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(RuntimeError, match="Permission denied"):
         charm_module.DjangoCharm._copy_files(charm)
 
-    charm._container.exec.assert_called_once()
-    assert [call.args[0] for call in charm._container.push.call_args_list] == [
-        charm_module.SCAN_SCRIPT_PATH
-    ]
+    charm._container.push.assert_not_called()
+
+
+@pytest.mark.parametrize("existing", [False, True])
+def test_known_hosts_survives_hooks(charm_module, charm, monkeypatch, tmp_path, existing):
+    """
+    arrange: SSH storage is absent or contains trusted keys from an earlier deployment.
+    act: prepare storage and repeat configuration and workload-ready hooks.
+    assert: keys survive and the directory and file remain private and writable.
+    """
+    directory = tmp_path / ".ssh"
+    known_hosts = directory / "known_hosts"
+    original = "github.com ssh-ed25519 AAAA\nold.example ssh-rsa BBBB\n"
+    if existing:
+        directory.mkdir(mode=0o755)
+        known_hosts.write_text(original)
+        known_hosts.chmod(0o644)
+    monkeypatch.setattr(charm_module, "KNOWN_HOSTS_PATH", str(known_hosts))
+    monkeypatch.setattr(charm_module, "DJANGO_USER", pwd.getpwuid(os.getuid()).pw_name)
+    monkeypatch.setattr(charm_module, "DJANGO_GROUP", grp.getgrgid(os.getgid()).gr_name)
+
+    def execute(command, **_kwargs):
+        subprocess.run(command, check=True, capture_output=True, timeout=5)
+        return MagicMock()
+
+    charm._container.exec.side_effect = execute
+    copy_files = charm_module.DjangoCharm._copy_files
+    charm._copy_files.side_effect = lambda: copy_files(charm)
+    copy_files(charm)
+    assert known_hosts.read_text() == (original if existing else "")
+    with known_hosts.open("a") as stream:
+        stream.write("new.example ssh-ed25519 CCCC\n")
+    expected = known_hosts.read_bytes()
+
+    for hook in ("_on_config_changed", "_on_pebble_ready"):
+        charm.config["git-ssh-key"] = f"updated-key-for-{hook}"
+        monkeypatch.setenv("JUJU_CHARM_HTTPS_PROXY", "http://updated-proxy.example:3128")
+        base_hook = MagicMock()
+        monkeypatch.setattr(ops.CharmBase, hook, base_hook, raising=False)
+        # Use the actual subclass so super() in the hook resolves the mocked base.
+        instance = object.__new__(charm_module.DjangoCharm)
+        monkeypatch.setattr(
+            charm_module.DjangoCharm, "_copy_files", lambda _self: charm._copy_files()
+        )
+        event = MagicMock()
+        getattr(instance, hook)(event)
+        base_hook.assert_called_once_with(event)
+        assert known_hosts.read_bytes() == expected
+
+    assert stat.S_IMODE(directory.stat().st_mode) == 0o700
+    assert stat.S_IMODE(known_hosts.stat().st_mode) == 0o600
+    assert directory.stat().st_uid == known_hosts.stat().st_uid == os.getuid()
+    assert directory.stat().st_gid == known_hosts.stat().st_gid == os.getgid()
+    assert os.access(directory, os.W_OK)
+    assert os.access(known_hosts, os.W_OK)
+    assert all(call.args[0] != str(known_hosts) for call in charm._container.push.call_args_list)
 
 
 def test_invalid_proxy_does_not_write_files(charm_module, charm, monkeypatch):
     """
     arrange: an unsupported authenticated proxy is configured.
     act: copy Git SSH files.
-    assert: an explicit error is raised before starting a scan or changing files.
+    assert: an explicit error is raised before changing files.
     """
     monkeypatch.setenv("JUJU_CHARM_HTTPS_PROXY", "http://user:password@proxy.example:3128")
 
@@ -161,7 +217,7 @@ def test_generated_ssh_config(charm_module, charm, monkeypatch, tmp_path, proxy)
     """
     arrange: configure the standard SSH port and an optional IPv6 proxy.
     act: generate the system SSH include and read it with OpenSSH.
-    assert: Git SSH sees strict verification, the correct files, and the selected route.
+    assert: Git SSH sees accept-new verification, the correct files, and the selected route.
     """
     charm.config["git-repo"] = "git+ssh://git@git.example.com/zones.git@main"
     monkeypatch.setenv("JUJU_CHARM_HTTPS_PROXY", proxy)
@@ -186,7 +242,7 @@ def test_generated_ssh_config(charm_module, charm, monkeypatch, tmp_path, proxy)
 
     assert f"identityfile {charm_module.RSA_PATH}\n" in result.stdout
     assert f"userknownhostsfile {charm_module.KNOWN_HOSTS_PATH}\n" in result.stdout
-    assert "stricthostkeychecking true\n" in result.stdout
+    assert "stricthostkeychecking accept-new\n" in result.stdout
     assert "port 22\n" in result.stdout
     if proxy:
         assert (
@@ -195,7 +251,92 @@ def test_generated_ssh_config(charm_module, charm, monkeypatch, tmp_path, proxy)
         ) in result.stdout
     else:
         assert "proxycommand" not in result.stdout
-    assert charm._container.exec.call_args.args[0][2] == "ssh://git.example.com:22"
+
+
+def test_accept_new_host_keys(charm_module, charm, monkeypatch, tmp_path):
+    """
+    arrange: a local SSH server offers an initial host key and later a replacement.
+    act: connect using the generated accept-new configuration before and after the change.
+    assert: first use is recorded, repeat host verification succeeds, and changed keys fail.
+    """
+    sshd = shutil.which("sshd")
+    if not sshd:
+        pytest.skip("OpenSSH server is required for the real host-key exchange")
+    keys = [tmp_path / "first_key", tmp_path / "replacement_key"]
+    for key in keys:
+        subprocess.run(
+            ["ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-f", str(key)],
+            check=True,
+            capture_output=True,
+            timeout=5,
+        )
+    known_hosts = tmp_path / "known_hosts"
+    monkeypatch.setattr(charm_module, "KNOWN_HOSTS_PATH", str(known_hosts))
+    charm.config["git-repo"] = "git+ssh://git@127.0.0.1/zones.git@main"
+    charm_module.DjangoCharm._copy_files(charm)
+    config_call = next(
+        call
+        for call in charm._container.push.call_args_list
+        if call.args[0] == charm_module.SSH_CONFIG_PATH
+    )
+    config = tmp_path / "ssh_config"
+    config.write_text(config_call.args[1])
+    server_config = tmp_path / "sshd_config"
+    server_config.write_text(
+        "UsePAM no\nPasswordAuthentication no\nKbdInteractiveAuthentication no\n"
+        "AuthorizedKeysFile none\nLogLevel ERROR\n"
+    )
+
+    class Handler(socketserver.BaseRequestHandler):
+        def handle(self):
+            subprocess.run(
+                [sshd, "-i", "-e", "-f", str(server_config), "-h", str(self.server.host_key)],
+                stdin=self.request,
+                stdout=self.request,
+                stderr=subprocess.PIPE,
+                check=False,
+                timeout=10,
+            )
+
+    with socketserver.TCPServer(("127.0.0.1", 0), Handler) as server:
+        server.host_key = keys[0]
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        command = [
+            "ssh",
+            "-F",
+            str(config),
+            "-p",
+            str(server.server_address[1]),
+            "-o",
+            "BatchMode=yes",
+            "-o",
+            "GlobalKnownHostsFile=/dev/null",
+            "-o",
+            "HostKeyAlgorithms=ssh-ed25519",
+            "127.0.0.1",
+            "true",
+        ]
+        try:
+            first = subprocess.run(command, capture_output=True, text=True, timeout=10)
+            assert "Permanently added" in first.stderr, first.stderr
+            recorded = known_hosts.read_bytes()
+            public_key = keys[0].with_suffix(".pub").read_text().split()[1]
+            assert public_key.encode() in recorded
+            repeat = subprocess.run(command, capture_output=True, text=True, timeout=10)
+            # No authorized client key is needed to exercise host verification.
+            assert "Permission denied" in repeat.stderr, repeat.stderr
+            assert "Permanently added" not in repeat.stderr
+            assert known_hosts.read_bytes() == recorded
+            server.host_key = keys[1]
+            changed = subprocess.run(command, capture_output=True, text=True, timeout=10)
+            assert changed.returncode == 255
+            assert "REMOTE HOST IDENTIFICATION HAS CHANGED" in changed.stderr
+            assert "Host key verification failed" in changed.stderr
+            assert known_hosts.read_bytes() == recorded
+        finally:
+            server.shutdown()
+            thread.join(timeout=5)
 
 
 @pytest.mark.parametrize("missing", ["container", "git-repo", "git-ssh-key"])

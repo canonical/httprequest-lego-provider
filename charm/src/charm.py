@@ -4,15 +4,19 @@
 
 """Flask Charm entrypoint."""
 
+import ipaddress
 import logging
 import os
+import re
 import typing
+from collections.abc import Mapping
 from pathlib import Path
+from urllib.parse import urlsplit
+from urllib.request import proxy_bypass_environment  # type: ignore[attr-defined]
 
 import actions
 import ops
 import paas_app_charmer.django
-import ssh_proxy
 
 logger = logging.getLogger(__name__)
 
@@ -21,8 +25,114 @@ DJANGO_USER = "_daemon_"
 DJANGO_GROUP = "_daemon_"
 KNOWN_HOSTS_PATH = "/var/lib/pebble/default/.ssh/known_hosts"
 RSA_PATH = "/var/lib/pebble/default/.ssh/id_rsa"
-SCAN_SCRIPT_PATH = "/var/lib/pebble/default/.ssh/scan_host_keys.py"
 SSH_CONFIG_PATH = "/etc/ssh/ssh_config.d/httprequest-lego-provider.conf"
+
+
+def _validate_hostname(hostname: str) -> None:
+    """Reject hostnames unsafe for SSH configuration or command arguments.
+
+    Args:
+        hostname: The DNS name or IP address to check.
+
+    Raises:
+        ValueError: If the hostname is invalid.
+    """
+    if "%" in hostname:
+        raise ValueError("Scoped IP addresses and SSH expansion tokens are unsupported in hosts")
+    try:
+        ipaddress.ip_address(hostname)
+    except ValueError:
+        labels = hostname.rstrip(".").split(".")
+        if len(hostname) > 253 or not all(
+            re.fullmatch(r"[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?", label)
+            for label in labels
+        ):
+            raise ValueError("Git and proxy hosts must be DNS names or IP addresses") from None
+
+
+def _bypass_proxy(hostname: str, port: int, no_proxy: str) -> bool:
+    """Match Juju exclusions, including literal IP networks.
+
+    Args:
+        hostname: The Git host.
+        port: The SSH port.
+        no_proxy: Comma-separated Juju proxy exclusions.
+
+    Returns:
+        Whether this destination should use a direct connection.
+    """
+    hostname = hostname.lower().rstrip(".")
+    address = f"[{hostname}]" if ":" in hostname else hostname
+    exclusions = [item.strip() for item in no_proxy.split(",")]
+    if proxy_bypass_environment(f"{address}:{port}", {"no": no_proxy}) or "*" in exclusions:
+        return True
+    try:
+        host_ip = ipaddress.ip_address(hostname)
+    except ValueError:
+        return False
+    # The standard library does not match IP networks or unbracketed IPv6 exclusions.
+    for exclusion in exclusions:
+        try:
+            network = ipaddress.ip_network(exclusion, strict=False)
+        except ValueError:
+            continue
+        if host_ip in network:
+            return True
+    return False
+
+
+def _select_proxy(hostname: str, port: int, environment: Mapping[str, str]) -> str:
+    """Select an unauthenticated HTTP CONNECT proxy from Juju hook settings.
+
+    Args:
+        hostname: The Git host.
+        port: The SSH port.
+        environment: The charm hook environment.
+
+    Returns:
+        The proxy host:port, or an empty string for a direct connection.
+
+    Raises:
+        ValueError: If the Git hostname is invalid or the applicable proxy URL is unsupported.
+    """
+    _validate_hostname(hostname)
+    if _bypass_proxy(hostname, port, environment.get("JUJU_CHARM_NO_PROXY", "")):
+        return ""
+    proxy = environment.get("JUJU_CHARM_HTTPS_PROXY") or environment.get("JUJU_CHARM_HTTP_PROXY")
+    if not proxy:
+        return ""
+    return _proxy_address(proxy)
+
+
+def _proxy_address(proxy: str) -> str:
+    """Validate an HTTP proxy URL and extract its address.
+
+    Args:
+        proxy: The HTTP proxy URL.
+
+    Returns:
+        The proxy hostname and port suitable for Ncat.
+
+    Raises:
+        ValueError: If the proxy URL is unsupported or invalid.
+    """
+    url = urlsplit(proxy)
+    if url.scheme != "http" or not url.hostname:
+        raise ValueError(
+            "SSH requires an http:// CONNECT proxy; other proxy schemes are unsupported"
+        )
+    if url.username is not None or url.password is not None:
+        raise ValueError(
+            "SSH proxy authentication is unsupported; use a proxy without credentials"
+        )
+    if url.path not in ("", "/") or url.query or url.fragment:
+        raise ValueError("The SSH proxy URL must not contain a path, query, or fragment")
+    _validate_hostname(url.hostname)
+    proxy_port = url.port if url.port is not None else 80
+    if not proxy_port:
+        raise ValueError("The SSH proxy port must be between 1 and 65535")
+    address = f"[{url.hostname}]" if ":" in url.hostname else url.hostname
+    return f"{address}:{proxy_port}"
 
 
 class DjangoCharm(paas_app_charmer.django.Charm):
@@ -64,42 +174,32 @@ class DjangoCharm(paas_app_charmer.django.Charm):
             return
         hostname = self.config.get("git-repo").split("@")[1].split("/")[0]
         port = 22
-        proxy = ssh_proxy.select_proxy(hostname, port, os.environ)
-        self._container.push(
-            SCAN_SCRIPT_PATH,
-            Path(__file__).with_name("ssh_proxy.py").read_text(encoding="utf-8"),
-            encoding="utf-8",
-            make_dirs=True,
-            user=DJANGO_USER,
-            group=DJANGO_GROUP,
-            permissions=0o600,
+        proxy = _select_proxy(hostname, port, os.environ)
+        ssh_directory = str(Path(KNOWN_HOSTS_PATH).parent)
+        # Repair ownership on upgrades without replacing any previously trusted keys.
+        self._container.exec(
+            [
+                "sh",
+                "-c",
+                f"install -d -m 700 -o {DJANGO_USER} -g {DJANGO_GROUP} {ssh_directory}"
+                f" && touch {KNOWN_HOSTS_PATH}"
+                f" && chown {DJANGO_USER}:{DJANGO_GROUP} {KNOWN_HOSTS_PATH}"
+                f" && chmod 600 {KNOWN_HOSTS_PATH}",
+            ],
+            user="root",
+            group="root",
+            timeout=10,
+        ).wait()
+        proxy_command = (
+            f"/usr/bin/ncat --proxy-type http --proxy {proxy} --wait 10 %h %p" if proxy else "none"
         )
-        process = self._container.exec(
-            ["python3", SCAN_SCRIPT_PATH, f"ssh://{hostname}:{port}", proxy],
-            user=DJANGO_USER,
-            group=DJANGO_GROUP,
-            timeout=45,
-        )
-        output, _ = process.wait_output()
-        if not output.strip():
-            raise RuntimeError("SSH host-key scan returned no host keys")
-        self._container.push(
-            KNOWN_HOSTS_PATH,
-            output,
-            encoding="utf-8",
-            make_dirs=True,
-            user=DJANGO_USER,
-            group=DJANGO_GROUP,
-            permissions=0o600,
-        )
-        proxy_command = " ".join(ssh_proxy.ncat_command(proxy, "%h", "%p")) if proxy else "none"
         self._container.push(
             SSH_CONFIG_PATH,
             f"Host {hostname}\n"
             f"    ProxyCommand {proxy_command}\n"
             f"    IdentityFile {RSA_PATH}\n"
             f"    UserKnownHostsFile {KNOWN_HOSTS_PATH}\n"
-            "    StrictHostKeyChecking yes\n"
+            "    StrictHostKeyChecking accept-new\n"
             "    ConnectTimeout 10\n",
             encoding="utf-8",
             make_dirs=True,
