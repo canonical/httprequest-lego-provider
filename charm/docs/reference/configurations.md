@@ -9,13 +9,23 @@ The Django charm framework forwards Juju's `JUJU_CHARM_HTTP_PROXY`,
 as `HTTP_PROXY`, `HTTPS_PROXY`, and `NO_PROXY`, including their lowercase equivalents.
 
 For Git SSH connections, the charm selects `JUJU_CHARM_HTTPS_PROXY` first, with
-`JUJU_CHARM_HTTP_PROXY` as a fallback. Both settings must use an unauthenticated
-`http://host:port` URL. HTTPS and SOCKS proxy URLs, proxy credentials, and proxy URL
-paths are unsupported and cause an explicit configuration error.
+`JUJU_CHARM_HTTP_PROXY` as a fallback. Both settings accept unauthenticated
+`http://host[:port]` or `https://host[:port]` URLs. Omitted ports default to 80 for
+HTTP and 443 for HTTPS; explicit ports are preserved. SOCKS proxy URLs, proxy
+credentials, and proxy URL paths are unsupported and cause an explicit configuration
+error.
 
 The selected proxy applies to Git clone and push operations, including SSH host-key
-verification, for all Git hosts. `Ncat` opens an HTTP CONNECT tunnel to the repository
-host on SSH port 22. The repository URL retains the original
+verification, for all Git hosts. For HTTP proxies, `Ncat` opens a plain HTTP CONNECT
+tunnel. For HTTPS proxies, `proxytunnel --encrypt-proxy` establishes TLS to the proxy
+before sending CONNECT. It verifies the proxy certificate chain and hostname using
+the workload's `/etc/ssl/certs` trust store; private proxy certificate authorities
+must be installed in that store. Certificate failures stop the connection without
+falling back to plain text or direct access. SSH still verifies the repository host
+key independently inside the tunnel.
+
+The tunnel destination remains the repository host on SSH port 22, regardless of
+the proxy port. The repository URL retains the original
 `git+ssh://username@host/path@branch` format without a custom port.
 The proxy must allow that destination; the charm does not switch GitHub connections
 to port 443.

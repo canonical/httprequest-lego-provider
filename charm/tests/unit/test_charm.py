@@ -53,7 +53,8 @@ def charm_fixture():
 
 @pytest.mark.parametrize("hostname", ["github.com", "git.example.com"])
 @pytest.mark.parametrize("bypass", [False, True])
-def test_git_proxy_configuration(charm_module, charm, monkeypatch, hostname, bypass):
+@pytest.mark.parametrize("scheme", ["http", "https"])
+def test_git_proxy_configuration(charm_module, charm, monkeypatch, hostname, bypass, scheme):
     """
     arrange: configure Juju proxies and an optional destination exclusion.
     act: copy Git SSH files.
@@ -61,7 +62,7 @@ def test_git_proxy_configuration(charm_module, charm, monkeypatch, hostname, byp
     """
     charm.config["git-repo"] = f"git+ssh://git@{hostname}/example/zones.git@main"
     monkeypatch.setenv("JUJU_CHARM_HTTP_PROXY", "http://http-proxy.example:3128")
-    monkeypatch.setenv("JUJU_CHARM_HTTPS_PROXY", "http://https-proxy.example:3129")
+    monkeypatch.setenv("JUJU_CHARM_HTTPS_PROXY", f"{scheme}://https-proxy.example:3129")
     monkeypatch.setenv("JUJU_CHARM_NO_PROXY", hostname if bypass else "localhost")
 
     charm_module.DjangoCharm._copy_files(charm)
@@ -90,11 +91,17 @@ def test_git_proxy_configuration(charm_module, charm, monkeypatch, hostname, byp
     assert "ConnectTimeout 10\n" in config
     if bypass:
         assert "ProxyCommand none\n" in config
-    else:
+    elif scheme == "http":
         assert (
             "ProxyCommand /usr/bin/ncat --proxy-type http --proxy "
             "https-proxy.example:3129 --wait 10 %h %p\n"
         ) in config
+    else:
+        assert (
+            "ProxyCommand /usr/bin/proxytunnel --encrypt-proxy --proxy "
+            "https-proxy.example:3129 --dest %h:%p\n"
+        ) in config
+        assert "--no-check-certificate" not in config
     assert pushes[charm_module.SSH_CONFIG_PATH].kwargs["permissions"] == 0o644
     assert pushes[charm_module.RSA_PATH].kwargs == {
         "encoding": "utf-8",
@@ -212,7 +219,7 @@ def test_invalid_proxy_does_not_write_files(charm_module, charm, monkeypatch):
     charm._container.push.assert_not_called()
 
 
-@pytest.mark.parametrize("proxy", ["", "http://[2001:db8::1]:3128"])
+@pytest.mark.parametrize("proxy", ["", "http://[2001:db8::1]:3128", "https://[2001:db8::1]:3129"])
 def test_generated_ssh_config(charm_module, charm, monkeypatch, tmp_path, proxy):
     """
     arrange: configure the standard SSH port and an optional IPv6 proxy.
@@ -244,13 +251,75 @@ def test_generated_ssh_config(charm_module, charm, monkeypatch, tmp_path, proxy)
     assert f"userknownhostsfile {charm_module.KNOWN_HOSTS_PATH}\n" in result.stdout
     assert "stricthostkeychecking accept-new\n" in result.stdout
     assert "port 22\n" in result.stdout
-    if proxy:
+    if proxy.startswith("https://"):
+        assert (
+            "proxycommand /usr/bin/proxytunnel --encrypt-proxy --proxy "
+            "[2001:db8::1]:3129 --dest %h:%p\n"
+        ) in result.stdout
+    elif proxy:
         assert (
             "proxycommand /usr/bin/ncat --proxy-type http --proxy [2001:db8::1]:3128 "
             "--wait 10 %h %p\n"
         ) in result.stdout
     else:
         assert "proxycommand" not in result.stdout
+
+
+@pytest.mark.parametrize(
+    "proxy,normalized",
+    [
+        ("http://proxy.example", "http://proxy.example:80"),
+        ("https://proxy.example", "https://proxy.example:443"),
+        ("http://proxy.example:443", "http://proxy.example:443"),
+        ("https://proxy.example:80", "https://proxy.example:80"),
+        ("https://proxy.example:8443/", "https://proxy.example:8443"),
+        ("https://[2001:db8::1]", "https://[2001:db8::1]:443"),
+    ],
+)
+def test_proxy_ports(charm_module, charm, monkeypatch, proxy, normalized):
+    """
+    arrange: a proxy URL has an explicit port or relies on its scheme's default.
+    act: validate the URL and generate the SSH configuration.
+    assert: the selected transport uses the correct explicit port.
+    """
+    monkeypatch.setenv("JUJU_CHARM_HTTPS_PROXY", proxy)
+    assert charm_module._select_proxy("github.com", 22, os.environ) == normalized
+
+    charm_module.DjangoCharm._copy_files(charm)
+
+    config = next(
+        call.args[1]
+        for call in charm._container.push.call_args_list
+        if call.args[0] == charm_module.SSH_CONFIG_PATH
+    )
+    assert f"--proxy {normalized.split('://', 1)[1]} " in config
+    assert ("--encrypt-proxy" in config) == proxy.startswith("https://")
+
+
+@pytest.mark.parametrize(
+    "proxy",
+    [
+        "socks5://proxy.example",
+        "https://user:password@proxy.example",
+        "https://proxy.example/path",
+        "https://proxy.example?query",
+        "https://proxy.example#fragment",
+        "https://proxy.example:0",
+        "https://proxy.example:65536",
+        "https://%h",
+    ],
+)
+def test_unsupported_proxy(charm_module, charm, monkeypatch, proxy):
+    """
+    arrange: a proxy uses unsupported or unsafe configuration.
+    act: prepare the Git SSH files.
+    assert: invalid input fails before any workload changes.
+    """
+    monkeypatch.setenv("JUJU_CHARM_HTTPS_PROXY", proxy)
+    with pytest.raises(ValueError):
+        charm_module.DjangoCharm._copy_files(charm)
+    charm._container.exec.assert_not_called()
+    charm._container.push.assert_not_called()
 
 
 def test_accept_new_host_keys(charm_module, charm, monkeypatch, tmp_path):
