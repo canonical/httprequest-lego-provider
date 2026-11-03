@@ -15,4 +15,7 @@ Upgrade the charm to the latest version:
 
 You should see the `httprequest-lego-provider` charm go to `Active` and `Idle` state after upgrading.
 
-
+The upgrade automatically repairs the domain and domain-permission ID sequences left behind by
+the database table rename. This also repairs deployments that already completed the table rename
+and then encountered duplicate primary-key errors when adding domains or granting permissions.
+Existing domains and permissions retain their IDs and data.

@@ -60,7 +60,7 @@ The `_acme-challenge.` prefix (per ACME spec) is stripped before permission chec
 
 ### Charm Layout
 
-- `charm/src/charm.py` — extends `paas_app_charmer.django.Charm`; pushes SSH key and `known_hosts` into the container on config change
+- `charm/src/charm.py` — extends `paas_app_charmer.django.Charm`; configures Git SSH with `accept-new` host-key checking and preserves `known_hosts` across hooks
 - `charm/src/actions.py` — `Observer` class that maps Juju actions to Django management command calls via `python3 manage.py <command>`
 - `charm/charmcraft.yaml` — uses `django-framework` extension; requires `postgresql` relation; defines `git-repo` and `git-ssh-key` configs
 
