@@ -148,23 +148,14 @@ class DjangoCharm(paas_charm.django.Charm):
         self.actions_observer = actions.Observer(self)
         self.framework.observe(self.on.collect_app_status, self._on_collect_app_status)
 
-    def _on_config_changed(self, _event: ops.ConfigChangedEvent) -> None:
-        """Config changed handler.
+    def _reconcile(self, rerun_migrations: bool = False) -> None:
+        """Copy the Git SSH files before reconciling the workload.
 
         Args:
-            _event: the event triggering the handler.
+            rerun_migrations: whether it is necessary to run the migrations again.
         """
         self._copy_files()
-        super()._on_config_changed(_event)
-
-    def _on_pebble_ready(self, _event: ops.PebbleReadyEvent) -> None:
-        """Pebble ready handler.
-
-        Args:
-            _event: the event triggering the handler.
-        """
-        self._copy_files()
-        super()._on_pebble_ready(_event)
+        super()._reconcile(rerun_migrations)
 
     def _copy_files(self) -> None:
         """Copy files needed by git."""

@@ -173,7 +173,7 @@ def test_known_hosts_survives_hooks(charm_module, charm, monkeypatch, tmp_path, 
         stream.write("new.example ssh-ed25519 CCCC\n")
     expected = known_hosts.read_bytes()
 
-    for hook in ("_on_config_changed", "_on_pebble_ready"):
+    for hook in ("_reconcile",):
         charm.config["git-ssh-key"] = f"updated-key-for-{hook}"
         monkeypatch.setenv("JUJU_CHARM_HTTPS_PROXY", "http://updated-proxy.example:3128")
         base_hook = MagicMock()
@@ -183,9 +183,8 @@ def test_known_hosts_survives_hooks(charm_module, charm, monkeypatch, tmp_path, 
         monkeypatch.setattr(
             charm_module.DjangoCharm, "_copy_files", lambda _self: charm._copy_files()
         )
-        event = MagicMock()
-        getattr(instance, hook)(event)
-        base_hook.assert_called_once_with(event)
+        getattr(instance, hook)()
+        base_hook.assert_called_once_with(False)
         assert known_hosts.read_bytes() == expected
 
     assert stat.S_IMODE(directory.stat().st_mode) == 0o700
