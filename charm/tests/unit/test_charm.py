@@ -3,10 +3,8 @@
 
 """Unit tests for Git SSH configuration."""
 
-import grp
 import importlib.util
 import os
-import pwd
 import shutil
 import socketserver
 import stat
@@ -70,13 +68,10 @@ def test_git_proxy_configuration(charm_module, charm, monkeypatch, hostname, byp
         [
             "sh",
             "-c",
-            "install -d -m 700 -o _daemon_ -g _daemon_ /var/lib/pebble/default/.ssh"
+            "install -d -m 700 /var/lib/pebble/default/.ssh"
             " && touch /var/lib/pebble/default/.ssh/known_hosts"
-            " && chown _daemon_:_daemon_ /var/lib/pebble/default/.ssh/known_hosts"
             " && chmod 600 /var/lib/pebble/default/.ssh/known_hosts",
         ],
-        user="root",
-        group="root",
         timeout=10,
     )
     charm._container.exec.return_value.wait.assert_called_once_with()
@@ -95,12 +90,10 @@ def test_git_proxy_configuration(charm_module, charm, monkeypatch, hostname, byp
             "ProxyCommand /usr/bin/ncat --proxy-type http --proxy "
             "https-proxy.example:3129 --wait 10 %h %p\n"
         ) in config
-    assert pushes[charm_module.SSH_CONFIG_PATH].kwargs["permissions"] == 0o644
+    assert pushes[charm_module.SSH_CONFIG_PATH].kwargs["permissions"] == 0o600
     assert pushes[charm_module.RSA_PATH].kwargs == {
         "encoding": "utf-8",
         "make_dirs": True,
-        "user": charm_module.DJANGO_USER,
-        "group": charm_module.DJANGO_GROUP,
         "permissions": 0o600,
     }
     assert pushes[charm_module.RSA_PATH].args[1] == "test-key"
@@ -157,8 +150,7 @@ def test_known_hosts_survives_hooks(charm_module, charm, monkeypatch, tmp_path, 
         known_hosts.write_text(original)
         known_hosts.chmod(0o644)
     monkeypatch.setattr(charm_module, "KNOWN_HOSTS_PATH", str(known_hosts))
-    monkeypatch.setattr(charm_module, "DJANGO_USER", pwd.getpwuid(os.getuid()).pw_name)
-    monkeypatch.setattr(charm_module, "DJANGO_GROUP", grp.getgrgid(os.getgid()).gr_name)
+    monkeypatch.setattr(charm_module, "SSH_DIRECTORY", str(directory))
 
     def execute(command, **_kwargs):
         subprocess.run(command, check=True, capture_output=True, timeout=5)
