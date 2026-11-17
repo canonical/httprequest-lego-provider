@@ -4,7 +4,6 @@
 """Fixtures for integration tests."""
 
 import logging
-import secrets
 import textwrap
 from collections.abc import Generator
 from pathlib import Path
@@ -66,7 +65,6 @@ def httprequest_lego_provider_fixture(
         app=HTTPREQUEST_LEGO_PROVIDER_APP_NAME,
         config={
             "django-allowed-hosts": "*",
-            "django-secret-key": secrets.token_hex(),
             "git-repo": "git+ssh://git@github.com/canonical/httprequest-lego-provider.git@main",
             "git-ssh-key": textwrap.dedent(
                 """\

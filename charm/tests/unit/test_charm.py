@@ -24,12 +24,12 @@ import pytest
 @pytest.fixture(name="charm_module")
 def charm_module_fixture(monkeypatch):
     """Load charm-specific code without build-time framework charm libraries."""
-    framework = ModuleType("paas_app_charmer")
-    django = ModuleType("paas_app_charmer.django")
+    framework = ModuleType("paas_charm")
+    django = ModuleType("paas_charm.django")
     django.Charm = ops.CharmBase
     framework.django = django
-    monkeypatch.setitem(sys.modules, "paas_app_charmer", framework)
-    monkeypatch.setitem(sys.modules, "paas_app_charmer.django", django)
+    monkeypatch.setitem(sys.modules, "paas_charm", framework)
+    monkeypatch.setitem(sys.modules, "paas_charm.django", django)
     path = Path(__file__).parents[2] / "src" / "charm.py"
     monkeypatch.syspath_prepend(str(path.parent))
     spec = importlib.util.spec_from_file_location("charm_under_test", path)

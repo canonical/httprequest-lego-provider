@@ -16,7 +16,7 @@ from urllib.request import proxy_bypass_environment  # type: ignore[attr-defined
 
 import actions
 import ops
-import paas_app_charmer.django
+import paas_charm.django
 
 logger = logging.getLogger(__name__)
 
@@ -135,7 +135,7 @@ def _proxy_address(proxy: str) -> str:
     return f"{address}:{proxy_port}"
 
 
-class DjangoCharm(paas_app_charmer.django.Charm):
+class DjangoCharm(paas_charm.django.Charm):
     """Flask Charm service."""
 
     def __init__(self, *args: typing.Any) -> None:
