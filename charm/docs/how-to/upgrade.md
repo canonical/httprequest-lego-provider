@@ -11,18 +11,27 @@ Follow the [PostgreSQL charm documentation](https://charmhub.io/postgresql/docs/
 ## Upgrade from a revision that uses paas-charm 1.x
 
 The charm now uses `paas-charm` 2.0 on Ubuntu 26.04. The workload container is renamed from
-`django-app` to `app` and the OCI resource from `django-app-image` to `app-image`. Because of
-[Juju bug LP#1991955](https://bugs.launchpad.net/juju/+bug/1991955), `juju refresh` keeps the
-old container alive and fails on Juju 3.x and 4.0. You must remove the application and deploy it
-again. Back up the database first, as described above.
+`django-app` to `app` and the OCI resource from `django-app-image` to `app-image`. On Juju
+earlier than 4.1, [Juju bug LP#1991955](https://bugs.launchpad.net/juju/+bug/1991955) keeps the
+old container alive and makes `juju refresh` fail. On those versions you must remove the
+application and deploy it again. Back up the database first, as described above.
 
-1. Remove the application:
-   `juju remove-application httprequest-lego-provider --destroy-storage`
-2. Deploy the new revision, then restore your configuration and integrations:
+1. Save the configuration and note the integrations, because removing the application deletes
+   them:
 
    ```
-   juju deploy httprequest-lego-provider --base ubuntu@26.04 --revision=<revision number> \
-     --config git-repo=<repository URL> --config git-ssh-key=<private key>
+   juju config httprequest-lego-provider git-repo > git-repo.txt
+   juju config httprequest-lego-provider git-ssh-key > git-ssh-key.txt
+   juju status httprequest-lego-provider --relations
+   ```
+
+2. Remove the application:
+   `juju remove-application httprequest-lego-provider --destroy-storage`
+3. Deploy the new revision, restore the configuration and recreate the integrations:
+
+   ```
+   juju deploy httprequest-lego-provider --base ubuntu@26.04 --revision=<revision number>
+   juju config httprequest-lego-provider git-repo=@git-repo.txt git-ssh-key=@git-ssh-key.txt
    juju integrate httprequest-lego-provider postgresql-k8s
    ```
 
