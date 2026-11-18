@@ -75,7 +75,65 @@ per-file-ignores = {"tests/*" = ["D100","D101","D102","D103","D104"],"httpreques
 max-complexity = 10
 
 [tool.codespell]
-skip = "build,lib,venv,icon.svg,.tox,.git,.mypy_cache,.ruff_cache,.coverage"
+skip = "build,lib,venv,icon.svg,.tox,.git,.mypy_cache,.ruff_cache,.coverage,uv.lock"
 
 [tool.pydocstyle]
 match_dir = "match-dir=^(?!httprequest_lego_provider/httprequest_lego_provider/migrations)"
+
+[dependency-groups]
+charm = [
+    "paas-charm>=2.0b1,<3",
+]
+fmt = [
+    "black",
+    "isort",
+]
+lint = [
+    {include-group = "charm"},
+    "black",
+    "codespell",
+    "flake8",
+    "flake8-builtins",
+    "flake8-copyright<6.0.0",
+    "flake8-docstrings>=1.6.0",
+    "flake8-docstrings-complete>=1.0.3",
+    "flake8-test-docs>=1.0",
+    "isort",
+    "jubilant",
+    "mypy",
+    "pep8-naming",
+    "pydocstyle>=2.10",
+    "pylint",
+    "pylint-django",
+    "pyproject-flake8",
+    "pytest",
+    "requests",
+    "types-PyYAML",
+    "types-requests",
+]
+unit = [
+    {include-group = "charm"},
+    "coverage[toml]",
+    "pytest",
+    "pytest-django",
+]
+benchmark = [
+    "opentelemetry-sdk",
+    "opentelemetry-exporter-otlp-proto-common",
+    "pytest-django",
+]
+integration = [
+    {include-group = "charm"},
+    "allure-pytest>=2.8.18",
+    "allure-pytest-collection-report @ git+https://github.com/canonical/data-platform-workflows@v24.0.0#subdirectory=python/pytest_plugins/allure_pytest_collection_report",
+    "jubilant",
+    "opcli @ git+https://github.com/canonical/charm-ci.git@v1.0.1 ; python_version >= '3.12'",
+    "pytest",
+]
+coverage-report = [
+    "coverage[toml]",
+    "pytest",
+]
+static = [
+    "bandit[toml]",
+]
