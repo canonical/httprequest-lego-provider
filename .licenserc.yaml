@@ -42,4 +42,5 @@ header:
     - 'charm/uv.lock'
     - '**/migrations/**'
     - '.lycheeignore'
+    - '**/MAJOR_VERSION'
   comment: on-failure

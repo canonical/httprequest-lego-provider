@@ -17,6 +17,10 @@ traces.json
 flamegraph.html
 charm/lib/charms/
 
+# Terraform artifacts
+**/.terraform/
+**/.terraform.lock.hcl
+
 
 # BEGIN VALE WORKFLOW IGNORE
 .vale/styles/*

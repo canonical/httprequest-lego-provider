@@ -5,18 +5,20 @@ variable "app_name" {
   description = "Name of the application in the Juju model."
   type        = string
   default     = "httprequest-lego-provider"
+  nullable    = false
 }
 
 variable "base" {
   description = "The operating system on which to deploy"
   type        = string
-  default     = "ubuntu@22.04"
+  default     = null
 }
 
 variable "channel" {
   description = "The channel to use when deploying a charm."
   type        = string
   default     = "latest/stable"
+  nullable    = false
 }
 
 variable "config" {
@@ -28,12 +30,13 @@ variable "config" {
 variable "constraints" {
   description = "Juju constraints to apply for this application."
   type        = string
-  default     = "arch=amd64"
+  default     = null
 }
 
 variable "model_uuid" {
   description = "UUID of the Juju model to deploy the application into."
   type        = string
+  nullable    = false
 }
 
 variable "revision" {
