@@ -278,7 +278,7 @@ dependencies = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "paas-charm", specifier = ">=2.0.dev1,<3" }]
+requires-dist = [{ name = "paas-charm", specifier = ">=2.0b1,<3" }]
 
 [package.metadata.requires-dev]
 charmlibs-pydeps = []

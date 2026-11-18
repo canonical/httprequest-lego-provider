@@ -8,6 +8,36 @@ Since the upgrade to the latest version involves running migration scripts in th
 
 Follow the [PostgreSQL charm documentation](https://charmhub.io/postgresql/docs/h-configure-s3-aws) to back up the database.
 
+## Upgrade from a revision that uses paas-charm 1.x
+
+The charm now uses `paas-charm` 2.0 on Ubuntu 26.04. The workload container is renamed from
+`django-app` to `app` and the OCI resource from `django-app-image` to `app-image`. Because of
+[Juju bug LP#1991955](https://bugs.launchpad.net/juju/+bug/1991955), `juju refresh` keeps the
+old container alive and fails on Juju 3.x and 4.0. You must remove the application and deploy it
+again. Back up the database first, as described above.
+
+1. Remove the application:
+   `juju remove-application httprequest-lego-provider --destroy-storage`
+2. Deploy the new revision, then restore your configuration and integrations:
+
+   ```
+   juju deploy httprequest-lego-provider --base ubuntu@26.04 --revision=<revision number> \
+     --config git-repo=<repository URL> --config git-ssh-key=<private key>
+   juju integrate httprequest-lego-provider postgresql-k8s
+   ```
+
+The charm generates a new application secret key, which signs out existing sessions. To keep a
+key, store it in a Juju secret and set the `app-secret-key` option to the secret ID:
+
+```
+juju add-secret my-app-secret-key value=<secret-string>
+juju grant-secret my-app-secret-key httprequest-lego-provider
+juju config httprequest-lego-provider app-secret-key=secret:<secret id>
+```
+
+The `django-secret-key` option is replaced by `app-secret-key`. Update any automation that sets
+the old option, the old resource name `django-app-image`, or the `secret-storage` relation.
+
 ## Upgrade to the latest version
 
 Upgrade the charm to the latest version:
