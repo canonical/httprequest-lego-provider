@@ -14,3 +14,4 @@ jobs:
     secrets: inherit
     with:
       vale-style-check: true
+      pre-run-script: .github/scripts/setup-unit-postgres.sh

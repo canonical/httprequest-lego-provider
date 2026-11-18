@@ -18,7 +18,7 @@ class NotReadyError(Exception):
     """Exception thrown when needed resources are not ready."""
 
 
-class Observer(ops.Object):
+class Observer(ops.Object):  # pylint: disable=too-few-public-methods
     """Charm actions observer."""
 
     def __init__(self, charm: paas_app_charmer.django.Charm):
