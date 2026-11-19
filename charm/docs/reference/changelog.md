@@ -1,8 +1,8 @@
 # Changelog
 
-## Upgrade to paas-charm 2.0 on Ubuntu 26.04
+## Upgrade to paas-charm 2.0 and the 26.04 LTS release of Ubuntu
 
-- The charm and rock move to Ubuntu 26.04 and `paas-charm` 2.0.
+- The charm and rock move to the 26.04 LTS release of Ubuntu and `paas-charm` 2.0.
 - The workload container is renamed from `django-app` to `app` and the OCI resource from
   `django-app-image` to `app-image`.
 - **Remove and redeploy is required on Juju earlier than 4.1.** Because of

@@ -10,7 +10,7 @@ Follow the [PostgreSQL charm documentation](https://charmhub.io/postgresql/docs/
 
 ## Upgrade from a revision that uses paas-charm 1.x
 
-The charm now uses `paas-charm` 2.0 on Ubuntu 26.04. The workload container is renamed from
+The charm now uses `paas-charm` 2.0 on the 26.04 LTS release of Ubuntu. The workload container is renamed from
 `django-app` to `app` and the OCI resource from `django-app-image` to `app-image`. On Juju
 earlier than 4.1, [Juju bug LP#1991955](https://bugs.launchpad.net/juju/+bug/1991955) keeps the
 old container alive and makes `juju refresh` fail. On those versions you must remove the

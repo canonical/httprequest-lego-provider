@@ -67,8 +67,8 @@ httprequest-lego-provider/0*  waiting   idle   10.1.180.77         Config git-re
 This means the required configurations have not been set yet.
 
 ### Configure the charm
-> NOTE: For tutorial you can fork this [repo](https://github.com/canonical/httprequest-lego-provider/tree/main) and use you own fork and ssh key.
-> If you fork the repo the `git-repo` will be in the form `git+ssh://git@github.com/<username>/httprequest-lego-provider.git@main`.
+> NOTE: For tutorial you can fork this [repository](https://github.com/canonical/httprequest-lego-provider/tree/main) and use your own fork and SSH key.
+> If you fork the repository the `git-repo` will be in the form `git+ssh://git@github.com/<username>/httprequest-lego-provider.git@main`.
 Provide the configurations `git-repo` and `git-ssh-key` required by the charm:
 
 ```
