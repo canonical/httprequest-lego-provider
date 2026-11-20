@@ -3,10 +3,8 @@
 
 """Unit tests for Git SSH configuration."""
 
-import grp
 import importlib.util
 import os
-import pwd
 import shutil
 import socketserver
 import stat
@@ -24,12 +22,12 @@ import pytest
 @pytest.fixture(name="charm_module")
 def charm_module_fixture(monkeypatch):
     """Load charm-specific code without build-time framework charm libraries."""
-    framework = ModuleType("paas_app_charmer")
-    django = ModuleType("paas_app_charmer.django")
+    framework = ModuleType("paas_charm")
+    django = ModuleType("paas_charm.django")
     django.Charm = ops.CharmBase
     framework.django = django
-    monkeypatch.setitem(sys.modules, "paas_app_charmer", framework)
-    monkeypatch.setitem(sys.modules, "paas_app_charmer.django", django)
+    monkeypatch.setitem(sys.modules, "paas_charm", framework)
+    monkeypatch.setitem(sys.modules, "paas_charm.django", django)
     path = Path(__file__).parents[2] / "src" / "charm.py"
     monkeypatch.syspath_prepend(str(path.parent))
     spec = importlib.util.spec_from_file_location("charm_under_test", path)
@@ -70,13 +68,10 @@ def test_git_proxy_configuration(charm_module, charm, monkeypatch, hostname, byp
         [
             "sh",
             "-c",
-            "install -d -m 700 -o _daemon_ -g _daemon_ /var/lib/pebble/default/.ssh"
+            "install -d -m 700 /var/lib/pebble/default/.ssh"
             " && touch /var/lib/pebble/default/.ssh/known_hosts"
-            " && chown _daemon_:_daemon_ /var/lib/pebble/default/.ssh/known_hosts"
             " && chmod 600 /var/lib/pebble/default/.ssh/known_hosts",
         ],
-        user="root",
-        group="root",
         timeout=10,
     )
     charm._container.exec.return_value.wait.assert_called_once_with()
@@ -95,12 +90,10 @@ def test_git_proxy_configuration(charm_module, charm, monkeypatch, hostname, byp
             "ProxyCommand /usr/bin/ncat --proxy-type http --proxy "
             "https-proxy.example:3129 --wait 10 %h %p\n"
         ) in config
-    assert pushes[charm_module.SSH_CONFIG_PATH].kwargs["permissions"] == 0o644
+    assert pushes[charm_module.SSH_CONFIG_PATH].kwargs["permissions"] == 0o600
     assert pushes[charm_module.RSA_PATH].kwargs == {
         "encoding": "utf-8",
         "make_dirs": True,
-        "user": charm_module.DJANGO_USER,
-        "group": charm_module.DJANGO_GROUP,
         "permissions": 0o600,
     }
     assert pushes[charm_module.RSA_PATH].args[1] == "test-key"
@@ -157,8 +150,7 @@ def test_known_hosts_survives_hooks(charm_module, charm, monkeypatch, tmp_path, 
         known_hosts.write_text(original)
         known_hosts.chmod(0o644)
     monkeypatch.setattr(charm_module, "KNOWN_HOSTS_PATH", str(known_hosts))
-    monkeypatch.setattr(charm_module, "DJANGO_USER", pwd.getpwuid(os.getuid()).pw_name)
-    monkeypatch.setattr(charm_module, "DJANGO_GROUP", grp.getgrgid(os.getgid()).gr_name)
+    monkeypatch.setattr(charm_module, "SSH_DIRECTORY", str(directory))
 
     def execute(command, **_kwargs):
         subprocess.run(command, check=True, capture_output=True, timeout=5)
@@ -173,7 +165,7 @@ def test_known_hosts_survives_hooks(charm_module, charm, monkeypatch, tmp_path, 
         stream.write("new.example ssh-ed25519 CCCC\n")
     expected = known_hosts.read_bytes()
 
-    for hook in ("_on_config_changed", "_on_pebble_ready"):
+    for hook in ("_reconcile",):
         charm.config["git-ssh-key"] = f"updated-key-for-{hook}"
         monkeypatch.setenv("JUJU_CHARM_HTTPS_PROXY", "http://updated-proxy.example:3128")
         base_hook = MagicMock()
@@ -183,9 +175,8 @@ def test_known_hosts_survives_hooks(charm_module, charm, monkeypatch, tmp_path, 
         monkeypatch.setattr(
             charm_module.DjangoCharm, "_copy_files", lambda _self: charm._copy_files()
         )
-        event = MagicMock()
-        getattr(instance, hook)(event)
-        base_hook.assert_called_once_with(event)
+        getattr(instance, hook)()
+        base_hook.assert_called_once_with(False)
         assert known_hosts.read_bytes() == expected
 
     assert stat.S_IMODE(directory.stat().st_mode) == 0o700

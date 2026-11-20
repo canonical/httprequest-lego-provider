@@ -15,4 +15,4 @@ jobs:
     secrets: inherit
     with:
       integration-test-workflow-file: test.yaml
-      resource-mapping: '{"httprequest-lego-provider": "django-app-image"}'
+      resource-mapping: '{"httprequest-lego-provider": "app-image"}'

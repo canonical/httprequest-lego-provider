@@ -3,13 +3,11 @@
 name: httprequest-lego-provider
 type: charm
 
-bases:
-  - build-on:
-    - name: ubuntu
-      channel: "22.04"
-    run-on:
-    - name: ubuntu
-      channel: "22.04"
+base: ubuntu@26.04
+charm-user: non-root
+
+platforms:
+  amd64:
 
 summary: HTTP request Lego provider.
 
@@ -47,17 +45,20 @@ extensions:
 requires:
   postgresql:
     interface: postgresql_client
+    optional: false
     limit: 1
 
 config:
   options:
     git-repo:
       type: string
+      optional: false
       description: >
         The repository URL where the DNS records are stored. The username has to be provided as in
         git+ssh://username@repository@branch, where the branch is optional.
     git-ssh-key:
       type: string
+      optional: false
       description: The private key for SSH authentication.
 
 actions:

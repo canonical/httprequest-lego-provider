@@ -9,7 +9,7 @@ import logging
 import secrets
 
 import ops
-import paas_app_charmer.django
+import paas_charm.django
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class NotReadyError(Exception):
 class Observer(ops.Object):  # pylint: disable=too-few-public-methods
     """Charm actions observer."""
 
-    def __init__(self, charm: paas_app_charmer.django.Charm):
+    def __init__(self, charm: paas_charm.django.Charm):
         """Initialize the observer and register actions handlers.
 
         Args:
@@ -57,7 +57,7 @@ class Observer(ops.Object):  # pylint: disable=too-few-public-methods
 
         process = self.charm._container.exec(
             ["python3", "manage.py"] + command,
-            working_dir=str(self.charm._workload_config.base_dir / "app"),
+            working_dir=str(self.charm._workload_config.app_dir),
             environment=self.charm._gen_environment(),
         )
         try:

@@ -10,22 +10,20 @@ import os
 import re
 import typing
 from collections.abc import Mapping
-from pathlib import Path
 from urllib.parse import urlsplit
 from urllib.request import proxy_bypass_environment  # type: ignore[attr-defined]
 
 import actions
 import ops
-import paas_app_charmer.django
+import paas_charm.django
 
 logger = logging.getLogger(__name__)
 
 
-DJANGO_USER = "_daemon_"
-DJANGO_GROUP = "_daemon_"
-KNOWN_HOSTS_PATH = "/var/lib/pebble/default/.ssh/known_hosts"
-RSA_PATH = "/var/lib/pebble/default/.ssh/id_rsa"
-SSH_CONFIG_PATH = "/etc/ssh/ssh_config.d/httprequest-lego-provider.conf"
+SSH_DIRECTORY = "/var/lib/pebble/default/.ssh"
+KNOWN_HOSTS_PATH = f"{SSH_DIRECTORY}/known_hosts"
+RSA_PATH = f"{SSH_DIRECTORY}/id_rsa"
+SSH_CONFIG_PATH = f"{SSH_DIRECTORY}/config"
 
 
 def _validate_hostname(hostname: str) -> None:
@@ -135,7 +133,7 @@ def _proxy_address(proxy: str) -> str:
     return f"{address}:{proxy_port}"
 
 
-class DjangoCharm(paas_app_charmer.django.Charm):
+class DjangoCharm(paas_charm.django.Charm):
     """Flask Charm service."""
 
     def __init__(self, *args: typing.Any) -> None:
@@ -146,25 +144,15 @@ class DjangoCharm(paas_app_charmer.django.Charm):
         """
         super().__init__(*args)
         self.actions_observer = actions.Observer(self)
-        self.framework.observe(self.on.collect_app_status, self._on_collect_app_status)
 
-    def _on_config_changed(self, _event: ops.ConfigChangedEvent) -> None:
-        """Config changed handler.
-
-        Args:
-            _event: the event triggering the handler.
-        """
-        self._copy_files()
-        super()._on_config_changed(_event)
-
-    def _on_pebble_ready(self, _event: ops.PebbleReadyEvent) -> None:
-        """Pebble ready handler.
+    def _reconcile(self, rerun_migrations: bool = False) -> None:
+        """Copy the Git SSH files before reconciling the workload.
 
         Args:
-            _event: the event triggering the handler.
+            rerun_migrations: whether it is necessary to run the migrations again.
         """
         self._copy_files()
-        super()._on_pebble_ready(_event)
+        super()._reconcile(rerun_migrations)
 
     def _copy_files(self) -> None:
         """Copy files needed by git."""
@@ -175,19 +163,16 @@ class DjangoCharm(paas_app_charmer.django.Charm):
         hostname = self.config.get("git-repo").split("@")[1].split("/")[0]
         port = 22
         proxy = _select_proxy(hostname, port, os.environ)
-        ssh_directory = str(Path(KNOWN_HOSTS_PATH).parent)
-        # Repair ownership on upgrades without replacing any previously trusted keys.
+        # The workload runs as the non-root _daemon_ user, which owns its home directory; keep
+        # any previously trusted host keys while repairing the permissions.
         self._container.exec(
             [
                 "sh",
                 "-c",
-                f"install -d -m 700 -o {DJANGO_USER} -g {DJANGO_GROUP} {ssh_directory}"
+                f"install -d -m 700 {SSH_DIRECTORY}"
                 f" && touch {KNOWN_HOSTS_PATH}"
-                f" && chown {DJANGO_USER}:{DJANGO_GROUP} {KNOWN_HOSTS_PATH}"
                 f" && chmod 600 {KNOWN_HOSTS_PATH}",
             ],
-            user="root",
-            group="root",
             timeout=10,
         ).wait()
         proxy_command = (
@@ -203,26 +188,15 @@ class DjangoCharm(paas_app_charmer.django.Charm):
             "    ConnectTimeout 10\n",
             encoding="utf-8",
             make_dirs=True,
-            permissions=0o644,
+            permissions=0o600,
         )
         self._container.push(
             RSA_PATH,
             self.config.get("git-ssh-key"),
             encoding="utf-8",
             make_dirs=True,
-            user=DJANGO_USER,
-            group=DJANGO_GROUP,
             permissions=0o600,
         )
-
-    def _on_collect_app_status(self, _: ops.CollectStatusEvent) -> None:
-        """Handle the status changes."""
-        if not self.config.get("git-repo"):
-            self.unit.status = ops.WaitingStatus("Config git-repo is required")
-            return
-        if not self.config.get("git-ssh-key"):
-            self.unit.status = ops.WaitingStatus("Config git-ssh-key is required")
-            return
 
 
 if __name__ == "__main__":  # pragma: no cover

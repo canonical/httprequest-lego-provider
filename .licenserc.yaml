@@ -39,6 +39,7 @@ header:
     - 'manage.py'
     - 'app/**'
     - 'charm/lib/**'
+    - 'charm/uv.lock'
     - '**/migrations/**'
     - '.lycheeignore'
     - '**/MAJOR_VERSION'
