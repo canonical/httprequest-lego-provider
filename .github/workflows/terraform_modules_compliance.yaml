@@ -1,4 +1,4 @@
-# Copyright 2025 Canonical Ltd.
+# Copyright 2026 Canonical Ltd.
 # See LICENSE file for licensing details.
 
 name: Terraform modules compliance
@@ -7,11 +7,11 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
-      - '**/terraform/**'
+      - 'terraform/**'
       - '.github/workflows/terraform_modules_compliance.yaml'
 
 jobs:
   terraform-compliance:
-    uses: canonical/operator-workflows/.github/workflows/terraform_modules_compliance.yaml@efdd72c768efaca41f992322fa51a830e90f4990 # main
+    uses: canonical/operator-workflows/.github/workflows/terraform_modules_compliance.yaml@5dbf925ede6288e3b7759114da363bcadada5f1f  # main
     with:
       terraform-directories: '["terraform/charm"]'
