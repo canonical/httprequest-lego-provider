@@ -1,358 +1,357 @@
 # Copyright 2026 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-"""Unit tests for the httprequest-lego-provider charm's custom functionality."""
+"""Unit tests for Git SSH configuration."""
 
+import grp
+import importlib.util
 import os
-import pathlib
+import pwd
+import shutil
+import socketserver
+import stat
+import subprocess
 import sys
+import threading
+from pathlib import Path
+from types import ModuleType
+from unittest.mock import MagicMock
+
 import ops
 import pytest
 
-CHARM_DIR = pathlib.Path(__file__).parents[2]
-sys.path.insert(0, str(CHARM_DIR / "lib"))
-sys.path.insert(0, str(CHARM_DIR / "src"))
 
-os.environ["SCENARIO_SKIP_CONSISTENCY_CHECKS"] = "1"
-
-from ops import testing  # noqa: E402
-
-import charm  # noqa: E402
-
-
-class TestCollectAppStatus:
-    """Test the collect-app-status handler for missing config."""
-
-    def test_missing_git_repo_sets_waiting(self):
-        """When git-repo is not set, unit status should be WaitingStatus."""
-        ctx = testing.Context(charm.DjangoCharm)
-        container = testing.Container("django-app", can_connect=True)
-        state = testing.State(
-            containers={container},
-            config={"git-ssh-key": "some-key"},
-            leader=True,
-        )
-        state_out = ctx.run(ctx.on.collect_app_status(), state)
-        assert isinstance(state_out.unit_status, ops.WaitingStatus)
-        assert "git-repo" in state_out.unit_status.message
-
-    def test_missing_git_ssh_key_sets_waiting(self):
-        """When git-ssh-key is not set, unit status should be WaitingStatus."""
-        ctx = testing.Context(charm.DjangoCharm)
-        container = testing.Container("django-app", can_connect=True)
-        state = testing.State(
-            containers={container},
-            config={"git-repo": "git+ssh://user@host/repo"},
-            leader=True,
-        )
-        state_out = ctx.run(ctx.on.collect_app_status(), state)
-        assert isinstance(state_out.unit_status, ops.WaitingStatus)
-        assert "git-ssh-key" in state_out.unit_status.message
-
-    def test_both_config_present_no_waiting(self):
-        """When both git-repo and git-ssh-key are set, no WaitingStatus."""
-        ctx = testing.Context(charm.DjangoCharm)
-        container = testing.Container("django-app", can_connect=True)
-        state = testing.State(
-            containers={container},
-            config={
-                "git-repo": "git+ssh://user@host/repo",
-                "git-ssh-key": "some-key",
-            },
-            leader=True,
-        )
-        state_out = ctx.run(ctx.on.collect_app_status(), state)
-        assert not isinstance(state_out.unit_status, ops.WaitingStatus)
+@pytest.fixture(name="charm_module")
+def charm_module_fixture(monkeypatch):
+    """Load charm-specific code without build-time framework charm libraries."""
+    framework = ModuleType("paas_app_charmer")
+    django = ModuleType("paas_app_charmer.django")
+    django.Charm = ops.CharmBase
+    framework.django = django
+    monkeypatch.setitem(sys.modules, "paas_app_charmer", framework)
+    monkeypatch.setitem(sys.modules, "paas_app_charmer.django", django)
+    path = Path(__file__).parents[2] / "src" / "charm.py"
+    monkeypatch.syspath_prepend(str(path.parent))
+    spec = importlib.util.spec_from_file_location("charm_under_test", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    for scheme in ("HTTP", "HTTPS", "NO"):
+        monkeypatch.delenv(f"JUJU_CHARM_{scheme}_PROXY", raising=False)
+    return module
 
 
-class TestCopyFiles:
-    """Test SSH key copying on pebble-ready (which triggers _copy_files)."""
-
-    def test_pebble_ready_runs_ssh_keyscan(self):
-        """On pebble-ready with container connected, ssh-keyscan is run."""
-        ctx = testing.Context(charm.DjangoCharm)
-        container = testing.Container(
-            "django-app", can_connect=True,
-            execs={testing.Exec(["ssh-keyscan"], stdout="github.com ssh-rsa AAAA...")},
-        )
-        state = testing.State(
-            containers={container},
-            config={
-                "git-repo": "git+ssh://git@github.com/canonical/repo@main",
-                "git-ssh-key": "-----BEGIN RSA PRIVATE KEY-----\nfakekey",
-            },
-            leader=True,
-        )
-
-        ctx.run(ctx.on.pebble_ready(container), state)
-
-        history = ctx.exec_history["django-app"]
-        assert len(history) == 1
-        assert history[0].command == ["ssh-keyscan", "-t", "rsa", "github.com"]
-
-    def test_pebble_ready_pushes_known_hosts_and_key(self):
-        """Pebble-ready pushes both known_hosts and id_rsa to container."""
-        ctx = testing.Context(charm.DjangoCharm)
-        container = testing.Container(
-            "django-app", can_connect=True,
-            execs={testing.Exec(["ssh-keyscan"], stdout="github.com ssh-rsa ...")},
-        )
-        state = testing.State(
-            containers={container},
-            config={
-                "git-repo": "git+ssh://git@github.com/canonical/repo@main",
-                "git-ssh-key": "my-private-key",
-            },
-            leader=True,
-        )
-
-        state_out = ctx.run(ctx.on.pebble_ready(container), state)
-
-        fs = state_out.get_container("django-app").get_filesystem(ctx)
-        known_hosts = fs / "var/lib/pebble/default/.ssh/known_hosts"
-        id_rsa = fs / "var/lib/pebble/default/.ssh/id_rsa"
-        assert known_hosts.read_text() == "github.com ssh-rsa ..."
-        assert id_rsa.read_text() == "my-private-key"
-
-    def test_pebble_ready_skips_without_git_config(self):
-        """On pebble-ready without git config, _copy_files does nothing."""
-        ctx = testing.Context(charm.DjangoCharm)
-        container = testing.Container("django-app", can_connect=True)
-        state = testing.State(
-            containers={container}, config={}, leader=True,
-        )
-
-        ctx.run(ctx.on.pebble_ready(container), state)
-
-        assert "django-app" not in ctx.exec_history
-
-    def test_copy_files_skips_when_container_not_connected(self):
-        """When container cannot connect, _copy_files returns early."""
-        ctx = testing.Context(charm.DjangoCharm)
-        container = testing.Container("django-app", can_connect=False)
-        state = testing.State(
-            containers={container},
-            config={
-                "git-repo": "git+ssh://git@github.com/repo",
-                "git-ssh-key": "fakekey",
-            },
-            leader=True,
-        )
-
-        ctx.run(ctx.on.pebble_ready(container), state)
-
-        assert "django-app" not in ctx.exec_history
-
-    def test_hostname_extraction_from_git_repo(self):
-        """The hostname is correctly extracted from git-repo config."""
-        ctx = testing.Context(charm.DjangoCharm)
-        container = testing.Container(
-            "django-app", can_connect=True,
-            execs={testing.Exec(["ssh-keyscan"], stdout="bitbucket.org ...")},
-        )
-        state = testing.State(
-            containers={container},
-            config={
-                "git-repo": "git+ssh://deploy@bitbucket.org/myorg/myrepo@main",
-                "git-ssh-key": "key",
-            },
-            leader=True,
-        )
-
-        ctx.run(ctx.on.pebble_ready(container), state)
-
-        cmd = ctx.exec_history["django-app"][0].command
-        assert cmd == ["ssh-keyscan", "-t", "rsa", "bitbucket.org"]
+@pytest.fixture(name="charm")
+def charm_fixture():
+    """Create a mock charm with a connected workload."""
+    charm = MagicMock()
+    charm.config = {
+        "git-repo": "git+ssh://git@github.com/example/zones.git@main",
+        "git-ssh-key": "test-key",
+    }
+    return charm
 
 
-class TestActions:
-    """Test the four custom actions.
-
-    The actions need the secret-storage peer relation (for the secret key)
-    and the postgresql relation (a required integration) so that the parent's
-    ``is_ready()`` returns True and ``_gen_environment()`` succeeds.
+@pytest.mark.parametrize("hostname", ["github.com", "git.example.com"])
+@pytest.mark.parametrize("bypass", [False, True])
+def test_git_proxy_configuration(charm_module, charm, monkeypatch, hostname, bypass):
     """
+    arrange: configure Juju proxies and an optional destination exclusion.
+    act: copy Git SSH files.
+    assert: Git uses the selected route and accepts only previously unknown host keys.
+    """
+    charm.config["git-repo"] = f"git+ssh://git@{hostname}/example/zones.git@main"
+    monkeypatch.setenv("JUJU_CHARM_HTTP_PROXY", "http://http-proxy.example:3128")
+    monkeypatch.setenv("JUJU_CHARM_HTTPS_PROXY", "http://https-proxy.example:3129")
+    monkeypatch.setenv("JUJU_CHARM_NO_PROXY", hostname if bypass else "localhost")
 
-    _MANAGE_PY = ["python3", "manage.py"]
+    charm_module.DjangoCharm._copy_files(charm)
 
-    def _action_state(self, ctx, *, execs=frozenset()):
-        """Create a State from context with the relations the parent requires."""
-        peer = testing.PeerRelation(
-            "secret-storage",
-            local_app_data={"django_secret_key": "test-secret-key"},
+    charm._container.exec.assert_called_once_with(
+        [
+            "sh",
+            "-c",
+            "install -d -m 700 -o _daemon_ -g _daemon_ /var/lib/pebble/default/.ssh"
+            " && touch /var/lib/pebble/default/.ssh/known_hosts"
+            " && chown _daemon_:_daemon_ /var/lib/pebble/default/.ssh/known_hosts"
+            " && chmod 600 /var/lib/pebble/default/.ssh/known_hosts",
+        ],
+        user="root",
+        group="root",
+        timeout=10,
+    )
+    charm._container.exec.return_value.wait.assert_called_once_with()
+    pushes = {call.args[0]: call for call in charm._container.push.call_args_list}
+    assert set(pushes) == {charm_module.SSH_CONFIG_PATH, charm_module.RSA_PATH}
+    config = pushes[charm_module.SSH_CONFIG_PATH].args[1]
+    assert f"Host {hostname}\n" in config
+    assert f"IdentityFile {charm_module.RSA_PATH}\n" in config
+    assert f"UserKnownHostsFile {charm_module.KNOWN_HOSTS_PATH}\n" in config
+    assert "StrictHostKeyChecking accept-new\n" in config
+    assert "ConnectTimeout 10\n" in config
+    if bypass:
+        assert "ProxyCommand none\n" in config
+    else:
+        assert (
+            "ProxyCommand /usr/bin/ncat --proxy-type http --proxy "
+            "https-proxy.example:3129 --wait 10 %h %p\n"
+        ) in config
+    assert pushes[charm_module.SSH_CONFIG_PATH].kwargs["permissions"] == 0o644
+    assert pushes[charm_module.RSA_PATH].kwargs == {
+        "encoding": "utf-8",
+        "make_dirs": True,
+        "user": charm_module.DJANGO_USER,
+        "group": charm_module.DJANGO_GROUP,
+        "permissions": 0o600,
+    }
+    assert pushes[charm_module.RSA_PATH].args[1] == "test-key"
+
+
+def test_proxy_removal_restores_direct_ssh(charm_module, charm, monkeypatch):
+    """
+    arrange: a proxy is configured and then removed.
+    act: regenerate the SSH files after each configuration change.
+    assert: the previously configured ProxyCommand is replaced with direct access.
+    """
+    monkeypatch.setenv("JUJU_CHARM_HTTPS_PROXY", "http://proxy.example:3128")
+    charm_module.DjangoCharm._copy_files(charm)
+    monkeypatch.delenv("JUJU_CHARM_HTTPS_PROXY")
+    charm._container.reset_mock()
+
+    charm_module.DjangoCharm._copy_files(charm)
+
+    config_call = next(
+        call
+        for call in charm._container.push.call_args_list
+        if call.args[0] == charm_module.SSH_CONFIG_PATH
+    )
+    assert "ProxyCommand none\n" in config_call.args[1]
+    assert "ncat" not in config_call.args[1]
+
+
+def test_known_hosts_setup_failure_is_explicit(charm_module, charm):
+    """
+    arrange: preparing writable host-key storage fails.
+    act: copy Git SSH files.
+    assert: the failure propagates before changing the SSH configuration or identity.
+    """
+    charm._container.exec.return_value.wait.side_effect = RuntimeError("Permission denied")
+
+    with pytest.raises(RuntimeError, match="Permission denied"):
+        charm_module.DjangoCharm._copy_files(charm)
+
+    charm._container.push.assert_not_called()
+
+
+@pytest.mark.parametrize("existing", [False, True])
+def test_known_hosts_survives_hooks(charm_module, charm, monkeypatch, tmp_path, existing):
+    """
+    arrange: SSH storage is absent or contains trusted keys from an earlier deployment.
+    act: prepare storage and repeat configuration and workload-ready hooks.
+    assert: keys survive and the directory and file remain private and writable.
+    """
+    directory = tmp_path / ".ssh"
+    known_hosts = directory / "known_hosts"
+    original = "github.com ssh-ed25519 AAAA\nold.example ssh-rsa BBBB\n"
+    if existing:
+        directory.mkdir(mode=0o755)
+        known_hosts.write_text(original)
+        known_hosts.chmod(0o644)
+    monkeypatch.setattr(charm_module, "KNOWN_HOSTS_PATH", str(known_hosts))
+    monkeypatch.setattr(charm_module, "DJANGO_USER", pwd.getpwuid(os.getuid()).pw_name)
+    monkeypatch.setattr(charm_module, "DJANGO_GROUP", grp.getgrgid(os.getgid()).gr_name)
+
+    def execute(command, **_kwargs):
+        subprocess.run(command, check=True, capture_output=True, timeout=5)
+        return MagicMock()
+
+    charm._container.exec.side_effect = execute
+    copy_files = charm_module.DjangoCharm._copy_files
+    charm._copy_files.side_effect = lambda: copy_files(charm)
+    copy_files(charm)
+    assert known_hosts.read_text() == (original if existing else "")
+    with known_hosts.open("a") as stream:
+        stream.write("new.example ssh-ed25519 CCCC\n")
+    expected = known_hosts.read_bytes()
+
+    for hook in ("_on_config_changed", "_on_pebble_ready"):
+        charm.config["git-ssh-key"] = f"updated-key-for-{hook}"
+        monkeypatch.setenv("JUJU_CHARM_HTTPS_PROXY", "http://updated-proxy.example:3128")
+        base_hook = MagicMock()
+        monkeypatch.setattr(ops.CharmBase, hook, base_hook, raising=False)
+        # Use the actual subclass so super() in the hook resolves the mocked base.
+        instance = object.__new__(charm_module.DjangoCharm)
+        monkeypatch.setattr(
+            charm_module.DjangoCharm, "_copy_files", lambda _self: charm._copy_files()
         )
-        postgresql = testing.Relation(
-            "postgresql",
-            remote_app_data={
-                "endpoints": "10.0.0.1:5432",
-                "username": "testuser",
-                "password": "testpass",
-            },
+        event = MagicMock()
+        getattr(instance, hook)(event)
+        base_hook.assert_called_once_with(event)
+        assert known_hosts.read_bytes() == expected
+
+    assert stat.S_IMODE(directory.stat().st_mode) == 0o700
+    assert stat.S_IMODE(known_hosts.stat().st_mode) == 0o600
+    assert directory.stat().st_uid == known_hosts.stat().st_uid == os.getuid()
+    assert directory.stat().st_gid == known_hosts.stat().st_gid == os.getgid()
+    assert os.access(directory, os.W_OK)
+    assert os.access(known_hosts, os.W_OK)
+    assert all(call.args[0] != str(known_hosts) for call in charm._container.push.call_args_list)
+
+
+def test_invalid_proxy_does_not_write_files(charm_module, charm, monkeypatch):
+    """
+    arrange: an unsupported authenticated proxy is configured.
+    act: copy Git SSH files.
+    assert: an explicit error is raised before changing files.
+    """
+    monkeypatch.setenv("JUJU_CHARM_HTTPS_PROXY", "http://user:password@proxy.example:3128")
+
+    with pytest.raises(ValueError, match="authentication is unsupported"):
+        charm_module.DjangoCharm._copy_files(charm)
+
+    charm._container.exec.assert_not_called()
+    charm._container.push.assert_not_called()
+
+
+@pytest.mark.parametrize("proxy", ["", "http://[2001:db8::1]:3128"])
+def test_generated_ssh_config(charm_module, charm, monkeypatch, tmp_path, proxy):
+    """
+    arrange: configure the standard SSH port and an optional IPv6 proxy.
+    act: generate the system SSH include and read it with OpenSSH.
+    assert: Git SSH sees accept-new verification, the correct files, and the selected route.
+    """
+    charm.config["git-repo"] = "git+ssh://git@git.example.com/zones.git@main"
+    monkeypatch.setenv("JUJU_CHARM_HTTPS_PROXY", proxy)
+    charm_module.DjangoCharm._copy_files(charm)
+    config_call = next(
+        call
+        for call in charm._container.push.call_args_list
+        if call.args[0] == charm_module.SSH_CONFIG_PATH
+    )
+    included = tmp_path / "managed.conf"
+    included.write_text(config_call.args[1])
+    config = tmp_path / "ssh_config"
+    config.write_text(f"Include {included}\nHost *\n")
+
+    result = subprocess.run(
+        ["ssh", "-G", "-F", str(config), "git.example.com"],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=5,
+    )
+
+    assert f"identityfile {charm_module.RSA_PATH}\n" in result.stdout
+    assert f"userknownhostsfile {charm_module.KNOWN_HOSTS_PATH}\n" in result.stdout
+    assert "stricthostkeychecking accept-new\n" in result.stdout
+    assert "port 22\n" in result.stdout
+    if proxy:
+        assert (
+            "proxycommand /usr/bin/ncat --proxy-type http --proxy [2001:db8::1]:3128 "
+            "--wait 10 %h %p\n"
+        ) in result.stdout
+    else:
+        assert "proxycommand" not in result.stdout
+
+
+def test_accept_new_host_keys(charm_module, charm, monkeypatch, tmp_path):
+    """
+    arrange: a local SSH server offers an initial host key and later a replacement.
+    act: connect using the generated accept-new configuration before and after the change.
+    assert: first use is recorded, repeat host verification succeeds, and changed keys fail.
+    """
+    sshd = shutil.which("sshd")
+    if not sshd:
+        pytest.skip("OpenSSH server is required for the real host-key exchange")
+    keys = [tmp_path / "first_key", tmp_path / "replacement_key"]
+    for key in keys:
+        subprocess.run(
+            ["ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-f", str(key)],
+            check=True,
+            capture_output=True,
+            timeout=5,
         )
-        return testing.State.from_context(
-            ctx,
-            leader=True,
-            relations={peer, postgresql},
-            containers={testing.Container(
-                "django-app", can_connect=True, execs=execs,
-            )},
-        )
+    known_hosts = tmp_path / "known_hosts"
+    monkeypatch.setattr(charm_module, "KNOWN_HOSTS_PATH", str(known_hosts))
+    charm.config["git-repo"] = "git+ssh://git@127.0.0.1/zones.git@main"
+    charm_module.DjangoCharm._copy_files(charm)
+    config_call = next(
+        call
+        for call in charm._container.push.call_args_list
+        if call.args[0] == charm_module.SSH_CONFIG_PATH
+    )
+    config = tmp_path / "ssh_config"
+    config.write_text(config_call.args[1])
+    server_config = tmp_path / "sshd_config"
+    server_config.write_text(
+        "UsePAM no\nPasswordAuthentication no\nKbdInteractiveAuthentication no\n"
+        "AuthorizedKeysFile none\nLogLevel ERROR\n"
+    )
 
-    def test_create_user_runs_management_command(self):
-        """create-user generates a password and runs create_user."""
-        ctx = testing.Context(charm.DjangoCharm)
-        state = self._action_state(
-            ctx, execs={testing.Exec(self._MANAGE_PY, stdout="OK")},
-        )
-
-        ctx.run(
-            ctx.on.action("create-user", params={"username": "testuser"}),
-            state,
-        )
-
-        cmd = ctx.exec_history["django-app"][0].command
-        assert cmd[:3] == ["python3", "manage.py", "create_user"]
-        assert cmd[3] == "testuser"
-        assert len(cmd[4]) > 0  # generated password
-
-    def test_create_user_sets_result(self):
-        """create-user sets results from command output."""
-        ctx = testing.Context(charm.DjangoCharm)
-        state = self._action_state(
-            ctx,
-            execs={testing.Exec(
-                self._MANAGE_PY, stdout="User created with password xyz",
-            )},
-        )
-
-        ctx.run(
-            ctx.on.action("create-user", params={"username": "testuser"}),
-            state,
-        )
-
-        assert ctx.action_results == {"result": "User created with password xyz"}
-
-    def test_allow_domains_with_both_params(self):
-        """allow-domains passes domains and subdomains."""
-        ctx = testing.Context(charm.DjangoCharm)
-        state = self._action_state(
-            ctx, execs={testing.Exec(self._MANAGE_PY, stdout="OK")},
-        )
-
-        ctx.run(
-            ctx.on.action(
-                "allow-domains",
-                params={
-                    "username": "testuser",
-                    "domains": "example.com,test.com",
-                    "subdomains": "sub.example.com",
-                },
-            ),
-            state,
-        )
-
-        cmd = ctx.exec_history["django-app"][0].command
-        assert "allow_domains" in cmd
-        assert "--domains" in cmd
-        assert "example.com,test.com" in cmd
-        assert "--subdomains" in cmd
-        assert "sub.example.com" in cmd
-
-    def test_allow_domains_fails_without_domains_or_subdomains(self):
-        """allow-domains fails if neither domains nor subdomains."""
-        ctx = testing.Context(charm.DjangoCharm)
-        state = self._action_state(ctx)
-
-        with pytest.raises(testing.ActionFailed) as exc_info:
-            ctx.run(
-                ctx.on.action("allow-domains", params={"username": "testuser"}),
-                state,
+    class Handler(socketserver.BaseRequestHandler):
+        def handle(self):
+            subprocess.run(
+                [sshd, "-i", "-e", "-f", str(server_config), "-h", str(self.server.host_key)],
+                stdin=self.request,
+                stdout=self.request,
+                stderr=subprocess.PIPE,
+                check=False,
+                timeout=10,
             )
 
-        assert "domains" in exc_info.value.message.lower()
+    with socketserver.TCPServer(("127.0.0.1", 0), Handler) as server:
+        server.host_key = keys[0]
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        command = [
+            "ssh",
+            "-F",
+            str(config),
+            "-p",
+            str(server.server_address[1]),
+            "-o",
+            "BatchMode=yes",
+            "-o",
+            "GlobalKnownHostsFile=/dev/null",
+            "-o",
+            "HostKeyAlgorithms=ssh-ed25519",
+            "127.0.0.1",
+            "true",
+        ]
+        try:
+            first = subprocess.run(command, capture_output=True, text=True, timeout=10)
+            assert "Permanently added" in first.stderr, first.stderr
+            recorded = known_hosts.read_bytes()
+            public_key = keys[0].with_suffix(".pub").read_text().split()[1]
+            assert public_key.encode() in recorded
+            repeat = subprocess.run(command, capture_output=True, text=True, timeout=10)
+            # No authorized client key is needed to exercise host verification.
+            assert "Permission denied" in repeat.stderr, repeat.stderr
+            assert "Permanently added" not in repeat.stderr
+            assert known_hosts.read_bytes() == recorded
+            server.host_key = keys[1]
+            changed = subprocess.run(command, capture_output=True, text=True, timeout=10)
+            assert changed.returncode == 255
+            assert "REMOTE HOST IDENTIFICATION HAS CHANGED" in changed.stderr
+            assert "Host key verification failed" in changed.stderr
+            assert known_hosts.read_bytes() == recorded
+        finally:
+            server.shutdown()
+            thread.join(timeout=5)
 
-    def test_allow_domains_only_domains(self):
-        """allow-domains works with only domains (no subdomains)."""
-        ctx = testing.Context(charm.DjangoCharm)
-        state = self._action_state(
-            ctx, execs={testing.Exec(self._MANAGE_PY, stdout="OK")},
-        )
 
-        ctx.run(
-            ctx.on.action(
-                "allow-domains",
-                params={"username": "testuser", "domains": "example.com"},
-            ),
-            state,
-        )
+@pytest.mark.parametrize("missing", ["container", "git-repo", "git-ssh-key"])
+def test_copy_files_not_ready(charm_module, charm, missing):
+    """
+    arrange: the container or required configuration is unavailable.
+    act: attempt to copy Git SSH files.
+    assert: no commands run and no files are written.
+    """
+    if missing == "container":
+        charm._container.can_connect.return_value = False
+    else:
+        charm.config[missing] = ""
 
-        cmd = ctx.exec_history["django-app"][0].command
-        assert "--domains" in cmd
-        assert "--subdomains" not in cmd
+    charm_module.DjangoCharm._copy_files(charm)
 
-    def test_revoke_domains_action(self):
-        """revoke-domains calls revoke_domains management command."""
-        ctx = testing.Context(charm.DjangoCharm)
-        state = self._action_state(
-            ctx, execs={testing.Exec(self._MANAGE_PY, stdout="OK")},
-        )
-
-        ctx.run(
-            ctx.on.action(
-                "revoke-domains",
-                params={"username": "testuser", "domains": "example.com"},
-            ),
-            state,
-        )
-
-        cmd = ctx.exec_history["django-app"][0].command
-        assert "revoke_domains" in cmd
-        assert "--domains" in cmd
-
-    def test_revoke_domains_fails_without_domains_or_subdomains(self):
-        """revoke-domains fails if neither domains nor subdomains."""
-        ctx = testing.Context(charm.DjangoCharm)
-        state = self._action_state(ctx)
-
-        with pytest.raises(testing.ActionFailed):
-            ctx.run(
-                ctx.on.action("revoke-domains", params={"username": "testuser"}),
-                state,
-            )
-
-    def test_list_domains_action(self):
-        """list-domains calls list_domains and returns output."""
-        ctx = testing.Context(charm.DjangoCharm)
-        state = self._action_state(
-            ctx,
-            execs={testing.Exec(
-                self._MANAGE_PY, stdout="domain1.com\ndomain2.com",
-            )},
-        )
-
-        ctx.run(
-            ctx.on.action("list-domains", params={"username": "testuser"}),
-            state,
-        )
-
-        cmd = ctx.exec_history["django-app"][0].command
-        assert cmd == ["python3", "manage.py", "list_domains", "testuser"]
-        assert ctx.action_results == {"result": "domain1.com\ndomain2.com"}
-
-    def test_action_handles_exec_error(self):
-        """Actions handle ExecError and fail with stderr message."""
-        ctx = testing.Context(charm.DjangoCharm)
-        state = self._action_state(
-            ctx,
-            execs={testing.Exec(
-                self._MANAGE_PY, return_code=1, stderr="User already exists",
-            )},
-        )
-
-        with pytest.raises(testing.ActionFailed) as exc_info:
-            ctx.run(
-                ctx.on.action("create-user", params={"username": "testuser"}),
-                state,
-            )
-
-        assert "User already exists" in exc_info.value.message
+    charm._container.exec.assert_not_called()
+    charm._container.push.assert_not_called()

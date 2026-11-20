@@ -1,0 +1,39 @@
+name: Integration tests
+
+on:
+  pull_request:
+  schedule:
+    - cron: "0 15 * * SAT"
+
+jobs:
+  integration-tests: 
+    permissions:
+      contents: read
+      packages: write
+      actions: read
+    uses: canonical/charm-ci/.github/workflows/integration-test.yml@14b1cf49d48b9d5b96192d9bca2890c98b7295cf # v1.0.2
+    secrets: inherit
+    with:
+      working-directory: .
+  required_status_checks:
+    name: Required Integration Test Status Checks
+    runs-on: ubuntu-latest
+    needs:
+      - integration-tests
+    if: always() && !cancelled()
+    timeout-minutes: 5
+    steps:
+      - name: Check integration-test status
+        run: |
+          RESULT="${{ needs.integration-tests.result }}"
+          if [ "$RESULT" = "success" ] || [ "$RESULT" = "skipped" ]; then
+            exit 0
+          else
+            echo "integration-test failed with status: $RESULT"
+            exit 1
+          fi
+  allure-report:
+    if: ${{ !cancelled() && github.event_name == 'schedule' }}
+    needs:
+      - integration-tests
+    uses: canonical/operator-workflows/.github/workflows/allure_report.yaml@main
