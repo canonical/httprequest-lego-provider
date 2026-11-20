@@ -33,7 +33,7 @@ application and deploy it again. Back up the database first, as described above.
 
    ```
    juju deploy httprequest-lego-provider --base ubuntu@26.04 --revision=<revision number>
-   juju config httprequest-lego-provider git-repo=@git-repo.txt git-ssh-key=@git-ssh-key.txt
+   juju config httprequest-lego-provider git-repo="$(cat git-repo.txt)" git-ssh-key=@git-ssh-key.txt
    juju integrate httprequest-lego-provider postgresql-k8s
    ```
 
