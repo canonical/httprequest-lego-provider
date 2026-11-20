@@ -14,6 +14,7 @@ Technical reference material for the `httprequest-lego-provider` charm.
 :maxdepth: 1
 
 actions
+changelog
 charm-architecture
 configurations
 integrations
