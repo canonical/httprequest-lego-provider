@@ -10,7 +10,9 @@
   replace the old container. Save the `git-repo` and `git-ssh-key` options and the integrations,
   use `juju remove-application`, deploy the new revision, then restore them. See
   [how to upgrade](../how-to/upgrade.md).
-- The application secret key is regenerated, which signs out existing sessions. Use the
-  secret-typed `app-secret-key` option to keep a key.
+- The `django-secret-key` and `django-secret-key-id` options are replaced by the secret-typed
+  `app-secret-key` option. Reuse the previous key through it to keep existing sessions.
+- The `git-repo` and `git-ssh-key` options are now required. When either is missing, the charm
+  goes to `Blocked` with `missing options: ...` instead of `Waiting`.
 - The workload runs as the non-root `_daemon_` user. The charm writes the Git SSH configuration,
   key and `known_hosts` file under `/var/lib/pebble/default/.ssh`.

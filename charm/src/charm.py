@@ -144,7 +144,6 @@ class DjangoCharm(paas_charm.django.Charm):
         """
         super().__init__(*args)
         self.actions_observer = actions.Observer(self)
-        self.framework.observe(self.on.collect_app_status, self._on_collect_app_status)
 
     def _reconcile(self, rerun_migrations: bool = False) -> None:
         """Copy the Git SSH files before reconciling the workload.
@@ -198,15 +197,6 @@ class DjangoCharm(paas_charm.django.Charm):
             make_dirs=True,
             permissions=0o600,
         )
-
-    def _on_collect_app_status(self, _: ops.CollectStatusEvent) -> None:
-        """Handle the status changes."""
-        if not self.config.get("git-repo"):
-            self.unit.status = ops.WaitingStatus("Config git-repo is required")
-            return
-        if not self.config.get("git-ssh-key"):
-            self.unit.status = ops.WaitingStatus("Config git-ssh-key is required")
-            return
 
 
 if __name__ == "__main__":  # pragma: no cover
