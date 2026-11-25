@@ -1,27 +1,110 @@
 name: Publish to edge
 
 on:
-  push:
-    branches:
-    - main
-    - track/*
+  workflow_dispatch:
+    inputs:
+      run-id:
+        description: "Integration-test workflow run ID to fetch artifacts from"
+        required: true
+        type: string
+      ref:
+        description: "Commit SHA or ref matching the run (ensures matching artifacts.yaml and version)"
+        required: true
+        type: string
+      channel:
+        description: "CharmHub channel to publish to"
+        required: false
+        default: "latest/edge"
+        type: string
+      dry-run:
+        description: "Validate publish without actually uploading to CharmHub"
+        required: false
+        default: true
+        type: boolean
 
 jobs:
-  select-channel:
+  publish-from-run:
     runs-on: ubuntu-latest
-    permissions: {}
-    outputs:
-      channel: ${{ steps.channel.outputs.name }}
-    steps:
-      - uses: canonical/charming-actions/channel@2.7.0
-        id: channel
-  publish-to-edge:
-    needs: select-channel
-    uses: canonical/charm-ci/.github/workflows/publish-artifacts.yml@14b1cf49d48b9d5b96192d9bca2890c98b7295cf # v1.0.2
     permissions:
       actions: read
-      contents: write
-    secrets: inherit
-    with:
-      channel: ${{ needs.select-channel.outputs.channel }}
-      integration-workflow-name: integration_test.yaml
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Checkout charm-ci scripts
+        uses: actions/checkout@v4
+        with:
+          repository: canonical/charm-ci
+          ref: 14b1cf49d48b9d5b96192d9bca2890c98b7295cf # v1.0.2
+          path: .charm-ci
+
+      - name: Install uv
+        run: sudo snap install astral-uv --classic
+
+      - name: Install opcli
+        run: uv tool install "opcli[cli] @ ${GITHUB_WORKSPACE}/.charm-ci"
+
+      - name: Install charmcraft
+        run: sudo snap install charmcraft --classic
+
+      - name: Fetch build artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_RUN_ID: ${{ inputs.run-id }}
+        run: |
+          set -euo pipefail
+
+          opcli artifacts fetch \
+            --run-id "${INPUT_RUN_ID}" \
+            --arch all \
+            --wait
+
+      - name: Add version file to charms
+        run: |
+          set -euo pipefail
+
+          COMMIT_SHA=$(git rev-parse HEAD)
+          CHARM_FILES=()
+          while IFS= read -r -d '' charm_file; do
+            CHARM_FILES+=("${charm_file}")
+          done < <(find . -type f -name '*.charm' -print0)
+
+          if [ "${#CHARM_FILES[@]}" -eq 0 ]; then
+            echo "::error::No .charm files found after fetching build artifacts."
+            exit 1
+          fi
+
+          "${GITHUB_WORKSPACE}/.charm-ci/.github/scripts/inject-charm-version.sh" \
+            "${COMMIT_SHA}" \
+            "${CHARM_FILES[@]}"
+
+      - name: Publish to CharmHub
+        env:
+          CHARMCRAFT_AUTH: ${{ secrets.CHARMHUB_TOKEN }}
+          INPUT_CHANNEL: ${{ inputs.channel }}
+          INPUT_DRY_RUN: ${{ inputs.dry-run }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${CHARMCRAFT_AUTH}" ]; then
+            echo "::error::CHARMHUB_TOKEN secret is not set. Required for publishing."
+            exit 1
+          fi
+
+          CHANNEL_ARGS=()
+          if [ -n "${INPUT_CHANNEL}" ]; then
+            CHANNEL_ARGS=(--channel "${INPUT_CHANNEL}")
+          fi
+
+          DRY_RUN_ARGS=()
+          if [ "${INPUT_DRY_RUN}" = "true" ]; then
+            DRY_RUN_ARGS=(--dry-run)
+          fi
+
+          opcli artifacts publish \
+            "${CHANNEL_ARGS[@]}" \
+            --json \
+            "${DRY_RUN_ARGS[@]}"
