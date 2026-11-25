@@ -9,6 +9,7 @@ on:
 jobs:
   select-channel:
     runs-on: ubuntu-latest
+    permissions: {}
     outputs:
       channel: ${{ steps.channel.outputs.name }}
     steps:
