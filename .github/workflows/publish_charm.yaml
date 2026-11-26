@@ -1,18 +1,27 @@
 name: Publish to edge
 
 on:
-  push:
-    branches:
-    - main
-    - track/*
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: "CharmHub channel to publish to"
+        required: false
+        default: "latest/edge"
+        type: string
+      dry-run:
+        description: "Validate publish without actually uploading to CharmHub"
+        required: false
+        default: true
+        type: boolean
 
 jobs:
   publish-to-edge:
-    uses: canonical/operator-workflows/.github/workflows/publish_charm.yaml@main
+    uses: canonical/charm-ci/.github/workflows/publish-artifacts.yml@14b1cf49d48b9d5b96192d9bca2890c98b7295cf # v1.0.2
     permissions:
       actions: read
       contents: write
     secrets: inherit
     with:
-      integration-test-workflow-file: test.yaml
-      resource-mapping: '{"httprequest-lego-provider": "django-app-image"}'
+      channel: ${{ inputs.channel }}
+      integration-workflow-name: integration_test.yaml
+      dry-run: ${{ inputs.dry-run }}
